@@ -1,10 +1,16 @@
 // app/tesis/crear.tsx
+import { EstudianteForm } from '@/components/forms/EstudianteForm';
+import { EvaluacionForm } from '@/components/forms/EvaluacionForm';
+import { ConfirmarDatosModal } from '@/components/ui/ConfirmarDatosModal';
+import { useEstudiantes } from '@/hooks/useEstudiantes';
+import { useEvaluaciones } from '@/hooks/useEvaluaciones';
+import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Modal,
     ScrollView,
     Text,
     TextInput,
@@ -13,7 +19,6 @@ import {
 } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import {
-    buscarPorCedula,
     crearTesis,
     getCarreras,
     type CrearTesisInput,
@@ -21,13 +26,6 @@ import {
 } from '../../../services/api';
 
 // Interfaces locales para el estado del formulario
-interface EstudianteForm {
-    id_estudiante?: number;
-    nombre_completo: string;
-    cedula: string;
-    email: string;
-    esExistente: boolean;
-}
 
 interface JuradoForm {
     id_jurado?: number;
@@ -44,7 +42,7 @@ interface EvaluacionForm {
     jurado: JuradoForm;
 }
 
-interface Carrera { 
+interface Carrera {
     id_carrera: number;
     nombre: string;
 }
@@ -55,11 +53,37 @@ export default function CrearTesisScreen() {
     const [carreras, setCarreras] = useState<Carrera[]>([]);
     const [cargandoCarreras, setCargandoCarreras] = useState(true);
 
-const [open, setOpen] = useState(false);
-const [value, setValue] = useState(null);
-const [items, setItems] = useState(
-    carreras.map(c => ({ label: c.nombre, value: c.id_carrera.toString() }))
-);
+    const [open, setOpen] = useState(false);
+    const [value, setValue] = useState(null);
+
+    // Hooks
+    const {
+        estudiantes,
+        buscando: buscandoEstudiante,
+        modalVisible: modalEstudianteVisible,
+        resultadoBusqueda: resultadoEstudiante,
+        agregarEstudiante,
+        eliminarEstudiante,
+        actualizarEstudiante,
+        buscarEstudiantePorCedula,
+        usarEstudianteExistente,
+        continuarConNuevoEstudiante,
+    } = useEstudiantes();
+
+    const {
+        evaluaciones,
+        buscando: buscandoJurado,
+        modalVisible: modalJuradoVisible,
+        resultadoBusqueda: resultadoJurado,
+        agregarEvaluacion,
+        eliminarEvaluacion,
+        actualizarEvaluacion,
+        actualizarJurado,
+        buscarJuradoPorCedula,
+        usarJuradoExistente,
+        continuarConNuevoJurado,
+    } = useEvaluaciones();
+
     // Datos principales de la tesis
     const [form, setForm] = useState({
         titulo: '',
@@ -67,27 +91,47 @@ const [items, setItems] = useState(
         id_carrera: '',
         url_documento: ''
     });
-    
-    // Listas dinámicas
-    const [estudiantes, setEstudiantes] = useState<EstudianteForm[]>([
-        { nombre_completo: '', cedula: '', email: '', esExistente: false }
-    ]);
-    
-    const [evaluaciones, setEvaluaciones] = useState<EvaluacionForm[]>([
-        { 
-            nota: '', 
-            fecha_evaluacion: new Date().toISOString().split('T')[0], 
-            comentarios: '', 
-            jurado: { nombre_completo: '', cedula: '', titulo_profesional: '', esExistente: false } 
+
+
+    const [documento, setDocumento] = useState<{
+        uri: string;
+        name: string;
+        size: number;
+        mimeType: string;
+    } | null>(null);
+
+    // Función para seleccionar archivo
+    const seleccionarDocumento = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: ['application/pdf'],  // Solo PDF
+                copyToCacheDirectory: true,
+            });
+
+            if (result.assets && result.assets[0]) {
+                const file = result.assets[0];
+                setDocumento({
+                    uri: file.uri,
+                    name: file.name,
+                    size: file.size || 0,
+                    mimeType: file.mimeType || 'application/pdf'
+                });
+                setForm({ ...form, url_documento: file.name });  // Guardar nombre
+                console.log(' Archivo seleccionado:', file.name);
+            }
+        } catch (error) {
+            console.error('Error seleccionando documento:', error);
+            Alert.alert('Error', 'No se pudo seleccionar el archivo');
         }
-    ]);
-    
-    // Modal de búsqueda
-    const [modalVisible, setModalVisible] = useState(false);
-    const [modalTipo, setModalTipo] = useState<'estudiante' | 'jurado'>('estudiante');
-    const [cedulaBuscar, setCedulaBuscar] = useState('');
-    const [indiceEditando, setIndiceEditando] = useState<number | null>(null);
-    const [resultadoBusqueda, setResultadoBusqueda] = useState<any>(null);
+    };
+
+    // Función para limpiar el archivo seleccionado
+    const limpiarDocumento = () => {
+        setDocumento(null);
+        setForm({ ...form, url_documento: '' });
+    };
+
+
 
     // Cargar carreras al iniciar
     useEffect(() => {
@@ -97,165 +141,40 @@ const [items, setItems] = useState(
     const cargarCarreras = async () => {
         setCargandoCarreras(true);
         const lista = await getCarreras();
-        console.log('lista carreras >> ',lista)
+        // console.log('lista carreras >> ', lista)
         setCarreras(lista);
         setCargandoCarreras(false);
     };
+
+    // Usar useMemo para evitar recalcular items en cada render
+    const dropdownItems = useMemo(() => {
+        return carreras.map(c => ({
+            label: c.nombre,
+            value: c.id_carrera.toString()
+        }));
+    }, [carreras]);  // Solo se recalcula cuando carreras cambia
+
+    // Estado para el valor del dropdown
+    const [selectedCarrera, setSelectedCarrera] = useState(null);
+
+    // Manejar cambio de carrera
+    const handleCarreraChange = useCallback((val: any) => {
+        setSelectedCarrera(val);
+        setForm(prev => ({ ...prev, id_carrera: val || '' }));
+    }, []);
+
+
+
+
 
     // Manejar cambios en campos principales
     const handleChange = (campo: string, valor: string) => {
         setForm({ ...form, [campo]: valor });
     };
 
-    // ==================== ESTUDIANTES ====================
-    
-    const agregarEstudiante = () => {
-        setEstudiantes([
-            ...estudiantes,
-            { nombre_completo: '', cedula: '', email: '', esExistente: false }
-        ]);
-    };
-
-    const eliminarEstudiante = (index: number) => {
-        if (estudiantes.length === 1) {
-            Alert.alert('Error', 'Debe haber al menos un estudiante');
-            return;
-        }
-        const nuevos = [...estudiantes];
-        nuevos.splice(index, 1);
-        setEstudiantes(nuevos);
-    };
-
-    const actualizarEstudiante = (index: number, campo: keyof EstudianteForm, valor: string) => {
-        const nuevos = [...estudiantes];
-        nuevos[index] = { ...nuevos[index], [campo]: valor, esExistente: false };
-        setEstudiantes(nuevos);
-    };
-
-    const buscarEstudiantePorCedula = async (index: number, cedula: string) => {
-        if (!cedula || cedula.length < 5) return;
-        
-        setBuscando(true);
-        setIndiceEditando(index);
-        setModalTipo('estudiante');
-        setCedulaBuscar(cedula);
-        
-        try {
-            const resultado = await buscarPorCedula('estudiante', cedula);
-            if (resultado.success && resultado.data) {
-                setResultadoBusqueda(resultado.data);
-                setModalVisible(true);
-            }
-        } catch (error) {
-            console.error('Error buscando estudiante:', error);
-        } finally {
-            setBuscando(false);
-        }
-    };
-
-    const usarEstudianteExistente = () => {
-        if (resultadoBusqueda && indiceEditando !== null) {
-            const nuevos = [...estudiantes];
-            nuevos[indiceEditando] = {
-                id_estudiante: resultadoBusqueda.id_estudiante,
-                nombre_completo: resultadoBusqueda.nombre_completo,
-                cedula: resultadoBusqueda.cedula,
-                email: resultadoBusqueda.email || '',
-                esExistente: true
-            };
-            setEstudiantes(nuevos);
-        }
-        setModalVisible(false);
-        setResultadoBusqueda(null);
-        setIndiceEditando(null);
-    };
-
-    const continuarConNuevoEstudiante = () => {
-        setModalVisible(false);
-        setResultadoBusqueda(null);
-        setIndiceEditando(null);
-    };
-
-    // ==================== JURADOS Y EVALUACIONES ====================
-    
-    const agregarEvaluacion = () => {
-        setEvaluaciones([
-            ...evaluaciones,
-            { 
-                nota: '', 
-                fecha_evaluacion: new Date().toISOString().split('T')[0], 
-                comentarios: '', 
-                jurado: { nombre_completo: '', cedula: '', titulo_profesional: '', esExistente: false } 
-            }
-        ]);
-    };
-
-    const eliminarEvaluacion = (index: number) => {
-        if (evaluaciones.length === 1) {
-            Alert.alert('Error', 'Debe haber al menos una evaluación');
-            return;
-        }
-        const nuevos = [...evaluaciones];
-        nuevos.splice(index, 1);
-        setEvaluaciones(nuevos);
-    };
-
-    const actualizarEvaluacion = (index: number, campo: keyof EvaluacionForm, valor: string) => {
-        const nuevos = [...evaluaciones];
-        nuevos[index] = { ...nuevos[index], [campo]: valor };
-        setEvaluaciones(nuevos);
-    };
-
-    const actualizarJurado = (evalIndex: number, campo: keyof JuradoForm, valor: string) => {
-        const nuevos = [...evaluaciones];
-        nuevos[evalIndex].jurado = { 
-            ...nuevos[evalIndex].jurado, 
-            [campo]: valor,
-            esExistente: false 
-        };
-        setEvaluaciones(nuevos);
-    };
-
-    const buscarJuradoPorCedula = async (evalIndex: number, cedula: string) => {
-        if (!cedula || cedula.length < 5) return;
-        
-        setBuscando(true);
-        setIndiceEditando(evalIndex);
-        setModalTipo('jurado');
-        setCedulaBuscar(cedula);
-        
-        try {
-            const resultado = await buscarPorCedula('jurado', cedula);
-            if (resultado.success && resultado.data) {
-                setResultadoBusqueda(resultado.data);
-                setModalVisible(true);
-            }
-        } catch (error) {
-            console.error('Error buscando jurado:', error);
-        } finally {
-            setBuscando(false);
-        }
-    };
-
-    const usarJuradoExistente = () => {
-        if (resultadoBusqueda && indiceEditando !== null) {
-            const nuevos = [...evaluaciones];
-            nuevos[indiceEditando].jurado = {
-                id_jurado: resultadoBusqueda.id_jurado,
-                nombre_completo: resultadoBusqueda.nombre_completo,
-                cedula: resultadoBusqueda.cedula,
-                titulo_profesional: resultadoBusqueda.titulo_profesional || '',
-                esExistente: true
-            };
-            setEvaluaciones(nuevos);
-        }
-        setModalVisible(false);
-        setResultadoBusqueda(null);
-        setIndiceEditando(null);
-    };
 
     // ==================== ENVÍO DEL FORMULARIO ====================
-    
+
     const handleSubmit = async () => {
         // Validaciones básicas
         if (!form.titulo.trim()) {
@@ -266,7 +185,7 @@ const [items, setItems] = useState(
             Alert.alert('Error', 'Selecciona una carrera');
             return;
         }
-        
+
         // Validar estudiantes
         for (let i = 0; i < estudiantes.length; i++) {
             const est = estudiantes[i];
@@ -279,7 +198,7 @@ const [items, setItems] = useState(
                 return;
             }
         }
-        
+
         // Validar evaluaciones
         for (let i = 0; i < evaluaciones.length; i++) {
             const ev = evaluaciones[i];
@@ -295,11 +214,11 @@ const [items, setItems] = useState(
                 Alert.alert('Error', `El jurado de la evaluación ${i + 1} debe tener cédula`);
                 return;
             }
-        }      
-          
+        }
+
         setLoading(true);
-        
-        // Preparar datos para enviar (usando los tipos correctos)
+
+        // ver que datos se estan enviando (solo en uso pasa console log porque se envia por formdata)
         const datosEnvio: CrearTesisInput = {
             titulo: form.titulo,
             resumen: form.resumen || undefined,
@@ -320,7 +239,7 @@ const [items, setItems] = useState(
             }),
             evaluaciones: evaluaciones.map(ev => {
                 let jurado: JuradoInput;
-                
+
                 if (ev.jurado.id_jurado) {
                     // Jurado existente: solo enviar ID
                     jurado = { id_jurado: ev.jurado.id_jurado };
@@ -332,7 +251,7 @@ const [items, setItems] = useState(
                         titulo_profesional: ev.jurado.titulo_profesional || undefined
                     };
                 }
-                
+
                 return {
                     nota: parseFloat(ev.nota),
                     fecha_evaluacion: ev.fecha_evaluacion,
@@ -341,10 +260,61 @@ const [items, setItems] = useState(
                 };
             })
         };
+
+        const formData = new FormData();
+
+        formData.append('titulo', form.titulo);
+        formData.append('resumen', form.resumen || '');
+        formData.append('id_carrera', form.id_carrera);
         
-        const resultado = await crearTesis(datosEnvio);
+        // Agregar el archivo PDF
+        if (documento) {
+            const fileInfo = {
+                uri: documento.uri,
+                type: documento.mimeType || 'application/pdf',
+                name: documento.name || 'documento.pdf'
+            };
+            formData.append('archivo_pdf', fileInfo as any);
+        }
+        
+        const estudiantesData = estudiantes.map(est => {
+            if (est.id_estudiante) {
+                return { id_estudiante: est.id_estudiante };
+            } else {
+                return {
+                    nombre_completo: est.nombre_completo,
+                    cedula: est.cedula,
+                    email: est.email || undefined
+                };
+            }
+        });
+        formData.append('estudiantes', JSON.stringify(estudiantesData));
+        
+        const evaluacionesData = evaluaciones.map(ev => {
+            let jurado: any;
+            if (ev.jurado.id_jurado) {
+                jurado = { id_jurado: ev.jurado.id_jurado };
+            } else {
+                jurado = {
+                    nombre_completo: ev.jurado.nombre_completo,
+                    cedula: ev.jurado.cedula,
+                    titulo_profesional: ev.jurado.titulo_profesional || undefined
+                };
+            }
+            return {
+                nota: parseFloat(ev.nota),
+                fecha_evaluacion: ev.fecha_evaluacion,
+                comentarios: ev.comentarios || undefined,
+                jurado
+            };
+        });
+        formData.append('evaluaciones', JSON.stringify(evaluacionesData));
+        
+        console.log(evaluacionesData)
+        console.log(datosEnvio)
+        const resultado = await crearTesis(formData);
         setLoading(false);
-        
+
         if (resultado.success) {
             Alert.alert('Éxito', 'Tesis creada correctamente', [
                 { text: 'OK', onPress: () => router.back() }
@@ -355,277 +325,245 @@ const [items, setItems] = useState(
     };
 
     return (
-        <ScrollView className="flex-1 bg-gray-100 p-5">
-            <Text className="text-3xl font-bold text-center text-gray-800 mb-8">
-                📝 Crear Nueva Tesis
-            </Text>
-
-            {/* ==================== DATOS BÁSICOS ==================== */}
-            <Text className="text-xl font-bold text-gray-800 mb-4">📋 Datos Básicos</Text>
-            
-            <Text className="text-base font-semibold text-gray-700 mb-2">Título *</Text>
-            <TextInput
-                className="bg-white border border-gray-300 rounded-lg p-3 text-base mb-5"
-                value={form.titulo}
-                onChangeText={(text) => handleChange('titulo', text)}
-                placeholder="Ingrese el título de la tesis"
-                placeholderTextColor="#999"
-            />
-
-            <Text className="text-base font-semibold text-gray-700 mb-2">Resumen</Text>
-            <TextInput
-                className="bg-white border border-gray-300 rounded-lg p-3 text-base mb-5 min-h-[100px]"
-                value={form.resumen}
-                onChangeText={(text) => handleChange('resumen', text)}
-                placeholder="Breve descripción de la tesis"
-                placeholderTextColor="#999"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-            />
-
-            {/* ==================== SELECTOR DE CARRERA ==================== */}
-<Text className="text-base font-semibold text-gray-700 mb-2">Carrera *</Text>
-<DropDownPicker
-    open={open}
-    value={value}
-    items={carreras.map(c => ({ label: c.nombre, value: c.id_carrera.toString() }))}
-    setOpen={setOpen}
-    setValue={setValue}
-    placeholder="Selecciona una carrera"
-    searchable={true}  // 👈 Activa el buscador
-    searchPlaceholder="Buscar carrera..."
-    listMode="MODAL"  // Mejor para pantallas pequeñas
-/>
-
-
-
-
-
-            <Text className="text-base font-semibold text-gray-700 mb-2">URL Documento (opcional)</Text>
-            <TextInput
-                className="bg-white border border-gray-300 rounded-lg p-3 text-base mb-5"
-                value={form.url_documento}
-                onChangeText={(text) => handleChange('url_documento', text)}
-                placeholder="/uploads/tesis.pdf"
-                placeholderTextColor="#999"
-            />
-
-            {/* ==================== ESTUDIANTES ==================== */}
-            <View className="flex-row justify-between items-center mt-4 mb-4">
-                <Text className="text-xl font-bold text-gray-800">👨‍🎓 Estudiantes</Text>
-                <TouchableOpacity
-                    className="bg-green-500 px-4 py-2 rounded-lg"
-                    onPress={agregarEstudiante}
-                >
-                    <Text className="text-white font-bold">+ Agregar</Text>
-                </TouchableOpacity>
+        <ScrollView className="flex-1 bg-white">
+            {/* Header con los colores de la app */}
+            <View className="bg-black pt-16 pb-6 px-5">
+                <View className="flex-row items-center">
+                    <TouchableOpacity onPress={() => router.back()} className="mr-3">
+                        <Ionicons name="arrow-back-outline" size={28} color="#FFD700" />
+                    </TouchableOpacity>
+                    <View>
+                        <Text className="text-yellow-500 text-2xl font-bold">Crear Tesis</Text>
+                        <Text className="text-white text-sm">Completa todos los campos</Text>
+                    </View>
+                </View>
             </View>
 
-            {estudiantes.map((estudiante, idx) => (
-                <View key={idx} className="bg-white rounded-lg p-4 mb-4 border border-gray-200">
-                    <View className="flex-row justify-between items-center mb-3">
-                        <Text className="font-bold text-gray-700">Estudiante {idx + 1}</Text>
-                        {estudiante.esExistente && (
-                            <View className="bg-green-100 px-2 py-1 rounded">
-                                <Text className="text-green-700 text-xs">✓ Existente</Text>
-                            </View>
-                        )}
-                        <TouchableOpacity onPress={() => eliminarEstudiante(idx)}>
-                            <Text className="text-red-500 font-bold">Eliminar</Text>
-                        </TouchableOpacity>
-                    </View>
-                    
-                    <Text className="text-sm font-semibold text-gray-600 mb-1">Cédula *</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2 mb-3"
-                        value={estudiante.cedula}
-                        onChangeText={(text) => actualizarEstudiante(idx, 'cedula', text)}
-                        onBlur={() => buscarEstudiantePorCedula(idx, estudiante.cedula)}
-                        placeholder="Cédula"
-                        placeholderTextColor="#999"
-                    />
-                    
-                    <Text className="text-sm font-semibold text-gray-600 mb-1">Nombre Completo *</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2 mb-3"
-                        value={estudiante.nombre_completo}
-                        onChangeText={(text) => actualizarEstudiante(idx, 'nombre_completo', text)}
-                        placeholder="Nombre completo"
-                        placeholderTextColor="#999"
-                    />
-                    
-                    <Text className="text-sm font-semibold text-gray-600 mb-1">Email</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2"
-                        value={estudiante.email}
-                        onChangeText={(text) => actualizarEstudiante(idx, 'email', text)}
-                        placeholder="email@universidad.edu"
-                        placeholderTextColor="#999"
-                        keyboardType="email-address"
-                    />
-                </View>
-            ))}
-
-            {/* ==================== EVALUACIONES ==================== */}
-            <View className="flex-row justify-between items-center mt-4 mb-4">
-                <Text className="text-xl font-bold text-gray-800">⚖️ Evaluaciones</Text>
-                <TouchableOpacity
-                    className="bg-green-500 px-4 py-2 rounded-lg"
-                    onPress={agregarEvaluacion}
-                >
-                    <Text className="text-white font-bold">+ Agregar</Text>
-                </TouchableOpacity>
-            </View>
-
-            {evaluaciones.map((evaluacion, idx) => (
-                <View key={idx} className="bg-white rounded-lg p-4 mb-4 border border-gray-200">
-                    <View className="flex-row justify-between items-center mb-3">
-                        <Text className="font-bold text-gray-700">Evaluación {idx + 1}</Text>
-                        <TouchableOpacity onPress={() => eliminarEvaluacion(idx)}>
-                            <Text className="text-red-500 font-bold">Eliminar</Text>
-                        </TouchableOpacity>
-                    </View>
-                    
-                    <Text className="text-sm font-semibold text-gray-600 mb-1">Nota *</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2 mb-3"
-                        value={evaluacion.nota}
-                        onChangeText={(text) => actualizarEvaluacion(idx, 'nota', text)}
-                        placeholder="0 - 20"
-                        placeholderTextColor="#999"
-                        keyboardType="numeric"
-                    />
-                    
-                    <Text className="text-sm font-semibold text-gray-600 mb-1">Fecha Evaluación</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2 mb-3"
-                        value={evaluacion.fecha_evaluacion}
-                        onChangeText={(text) => actualizarEvaluacion(idx, 'fecha_evaluacion', text)}
-                        placeholder="YYYY-MM-DD"
-                        placeholderTextColor="#999"
-                    />
-                    
-                    <Text className="text-sm font-semibold text-gray-600 mb-1">Comentarios</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2 mb-3 min-h-[60px]"
-                        value={evaluacion.comentarios}
-                        onChangeText={(text) => actualizarEvaluacion(idx, 'comentarios', text)}
-                        placeholder="Observaciones del jurado"
-                        placeholderTextColor="#999"
-                        multiline
-                    />
-                    
-                    <Text className="text-sm font-semibold text-gray-600 mb-1 mt-2">
-                        👨‍⚖️ Jurado {evaluacion.jurado.esExistente && '(Existente)'}
-                    </Text>
-                    
-                    <Text className="text-xs text-gray-500 mb-1">Cédula *</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2 mb-2"
-                        value={evaluacion.jurado.cedula}
-                        onChangeText={(text) => actualizarJurado(idx, 'cedula', text)}
-                        onBlur={() => buscarJuradoPorCedula(idx, evaluacion.jurado.cedula)}
-                        placeholder="Cédula del jurado"
-                        placeholderTextColor="#999"
-                    />
-                    
-                    <Text className="text-xs text-gray-500 mb-1">Nombre Completo *</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2 mb-2"
-                        value={evaluacion.jurado.nombre_completo}
-                        onChangeText={(text) => actualizarJurado(idx, 'nombre_completo', text)}
-                        placeholder="Nombre completo"
-                        placeholderTextColor="#999"
-                    />
-                    
-                    <Text className="text-xs text-gray-500 mb-1">Título Profesional</Text>
-                    <TextInput
-                        className="bg-gray-50 border border-gray-300 rounded-lg p-2"
-                        value={evaluacion.jurado.titulo_profesional}
-                        onChangeText={(text) => actualizarJurado(idx, 'titulo_profesional', text)}
-                        placeholder="Dr., Mg., Ing., etc."
-                        placeholderTextColor="#999"
-                    />
-                </View>
-            ))}
-
-            {/* ==================== BOTÓN ENVIAR ==================== */}
-            <TouchableOpacity
-                className="bg-blue-500 py-4 rounded-lg items-center mt-4 mb-10"
-                onPress={handleSubmit}
-                disabled={loading}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text className="text-white text-lg font-bold">✅ Crear Tesis</Text>
-                )}
-            </TouchableOpacity>
-
-            {/* ==================== MODAL DE CONFIRMACIÓN ==================== */}
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View className="flex-1 justify-center items-center bg-black/50">
-                    <View className="bg-white rounded-lg p-6 w-11/12 max-w-sm">
-                        <Text className="text-xl font-bold mb-4 text-center">
-                            {modalTipo === 'estudiante' ? '🎓 Estudiante' : '⚖️ Jurado'} Encontrado
-                        </Text>
-                        
-                        {resultadoBusqueda && (
-                            <View className="mb-4">
-                                <Text className="text-gray-700">
-                                    <Text className="font-bold">Nombre:</Text> {resultadoBusqueda.nombre_completo}
-                                </Text>
-                                <Text className="text-gray-700 mt-1">
-                                    <Text className="font-bold">Cédula:</Text> {resultadoBusqueda.cedula}
-                                </Text>
-                                {modalTipo === 'estudiante' && resultadoBusqueda.email && (
-                                    <Text className="text-gray-700 mt-1">
-                                        <Text className="font-bold">Email:</Text> {resultadoBusqueda.email}
-                                    </Text>
-                                )}
-                                {modalTipo === 'jurado' && resultadoBusqueda.titulo_profesional && (
-                                    <Text className="text-gray-700 mt-1">
-                                        <Text className="font-bold">Título:</Text> {resultadoBusqueda.titulo_profesional}
-                                    </Text>
-                                )}
-                            </View>
-                        )}
-                        
-                        <Text className="text-gray-600 mb-4 text-center">
-                            ¿Deseas usar estos datos?
-                        </Text>
-                        
-                        <View className="flex-row justify-between gap-3">
-                            <TouchableOpacity
-                                className="flex-1 bg-gray-300 py-3 rounded-lg"
-                                onPress={continuarConNuevoEstudiante}
-                            >
-                                <Text className="text-center font-bold">No, crear nuevo</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                className="flex-1 bg-blue-500 py-3 rounded-lg"
-                                onPress={modalTipo === 'estudiante' ? usarEstudianteExistente : usarJuradoExistente}
-                            >
-                                <Text className="text-white text-center font-bold">Sí, usar existente</Text>
-                            </TouchableOpacity>
+            {/* Formulario */}
+            <View className="p-5">
+                {/* ==================== DATOS BÁSICOS ==================== */}
+                <View className="mb-6">
+                    <View className="flex-row items-center mb-3">
+                        <View className="bg-yellow-500 rounded-full w-6 h-6 items-center justify-center mr-2">
+                            <Text className="text-black text-xs font-bold">1</Text>
                         </View>
+                        <Text className="text-black text-lg font-bold">Datos Básicos</Text>
+                    </View>
+
+                    <View className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <Text className="text-base font-semibold text-gray-700 mb-2">
+                            Título *
+                        </Text>
+                        <TextInput
+                            className="bg-white border border-gray-300 rounded-lg p-3 text-base mb-4"
+                            value={form.titulo}
+                            onChangeText={(text) => handleChange('titulo', text)}
+                            placeholder="Ingrese el título de la tesis"
+                            placeholderTextColor="#999"
+                        />
+
+                        <Text className="text-base font-semibold text-gray-700 mb-2">
+                            Resumen
+                        </Text>
+                        <TextInput
+                            className="bg-white border border-gray-300 rounded-lg p-3 text-base mb-4 min-h-[100px]"
+                            value={form.resumen}
+                            onChangeText={(text) => handleChange('resumen', text)}
+                            placeholder="Breve descripción de la tesis"
+                            placeholderTextColor="#999"
+                            multiline
+                            numberOfLines={4}
+                            textAlignVertical="top"
+                        />
+
+                        <Text className="text-base font-semibold text-gray-700 mb-2">
+                            Carrera *
+                        </Text>
+                        <View className="mb-4 z-10">
+                            <DropDownPicker
+                                open={open}
+                                value={selectedCarrera}
+                                items={dropdownItems}
+                                setOpen={setOpen}
+                                setValue={setSelectedCarrera}
+                                placeholder="Selecciona una carrera"
+                                searchable={true}
+                                searchPlaceholder="🔍 Buscar carrera..."
+                                listMode="MODAL"
+                                style={{
+                                    backgroundColor: '#FFFFFF',
+                                    borderColor: '#D1D5DB',
+                                    borderRadius: 8,
+                                }}
+                                dropDownContainerStyle={{
+                                    backgroundColor: '#FFFFFF',
+                                    borderColor: '#D1D5DB',
+                                }}
+                                onChangeValue={handleCarreraChange}
+                            />
+                        </View>
+
+                        {/* Documento PDF */}
+                        <Text className="text-base font-semibold text-gray-700 mb-2">
+                            Documento PDF (opcional)
+                        </Text>
+                        {documento ? (
+                            <View className="bg-green-50 border border-green-300 rounded-lg p-3 flex-row justify-between items-center">
+                                <View className="flex-1">
+                                    <View className="flex-row items-center">
+                                        <Ionicons name="document-text" size={20} color="#059669" />
+                                        <Text className="text-green-700 font-semibold ml-2">Archivo seleccionado</Text>
+                                    </View>
+                                    <Text className="text-gray-600 text-sm mt-1" numberOfLines={1}>
+                                        {documento.name}
+                                    </Text>
+                                    <Text className="text-gray-400 text-xs">
+                                        {(documento.size / 1024).toFixed(2)} KB
+                                    </Text>
+                                </View>
+                                <TouchableOpacity onPress={limpiarDocumento} className="ml-3">
+                                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity
+                                className="bg-gray-50 border border-gray-300 rounded-lg p-4 items-center border-dashed"
+                                onPress={seleccionarDocumento}
+                            >
+                                <Ionicons name="cloud-upload-outline" size={32} color="#6B7280" />
+                                <Text className="text-gray-600 text-base mt-2">Seleccionar archivo PDF</Text>
+                                <Text className="text-gray-400 text-xs mt-1">Solo archivos PDF (máx 10MB)</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
-            </Modal>
-            
-            {/* Indicador de búsqueda */}
-            {buscando && (
+
+                {/* ==================== ESTUDIANTES ==================== */}
+                <View className="mb-6">
+                    <View className="flex-row justify-between items-center mb-3">
+                        <View className="flex-row items-center">
+                            <View className="bg-yellow-500 rounded-full w-6 h-6 items-center justify-center mr-2">
+                                <Text className="text-black text-xs font-bold">2</Text>
+                            </View>
+                            <Text className="text-black text-lg font-bold">Estudiantes</Text>
+                        </View>
+                        <TouchableOpacity
+                            className="bg-yellow-500 px-4 py-2 rounded-lg flex-row items-center"
+                            onPress={agregarEstudiante}
+                        >
+                            <Ionicons name="add" size={18} color="#000000" />
+                            <Text className="text-black font-bold ml-1">Agregar</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {estudiantes.length === 0 ? (
+                        <View className="bg-gray-50 rounded-xl p-8 items-center border border-gray-200 border-dashed">
+                            <Ionicons name="people-outline" size={48} color="#9CA3AF" />
+                            <Text className="text-gray-500 text-center mt-3">
+                                No hay estudiantes agregados
+                            </Text>
+                            <Text className="text-gray-400 text-sm text-center">
+                                Presiona "Agregar" para añadir autores
+                            </Text>
+                        </View>
+                    ) : (
+                        estudiantes.map((estudiante, idx) => (
+                            <EstudianteForm
+                                key={idx}
+                                index={idx}
+                                estudiante={estudiante}
+                                onUpdate={actualizarEstudiante}
+                                onDelete={eliminarEstudiante}
+                                onBuscar={buscarEstudiantePorCedula}
+                            />
+                        ))
+                    )}
+                </View>
+
+                {/* ==================== EVALUACIONES ==================== */}
+                <View className="mb-6">
+                    <View className="flex-row justify-between items-center mb-3">
+                        <View className="flex-row items-center">
+                            <View className="bg-yellow-500 rounded-full w-6 h-6 items-center justify-center mr-2">
+                                <Text className="text-black text-xs font-bold">3</Text>
+                            </View>
+                            <Text className="text-black text-lg font-bold">Evaluaciones</Text>
+                        </View>
+                        <TouchableOpacity
+                            className="bg-yellow-500 px-4 py-2 rounded-lg flex-row items-center"
+                            onPress={agregarEvaluacion}
+                        >
+                            <Ionicons name="add" size={18} color="#000000" />
+                            <Text className="text-black font-bold ml-1">Agregar</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {evaluaciones.length === 0 ? (
+                        <View className="bg-gray-50 rounded-xl p-8 items-center border border-gray-200 border-dashed">
+                            <Ionicons name="clipboard-outline" size={48} color="#9CA3AF" />
+                            <Text className="text-gray-500 text-center mt-3">
+                                No hay evaluaciones agregadas
+                            </Text>
+                            <Text className="text-gray-400 text-sm text-center">
+                                Presiona "Agregar" para añadir jurados y notas
+                            </Text>
+                        </View>
+                    ) : (
+                        evaluaciones.map((evaluacion, idx) => (
+                            <EvaluacionForm
+                                key={`eval-${idx}`}
+                                index={idx}
+                                evaluacion={evaluacion}
+                                onUpdateEvaluacion={actualizarEvaluacion}
+                                onUpdateJurado={actualizarJurado}
+                                onBuscarJurado={buscarJuradoPorCedula}
+                                onDelete={eliminarEvaluacion}
+                            />
+                        ))
+                    )}
+                </View>
+
+                {/* Botón Enviar */}
+                <TouchableOpacity
+                    className="bg-yellow-500 py-4 rounded-xl items-center mt-4 mb-10 flex-row justify-center"
+                    onPress={handleSubmit}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#000000" />
+                    ) : (
+                        <>
+                            <Ionicons name="checkmark-circle" size={24} color="#000000" />
+                            <Text className="text-black text-lg font-bold ml-2">Crear Tesis</Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+            </View>
+
+            {/* Modales y loading... */}
+            <ConfirmarDatosModal
+                visible={modalEstudianteVisible}
+                titulo="Estudiante"
+                datos={resultadoEstudiante}
+                onConfirmar={usarEstudianteExistente}
+                onCancelar={continuarConNuevoEstudiante}
+            />
+
+            <ConfirmarDatosModal
+                visible={modalJuradoVisible}
+                titulo="Jurado"
+                datos={resultadoJurado}
+                onConfirmar={usarJuradoExistente}
+                onCancelar={continuarConNuevoJurado}
+            />
+
+            {(buscandoEstudiante || buscandoJurado) && (
                 <View className="absolute inset-0 bg-black/50 justify-center items-center">
-                    <ActivityIndicator size="large" color="#fff" />
+                    <ActivityIndicator size="large" color="#FFD700" />
                     <Text className="text-white mt-3">Buscando...</Text>
                 </View>
             )}
         </ScrollView>
+      
     );
 }

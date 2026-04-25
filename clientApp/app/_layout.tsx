@@ -1,23 +1,40 @@
-import "../global.css";
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+// app/_layout.tsx 
+
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import "../global.css";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+    <ThemeProvider value={DefaultTheme}>
+      <Stack
+        screenOptions={{
+          headerShown: false,  //  oculta TODOS los headers por defecto
+        }}
+      >
+        {/* LAS TABS - grupo (tabs) */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        
+        {/* PANTALLAS MODALES (fuera de tabs) */}
+        <Stack.Screen 
+          name="tesis/create" 
+          options={{ 
+            title: 'Crear Tesis',
+            presentation: 'modal'
+          }} 
+        />
+        
+          {/* Detalle de tesis (dentro de tabs pero se maneja automáticamente) */}
+        <Stack.Screen 
+          name="tesis/[id]" 
+          options={{ 
+            title: 'Detalle de Tesis',
+            headerStyle: { backgroundColor: '#000000' },
+            headerTitleStyle: { color: '#FFD700' }
+          }} 
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
