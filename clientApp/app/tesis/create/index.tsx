@@ -1,7 +1,9 @@
 // app/tesis/crear.tsx
+import { validateEstudiante, validateEvaluacion, validateTesisForm } from '@/app/helpers/validations';
 import { EstudianteForm } from '@/components/forms/EstudianteForm';
 import { EvaluacionForm } from '@/components/forms/EvaluacionForm';
 import { ConfirmarDatosModal } from '@/components/ui/ConfirmarDatosModal';
+import { MultipleResultsModal } from '@/components/ui/multipleResultsmodal';
 import { useEstudiantes } from '@/hooks/useEstudiantes';
 import { useEvaluaciones } from '@/hooks/useEvaluaciones';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,28 +22,10 @@ import {
 import DropDownPicker from 'react-native-dropdown-picker';
 import {
     crearTesis,
-    getCarreras,
-    type CrearTesisInput,
-    type JuradoInput
+    getCarreras
 } from '../../../services/api';
 
 // Interfaces locales para el estado del formulario
-
-interface JuradoForm {
-    id_jurado?: number;
-    nombre_completo: string;
-    cedula: string;
-    titulo_profesional: string;
-    esExistente: boolean;
-}
-
-interface EvaluacionForm {
-    nota: string;
-    fecha_evaluacion: string;
-    comentarios: string;
-    jurado: JuradoForm;
-}
-
 interface Carrera {
     id_carrera: number;
     nombre: string;
@@ -49,24 +33,23 @@ interface Carrera {
 
 export default function CrearTesisScreen() {
     const [loading, setLoading] = useState(false);
-    const [buscando, setBuscando] = useState(false);
     const [carreras, setCarreras] = useState<Carrera[]>([]);
     const [cargandoCarreras, setCargandoCarreras] = useState(true);
-
     const [open, setOpen] = useState(false);
-    const [value, setValue] = useState(null);
-
     // Hooks
     const {
         estudiantes,
         buscando: buscandoEstudiante,
         modalVisible: modalEstudianteVisible,
         resultadoBusqueda: resultadoEstudiante,
+        multipleModalVisible: multipleEstudianteVisible,
+        resultadosMultiples: resultadosMultiplesEstudiantes,
         agregarEstudiante,
         eliminarEstudiante,
         actualizarEstudiante,
         buscarEstudiantePorCedula,
         usarEstudianteExistente,
+        usarEstudianteMultiple,
         continuarConNuevoEstudiante,
     } = useEstudiantes();
 
@@ -75,12 +58,16 @@ export default function CrearTesisScreen() {
         buscando: buscandoJurado,
         modalVisible: modalJuradoVisible,
         resultadoBusqueda: resultadoJurado,
+
+        multipleModalVisible: multipleJuradoVisible,
+        resultadosMultiples: resultadosMultiplesJurados,
         agregarEvaluacion,
         eliminarEvaluacion,
         actualizarEvaluacion,
         actualizarJurado,
         buscarJuradoPorCedula,
         usarJuradoExistente,
+        usarJuradoMultiple,
         continuarConNuevoJurado,
     } = useEvaluaciones();
 
@@ -89,9 +76,23 @@ export default function CrearTesisScreen() {
         titulo: '',
         resumen: '',
         id_carrera: '',
+        id_year:'',
         url_documento: ''
     });
 
+    //  year de elaboracion de la tesis
+    const [anioElaboracion, setAnioElaboracion] = useState<number | null>(null);
+    const [openAnio, setOpenAnio] = useState(false);
+
+    // Generar años disponibles (desde 1990 hasta el próximo año)
+    const aniosDisponibles = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        const years = [];
+        for (let i = currentYear + 1; i >= 1990; i--) {
+            years.push({ label: i.toString(), value: i });
+        }
+        return years;
+    }, []);
 
     const [documento, setDocumento] = useState<{
         uri: string;
@@ -99,6 +100,14 @@ export default function CrearTesisScreen() {
         size: number;
         mimeType: string;
     } | null>(null);
+
+    // Estados para errores visuales
+    const [fieldErrors, setFieldErrors] = useState<{
+        titulo?: string;
+        id_carrera?: string;
+        id_year?: string;
+        documento?: string;
+    }>({});
 
     // Función para seleccionar archivo
     const seleccionarDocumento = async () => {
@@ -118,6 +127,8 @@ export default function CrearTesisScreen() {
                 });
                 setForm({ ...form, url_documento: file.name });  // Guardar nombre
                 console.log(' Archivo seleccionado:', file.name);
+                // Limpiar error del documento
+                setFieldErrors(prev => ({ ...prev, documento: undefined }));
             }
         } catch (error) {
             console.error('Error seleccionando documento:', error);
@@ -161,112 +172,87 @@ export default function CrearTesisScreen() {
     const handleCarreraChange = useCallback((val: any) => {
         setSelectedCarrera(val);
         setForm(prev => ({ ...prev, id_carrera: val || '' }));
+        // Limpiar error de carrera
+        setFieldErrors(prev => ({ ...prev, id_carrera: undefined }));
     }, []);
 
 
-
+    // manejar cambio de año 
+  const handleAnioChange = useCallback((val: number | null) => {
+    console.log('Año seleccionado:', val); // Para debug
+    setAnioElaboracion(val);
+    setForm(prev => ({ ...prev, id_year:  val?.toString() || '' }));
+    // Limpiar error del año usando la misma clave que en fieldErrors
+    setFieldErrors(prev => ({ ...prev, id_year: undefined }));
+}, []);
 
 
     // Manejar cambios en campos principales
     const handleChange = (campo: string, valor: string) => {
         setForm({ ...form, [campo]: valor });
+        // Limpiar error del campo cuando el usuario escribe
+        if (fieldErrors[campo as keyof typeof fieldErrors]) {
+            setFieldErrors(prev => ({ ...prev, [campo]: undefined }));
+        }
     };
 
 
     // ==================== ENVÍO DEL FORMULARIO ====================
 
     const handleSubmit = async () => {
-        // Validaciones básicas
-        if (!form.titulo.trim()) {
-            Alert.alert('Error', 'El título es obligatorio');
-            return;
-        }
-        if (!form.id_carrera) {
-            Alert.alert('Error', 'Selecciona una carrera');
+        // Validaciones
+        const tesisValidation = validateTesisForm({
+            titulo: form.titulo,
+            id_carrera: form.id_carrera,
+            id_year: form.id_year,
+            documento
+        });
+
+        if (!tesisValidation.isValid) {
+            setFieldErrors(tesisValidation.errors);
+            Alert.alert('Error', 'Por favor completa los campos obligatorios');
             return;
         }
 
-        // Validar estudiantes
+        //  Validar estudiantes
+        if (estudiantes.length === 0) {
+            Alert.alert('Error', 'Debe haber al menos un estudiante');
+            return;
+        }
+
         for (let i = 0; i < estudiantes.length; i++) {
-            const est = estudiantes[i];
-            if (!est.nombre_completo.trim()) {
-                Alert.alert('Error', `El estudiante ${i + 1} debe tener nombre completo`);
-                return;
-            }
-            if (!est.cedula.trim()) {
-                Alert.alert('Error', `El estudiante ${i + 1} debe tener cédula`);
+            const validation = validateEstudiante(estudiantes[i], i);
+            if (!validation.isValid) {
+                // Mostrar el primer error del estudiante
+                const errorMsg = validation.errors.nombre || validation.errors.cedula || validation.errors.email;
+                Alert.alert('Error', `Estudiante ${i + 1}: ${errorMsg}`);
                 return;
             }
         }
 
-        // Validar evaluaciones
+        // Validar evaluaciones 
+        if (evaluaciones.length === 0) {
+            Alert.alert('Error', 'Debe haber al menos una evaluación');
+            return;
+        }
+
         for (let i = 0; i < evaluaciones.length; i++) {
-            const ev = evaluaciones[i];
-            if (!ev.nota) {
-                Alert.alert('Error', `La evaluación ${i + 1} debe tener una nota`);
-                return;
-            }
-            if (!ev.jurado.nombre_completo.trim()) {
-                Alert.alert('Error', `El jurado de la evaluación ${i + 1} debe tener nombre completo`);
-                return;
-            }
-            if (!ev.jurado.cedula.trim()) {
-                Alert.alert('Error', `El jurado de la evaluación ${i + 1} debe tener cédula`);
+            const validation = validateEvaluacion(evaluaciones[i], i);
+            if (!validation.isValid) {
+                Alert.alert('Error', validation.errors[0]); // Muestra el primer error
                 return;
             }
         }
 
         setLoading(true);
 
-        // ver que datos se estan enviando (solo en uso pasa console log porque se envia por formdata)
-        const datosEnvio: CrearTesisInput = {
-            titulo: form.titulo,
-            resumen: form.resumen || undefined,
-            id_carrera: parseInt(form.id_carrera),
-            url_documento: form.url_documento || null,
-            estudiantes: estudiantes.map(est => {
-                if (est.id_estudiante) {
-                    // Estudiante existente: solo enviar ID
-                    return { id_estudiante: est.id_estudiante };
-                } else {
-                    // Estudiante nuevo: enviar datos completos
-                    return {
-                        nombre_completo: est.nombre_completo,
-                        cedula: est.cedula,
-                        email: est.email || undefined
-                    };
-                }
-            }),
-            evaluaciones: evaluaciones.map(ev => {
-                let jurado: JuradoInput;
-
-                if (ev.jurado.id_jurado) {
-                    // Jurado existente: solo enviar ID
-                    jurado = { id_jurado: ev.jurado.id_jurado };
-                } else {
-                    // Jurado nuevo: enviar datos completos
-                    jurado = {
-                        nombre_completo: ev.jurado.nombre_completo,
-                        cedula: ev.jurado.cedula,
-                        titulo_profesional: ev.jurado.titulo_profesional || undefined
-                    };
-                }
-
-                return {
-                    nota: parseFloat(ev.nota),
-                    fecha_evaluacion: ev.fecha_evaluacion,
-                    comentarios: ev.comentarios || undefined,
-                    jurado
-                };
-            })
-        };
-
         const formData = new FormData();
 
         formData.append('titulo', form.titulo);
         formData.append('resumen', form.resumen || '');
         formData.append('id_carrera', form.id_carrera);
-        
+        formData.append('anio_elaboracion', form.id_year);
+
         // Agregar el archivo PDF
         if (documento) {
             const fileInfo = {
@@ -276,7 +262,7 @@ export default function CrearTesisScreen() {
             };
             formData.append('archivo_pdf', fileInfo as any);
         }
-        
+
         const estudiantesData = estudiantes.map(est => {
             if (est.id_estudiante) {
                 return { id_estudiante: est.id_estudiante };
@@ -289,7 +275,7 @@ export default function CrearTesisScreen() {
             }
         });
         formData.append('estudiantes', JSON.stringify(estudiantesData));
-        
+
         const evaluacionesData = evaluaciones.map(ev => {
             let jurado: any;
             if (ev.jurado.id_jurado) {
@@ -309,9 +295,8 @@ export default function CrearTesisScreen() {
             };
         });
         formData.append('evaluaciones', JSON.stringify(evaluacionesData));
-        
+
         console.log(evaluacionesData)
-        console.log(datosEnvio)
         const resultado = await crearTesis(formData);
         setLoading(false);
 
@@ -355,12 +340,16 @@ export default function CrearTesisScreen() {
                             Título *
                         </Text>
                         <TextInput
-                            className="bg-white border border-gray-300 rounded-lg p-3 text-base mb-4"
+                            className={`bg-white border rounded-lg p-3 text-base mb-4 ${fieldErrors.titulo ? 'border-red-500' : 'border-gray-300'
+                                }`}
                             value={form.titulo}
                             onChangeText={(text) => handleChange('titulo', text)}
                             placeholder="Ingrese el título de la tesis"
                             placeholderTextColor="#999"
                         />
+                        {fieldErrors.titulo && (
+                            <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.titulo}</Text>
+                        )}
 
                         <Text className="text-base font-semibold text-gray-700 mb-2">
                             Resumen
@@ -379,7 +368,7 @@ export default function CrearTesisScreen() {
                         <Text className="text-base font-semibold text-gray-700 mb-2">
                             Carrera *
                         </Text>
-                        <View className="mb-4 z-10">
+                        <View className={`mb-4 z-10 ${fieldErrors.id_carrera ? 'border-red-500 border rounded-lg' : ''}`}>
                             <DropDownPicker
                                 open={open}
                                 value={selectedCarrera}
@@ -392,7 +381,7 @@ export default function CrearTesisScreen() {
                                 listMode="MODAL"
                                 style={{
                                     backgroundColor: '#FFFFFF',
-                                    borderColor: '#D1D5DB',
+                                    borderColor: fieldErrors.id_carrera ? '#EF4444' : '#D1D5DB',
                                     borderRadius: 8,
                                 }}
                                 dropDownContainerStyle={{
@@ -402,10 +391,45 @@ export default function CrearTesisScreen() {
                                 onChangeValue={handleCarreraChange}
                             />
                         </View>
+                        {fieldErrors.id_carrera && (
+                            <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.id_carrera}</Text>
+                        )}
+
+                       {/* ==================== AÑO DE ELABORACIÓN ==================== */}
+<Text className="text-base font-semibold text-gray-700 mb-2">
+    Año de Elaboración <Text className="text-red-500">*</Text>
+</Text>
+<View className={`mb-4 z-10`}>
+    <DropDownPicker
+        open={openAnio}
+        value={anioElaboracion}
+        items={aniosDisponibles}
+        setOpen={setOpenAnio}
+        setValue={setAnioElaboracion}
+        placeholder="Selecciona el año de elaboración"
+        searchable={true}
+        searchPlaceholder="🔍 Buscar año..."
+        listMode="MODAL"
+        style={{
+            backgroundColor: '#FFFFFF',
+            borderColor: fieldErrors.id_year ? '#EF4444' : '#D1D5DB',
+            borderRadius: 8,
+        }}
+        dropDownContainerStyle={{
+            backgroundColor: '#FFFFFF',
+            borderColor: '#D1D5DB',
+        }}
+        onChangeValue={handleAnioChange}
+    />
+    {fieldErrors.id_year && (
+        <Text className="text-red-500 text-sm mt-1">{fieldErrors.id_year}</Text>
+    )}
+</View>
+
 
                         {/* Documento PDF */}
                         <Text className="text-base font-semibold text-gray-700 mb-2">
-                            Documento PDF (opcional)
+                            Documento PDF *
                         </Text>
                         {documento ? (
                             <View className="bg-green-50 border border-green-300 rounded-lg p-3 flex-row justify-between items-center">
@@ -426,14 +450,20 @@ export default function CrearTesisScreen() {
                                 </TouchableOpacity>
                             </View>
                         ) : (
-                            <TouchableOpacity
-                                className="bg-gray-50 border border-gray-300 rounded-lg p-4 items-center border-dashed"
-                                onPress={seleccionarDocumento}
-                            >
-                                <Ionicons name="cloud-upload-outline" size={32} color="#6B7280" />
-                                <Text className="text-gray-600 text-base mt-2">Seleccionar archivo PDF</Text>
-                                <Text className="text-gray-400 text-xs mt-1">Solo archivos PDF (máx 10MB)</Text>
-                            </TouchableOpacity>
+                            <>
+                                <TouchableOpacity
+                                    className={`bg-gray-50 border rounded-lg p-4 items-center border-dashed ${fieldErrors.documento ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    onPress={seleccionarDocumento}
+                                >
+                                    <Ionicons name="cloud-upload-outline" size={32} color={fieldErrors.documento ? "#EF4444" : "#6B7280"} />
+                                    <Text className="text-gray-600 text-base mt-2">Seleccionar archivo PDF</Text>
+                                    <Text className="text-gray-400 text-xs mt-1">Solo archivos PDF (máx 10MB)</Text>
+                                </TouchableOpacity>
+                                {fieldErrors.documento && (
+                                    <Text className="text-red-500 text-sm mt-2">{fieldErrors.documento}</Text>
+                                )}
+                            </>
                         )}
                     </View>
                 </View>
@@ -541,6 +571,24 @@ export default function CrearTesisScreen() {
             </View>
 
             {/* Modales y loading... */}
+
+            {/* Modal para múltiples estudiantes */}
+            <MultipleResultsModal
+                visible={multipleEstudianteVisible}
+                title="Seleccionar Estudiante"
+                results={resultadosMultiplesEstudiantes}
+                onSelect={usarEstudianteMultiple}
+                onCancel={continuarConNuevoEstudiante}
+            />
+
+            {/* Modal para múltiples jurados */}
+            <MultipleResultsModal
+                visible={multipleJuradoVisible}
+                title="Seleccionar Jurado"
+                results={resultadosMultiplesJurados}
+                onSelect={usarJuradoMultiple}
+                onCancel={continuarConNuevoJurado}
+            />
             <ConfirmarDatosModal
                 visible={modalEstudianteVisible}
                 titulo="Estudiante"
@@ -564,6 +612,6 @@ export default function CrearTesisScreen() {
                 </View>
             )}
         </ScrollView>
-      
+
     );
 }

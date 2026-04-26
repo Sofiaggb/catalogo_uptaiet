@@ -28,9 +28,12 @@ export const useEstudiantes = () => {
     
     // Estado para el modal
     const [modalVisible, setModalVisible] = useState(false);
-    const [resultadoBusqueda, setResultadoBusqueda] = useState<ResultadoBusqueda | null>(null);
+    // const [resultadoBusqueda, setResultadoBusqueda] = useState<ResultadoBusqueda | null>(null);
     const [indiceEditando, setIndiceEditando] = useState<number | null>(null);
     const [buscando, setBuscando] = useState(false);
+    const [multipleModalVisible, setMultipleModalVisible] = useState(false);
+    const [resultadoBusqueda, setResultadoBusqueda] = useState<any>(null);
+    const [resultadosMultiples, setResultadosMultiples] = useState<any[]>([]);
 
     // Agregar nuevo estudiante al final
     const agregarEstudiante = () => {
@@ -60,26 +63,37 @@ export const useEstudiantes = () => {
 
     // Buscar estudiante por cédula (cuando pierde el foco)
     const buscarEstudiantePorCedula = async (index: number, cedula: string) => {
-        if (!cedula || cedula.length < 5) return;
+        if (!cedula || cedula.length < 3) return;
         
         setBuscando(true);
         setIndiceEditando(index);
         
         try {
             const resultado = await buscarPorCedula('estudiante', cedula);
-            console.log(resultado)
-            if (resultado.success && resultado.data) {
-                setResultadoBusqueda(resultado.data);
-                setModalVisible(true); // Abrir modal
+                    // console.log('res estudiantes', resultado)
+            
+            if (resultado.success && resultado.data && resultado.data.length > 0) {
+                if (resultado.multiple || resultado.data.length > 1) {
+                    // Múltiples resultados - mostrar modal de selección
+                    setResultadosMultiples(resultado.data);
+                    setMultipleModalVisible(true);
+                } else {
+                    // Un solo resultado - mostrar modal de confirmación
+                    // console.log('aqui va uno solo', resultado)
+                    setResultadoBusqueda(resultado.data[0]);
+                    setModalVisible(true);
+                }
             }
+            // Si no hay resultados, no hacemos nada (el usuario sigue escribiendo)
+            
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error buscando estudiante:', error);
         } finally {
             setBuscando(false);
         }
     };
 
-    // Usar estudiante existente (confirmar en modal)
+    // Usar estudiante existente (único resultado)
     const usarEstudianteExistente = () => {
         if (resultadoBusqueda && indiceEditando !== null) {
             const nuevos = [...estudiantes];
@@ -97,13 +111,38 @@ export const useEstudiantes = () => {
         setIndiceEditando(null);
     };
 
-    // Continuar con estudiante nuevo (cancelar modal)
-    const continuarConNuevoEstudiante = () => {
-        setModalVisible(false);
-        setResultadoBusqueda(null);
+    //  Usar estudiante de selección múltiple
+    const usarEstudianteMultiple = (estudiante: any) => {
+        if (estudiante && indiceEditando !== null) {
+            const nuevos = [...estudiantes];
+            nuevos[indiceEditando] = {
+                id_estudiante: estudiante.id_estudiante,
+                nombre_completo: estudiante.nombre_completo,
+                cedula: estudiante.cedula,
+                email: estudiante.email || '',
+                esExistente: true
+            };
+            setEstudiantes(nuevos);
+        }
+        setMultipleModalVisible(false);
+        setResultadosMultiples([]);
         setIndiceEditando(null);
     };
 
+    // Continuar con nuevo estudiante (ignorar sugerencia)
+    const continuarConNuevoEstudiante = () => {
+        setModalVisible(false);
+        setMultipleModalVisible(false);
+        setResultadoBusqueda(null);
+        setResultadosMultiples([]);
+        setIndiceEditando(null);
+    };
+
+
+    
+    // ============================================
+    // FUNCIONES AUXILIARES
+    // ============================================
     // Limpiar todos los estudiantes
     const limpiarEstudiantes = () => {
         setEstudiantes([{ nombre_completo: '', cedula: '', email: '', esExistente: false }]);
@@ -128,11 +167,15 @@ export const useEstudiantes = () => {
         buscando,
         modalVisible,
         resultadoBusqueda,
+
+        multipleModalVisible,
+        resultadosMultiples,
         agregarEstudiante,
         eliminarEstudiante,
         actualizarEstudiante,
         buscarEstudiantePorCedula,
         usarEstudianteExistente,
+        usarEstudianteMultiple,
         continuarConNuevoEstudiante,
         limpiarEstudiantes,
         obtenerEstudiantesParaEnvio,

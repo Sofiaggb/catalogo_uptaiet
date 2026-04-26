@@ -12,7 +12,13 @@ const app = express();
 const port = 3000;
 
 // Servir archivos estáticos de la carpeta uploads
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// También puedes servir la carpeta específica de tesis
+app.use('/uploads/tesis', express.static(path.join(__dirname, 'uploads/tesis')));
+
+console.log('Sirviendo archivos desde:', path.join(__dirname, '../uploads'));
+console.log('Ruta de uploads:', path.join(__dirname, '../uploads/tesis'));
 
 // Importar rutas
 import carreraRoutes from './src/routes/carreraRoutes.js';

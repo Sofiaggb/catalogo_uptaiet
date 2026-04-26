@@ -1,5 +1,7 @@
 
 
+alter table personas.estudiante 
+drop column id_carrera
 
 
 --------- crear tesis
@@ -8,16 +10,13 @@ CREATE OR REPLACE FUNCTION tesis.crear_tesis(
     -- Datos de la tesis
     p_titulo VARCHAR(300),
     p_resumen TEXT,
-    p_id_carrera INT,
-    p_url_documento VARCHAR(500) DEFAULT NULL,
-    
+    p_id_carrera INT,	
+	p_anio_elaboracion INT ,
+    p_url_documento VARCHAR(500) DEFAULT NULL,    
     -- Estudiantes: array de objetos con id O nombre/cedula/email
-    p_estudiantes JSONB DEFAULT '[]'::jsonb,
-    
+    p_estudiantes JSONB DEFAULT '[]'::jsonb,    
     -- Jurados/evaluaciones: array con datos del jurado + nota
-    p_evaluaciones JSONB DEFAULT '[]'::jsonb,
-    
-    -- Auditoría
+    p_evaluaciones JSONB DEFAULT '[]'::jsonb,    
     p_creado_por INTEGER DEFAULT NULL
 )
 RETURNS JSONB AS $$
@@ -36,7 +35,7 @@ BEGIN
 
     -- VALIDACIONES BÁSICAS
 	-- cargar ruta arc
-  IF NOT EXISTS p_url_documento IS NULL THEN
+  IF  p_url_documento IS NULL THEN
         RETURN jsonb_build_object(
         'success', false,
         'status', 400,
@@ -69,6 +68,7 @@ BEGIN
         url_documento,
         id_carrera,
         id_estado,
+		anio_elaboracion,
         id_usuario_creacion
     ) VALUES (
         TRIM(p_titulo),
@@ -76,6 +76,7 @@ BEGIN
         p_url_documento,
         p_id_carrera,
         1, -- publicada
+		p_anio_elaboracion,
         p_creado_por
     )
     RETURNING id_tesis INTO v_id_tesis;
@@ -115,13 +116,11 @@ BEGIN
                     nombre_completo,
                     cedula,
                     email,
-                    id_carrera,
 					id_usuario_creacion
                 ) VALUES (
                     v_estudiante->>'nombre_completo',
                     v_estudiante->>'cedula',
                     v_estudiante->>'email',
-                    p_id_carrera,
                     p_creado_por
                 )
                 RETURNING id_estudiante INTO v_id_estudiante;
@@ -242,6 +241,7 @@ $$ LANGUAGE plpgsql;
 
 
 ---------- obtener tesis completa
+select tesis.obtener_tesis_completa(19)
 
 CREATE OR REPLACE FUNCTION tesis.obtener_tesis_completa(
     p_id_tesis INTEGER
@@ -249,113 +249,112 @@ CREATE OR REPLACE FUNCTION tesis.obtener_tesis_completa(
 RETURNS JSONB AS $$
 DECLARE
     v_resultado JSONB;
-    v_tesis JSONB;
-    v_estudiantes JSONB;
-    v_evaluaciones JSONB;
-    v_carrera_nombre VARCHAR;
-    v_estado_nombre VARCHAR;
 BEGIN
-    --  Verificar tesis existe 
+
+ --  Verificar tesis existe 
     IF NOT EXISTS (
         SELECT 1 FROM tesis.tesis 
         WHERE id_tesis = p_id_tesis 
         AND fecha_eliminacion IS NULL
     ) THEN
-        RAISE EXCEPTION 'Tesis no encontrada o eliminada (ID: %)', p_id_tesis;
+	 RETURN  jsonb_build_object(
+            'success', FALSE,
+            'status', 404,
+           	'message', 'Tesis no encontrada o eliminada '
+        );
     END IF;
 
-    --  obtener datos tesis
-    SELECT 
-        jsonb_build_object(
-            'id_tesis', t.id_tesis,
-            'titulo', t.titulo,
-            'resumen', t.resumen,
-            'fecha_publicacion', t.fecha_publicacion,
-            'url_documento', t.url_documento,
-            'fecha_creacion', t.fecha_creacion,
-            'carrera', jsonb_build_object(
-                'id_carrera', c.id_carrera,
-                'nombre', c.nombre
-            ),
-            'estado', jsonb_build_object(
-                'id_estado', e.id_estado,
-                'nombre', e.nombre_estado
+    SELECT row_to_json(tesis_data) INTO v_resultado
+	FROM (
+		SELECT
+         t.id_tesis,
+         t.titulo,
+         t.resumen,
+         t.anio_elaboracion,
+         t.url_documento,
+         t.fecha_creacion,
+         c.id_carrera,
+         c.nombre as nombre_carrera,
+         e.id_estado,
+         e.nombre_estado,
+
+        -- Estudiantes
+        COALESCE((
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'id_estudiante', est.id_estudiante,
+                    'nombre_completo', est.nombre_completo,
+                    'cedula', est.cedula,
+                    'email', est.email
+                )
+                ORDER BY te.id_tesis_estudiante
             )
-        )
-    INTO v_tesis
+            FROM tesis.tesis_estudiante te
+            JOIN personas.estudiante est ON te.id_estudiante = est.id_estudiante
+            WHERE te.id_tesis = t.id_tesis
+        ), '[]'::jsonb) AS estudiantes,
+
+        -- Evaluaciones
+        COALESCE((
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'id_evaluacion', ev.id_evaluacion,
+                    'nota', ev.nota,
+                    'fecha_evaluacion', ev.fecha_evaluacion,
+                    'comentarios', ev.comentarios,
+                    'jurado', jsonb_build_object(
+                        'id_jurado', j.id_jurado,
+                        'nombre_completo', j.nombre_completo,
+                        'titulo_profesional', j.titulo_profesional,
+                        'cedula', j.cedula
+                    )
+                )
+                ORDER BY ev.fecha_evaluacion DESC
+            )
+            FROM tesis.evaluacion_tesis ev
+            JOIN personas.jurado j ON ev.id_jurado = j.id_jurado
+            WHERE ev.id_tesis = t.id_tesis
+            AND ev.fecha_eliminacion IS NULL
+        ), '[]'::jsonb) as evaluaciones,
+
+        -- Promedio
+        (
+            SELECT ROUND(AVG(ev.nota), 2)
+            FROM tesis.evaluacion_tesis ev
+            WHERE ev.id_tesis = t.id_tesis
+            AND ev.fecha_eliminacion IS NULL
+        ) as promedio_nota    
     FROM tesis.tesis t
     JOIN catalogo.carrera c ON t.id_carrera = c.id_carrera
     LEFT JOIN control.estado e ON t.id_estado = e.id_estado
     WHERE t.id_tesis = p_id_tesis
-    AND t.fecha_eliminacion IS NULL;
+    AND t.fecha_eliminacion IS NULL
+	) AS tesis_data;
 
-    -- Obtener estudiantes autores
-    SELECT COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'id_estudiante', e.id_estudiante,
-                'nombre_completo', e.nombre_completo,
-                'cedula', e.cedula,
-                'email', e.email,
-                'carrera_estudiante', (
-                    SELECT nombre FROM catalogo.carrera 
-                    WHERE id_carrera = e.id_carrera
-                )
-            )
-            ORDER BY te.id_tesis_estudiante
-        ),
-        '[]'::jsonb
-    )
-    INTO v_estudiantes
-    FROM tesis.tesis_estudiante te
-    JOIN personas.estudiante e ON te.id_estudiante = e.id_estudiante
-    WHERE te.id_tesis = p_id_tesis;
 
-    --  Obtener evaluaciones (jurados)
-    SELECT COALESCE(
-        jsonb_agg(
-            jsonb_build_object(
-                'id_evaluacion', ev.id_evaluacion,
-                'nota', ev.nota,
-                'fecha_evaluacion', ev.fecha_evaluacion,
-                'comentarios', ev.comentarios,
-                'jurado', jsonb_build_object(
-                    'id_jurado', j.id_jurado,
-                    'nombre_completo', j.nombre_completo,
-                    'titulo_profesional', j.titulo_profesional,
-                    'cedula', j.cedula
-                )
-            )
-            ORDER BY ev.fecha_evaluacion DESC
-        ),
-        '[]'::jsonb
-    )
-    INTO v_evaluaciones
-    FROM tesis.evaluacion_tesis ev
-    JOIN personas.jurado j ON ev.id_jurado = j.id_jurado
-    WHERE ev.id_tesis = p_id_tesis
-    AND ev.fecha_eliminacion IS NULL;
-
-    -- respuesta
-    v_resultado := v_tesis || jsonb_build_object(
-        'estudiantes', v_estudiantes,
-        'evaluaciones', v_evaluaciones,
-        'total_estudiantes', jsonb_array_length(v_estudiantes),
-        'total_evaluaciones', jsonb_array_length(v_evaluaciones),
-        'promedio_nota', (
-            SELECT ROUND(AVG(nota), 2)
-            FROM tesis.evaluacion_tesis
-            WHERE id_tesis = p_id_tesis
-            AND fecha_eliminacion IS NULL
-        )
-    );
-
-    RETURN v_resultado;
+    	 RETURN  jsonb_build_object(
+            'success', TRUE,
+            'status', 200,
+            'data', v_resultado
+        );
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 400,
+			'message', 'error al buscar la tesis',
+            'error', SQLERRM,
+            'codigo', SQLSTATE
+        );
 END;
 $$ LANGUAGE plpgsql;
 
 
 
+
+
+
+select tesis.listar_tesis()
 
 ---------- devolver todas las tesis 
 CREATE OR REPLACE FUNCTION tesis.listar_tesis(
@@ -378,7 +377,7 @@ BEGIN
         WHERE t.fecha_eliminacion IS NULL
         AND (p_id_carrera IS NULL OR t.id_carrera = p_id_carrera)
         AND (p_id_estado IS NULL OR t.id_estado = p_id_estado)
-        AND (p_anio IS NULL OR EXTRACT(YEAR FROM t.fecha_creacion) = p_anio)
+        AND (p_anio IS NULL OR t.anio_elaboracion = p_anio)
         AND (p_buscar IS NULL OR 
              t.titulo ILIKE '%' || p_buscar || '%' OR 
              t.resumen ILIKE '%' || p_buscar || '%')
@@ -393,7 +392,7 @@ BEGIN
             t.id_tesis,
             t.titulo,
             LEFT(t.resumen, 150) AS resumen_corto,
-            t.fecha_publicacion,
+            t.anio_elaboracion,
             t.fecha_creacion,
             t.url_documento,
             c.id_carrera,
@@ -418,11 +417,17 @@ BEGIN
         ) ev ON ev.id_tesis = t.id_tesis
         ORDER BY t.fecha_creacion DESC
         LIMIT p_limit OFFSET p_offset
+    ),
+	final AS (
+        SELECT 
+            (SELECT jsonb_agg(to_jsonb(datos.*)) FROM datos) AS resultado,
+            (SELECT total FROM conteo) AS total
     )
 
-    SELECT jsonb_agg(to_jsonb(datos.*)) INTO v_resultado FROM datos;
-    SELECT total INTO v_total FROM conteo;
-
+     SELECT resultado, total
+    INTO v_resultado, v_total
+    FROM final;
+	
     RETURN jsonb_build_object(
         'success', TRUE,
         'data', v_resultado,

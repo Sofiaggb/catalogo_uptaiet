@@ -1,139 +1,5 @@
-// const API_URL = 'http://192.168.0.106:3000/api';
-
-// // ============================================
-// // TIPOS DE DATOS
-// // ============================================
-
-// // Tipo para estudiante (puede ser existente o nuevo)
-// export type EstudianteInput = 
-//     | { id_estudiante: number }  // Existente
-//     | { nombre_completo: string; cedula: string; email?: string };  // Nuevo
-
-// // Tipo para jurado (puede ser existente o nuevo)
-// export type JuradoInput = 
-//     | { id_jurado: number }  // Existente
-//     | { nombre_completo: string; cedula: string; titulo_profesional?: string };  // Nuevo
-
-// // Tipo para evaluación
-// export type EvaluacionInput = {
-//     nota: number;
-//     fecha_evaluacion: string;
-//     comentarios?: string;
-//     jurado: JuradoInput;
-// };
-
-// // Tipo para crear tesis
-// export type CrearTesisInput = {
-//     titulo: string;
-//     resumen?: string;
-//     id_carrera: number;
-//     url_documento?: string | null;
-//     estudiantes: EstudianteInput[];
-//     evaluaciones: EvaluacionInput[];
-// };
-
-
-// // FUNCIÓN PARA CREAR TESIS 
-
-// export const crearTesis = async (datosTesis: CrearTesisInput) => {
-//     try {
-//         console.log('Enviando datos:', JSON.stringify(datosTesis, null, 2));
-        
-//         const response = await fetch(`${API_URL}/tesis`, {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             },
-//             body: JSON.stringify(datosTesis),
-//         });
-        
-//         const resultado = await response.json();
-//         console.log('Respuesta del servidor:', resultado);
-//         return resultado;
-//     } catch (error) {
-//         console.error('Error al crear tesis:', error);
-//         return {
-//             success: false,
-//             error: 'Error de conexión con el servidor',
-//         };
-//     }
-// };
-
-
-
-// // BUSCAR POR CÉDULA
-
-// export const buscarPorCedula = async (tipo: 'estudiante' | 'jurado', cedula: string) => {
-//     try {
-//         const response = await fetch(`${API_URL}/tesis/${tipo}s/cedula/${cedula}`);
-        
-//         if (response.status === 404) {
-//             return { success: false, data: null, error: 'No encontrado' };
-//         }
-        
-//         const data = await response.json();
-//         return { success: true, data };
-//     } catch (error) {
-//         console.error(`Error buscando ${tipo}:`, error);
-//         return { success: false, error: 'Error de conexión', data: null };
-//     }
-// };
-
-
-
-// // FUNCIONES AUXILIARES PARA OBTENER LISTAS
-
-// // Obtener lista de carreras (para el selector)
-// export const getCarreras = async () => {
-//     try {
-//         const response = await fetch(`${API_URL}/carreras`);
-//         const data = await response.json();
-//         return data.success ? data.data : [];
-//     } catch (error) {
-//         console.error('Error obteniendo carreras:', error);
-//         return [];
-//     }
-// };
-
-// // Obtener lista de tipos de carrera
-// export const getTiposCarrera = async () => {
-//     try {
-//         const response = await fetch(`${API_URL}/tipos-carrera`);
-//         const data = await response.json();
-//         return data.success ? data.data : [];
-//     } catch (error) {
-//         console.error('Error obteniendo tipos de carrera:', error);
-//         return [];
-//     }
-// };
-
-
-
 // services/api.ts
-import { Platform } from 'react-native';
-
-// ============================================
-// CONFIGURACIÓN
-// ============================================
-
-// Configuración de entorno
-const getApiUrl = () => {
-    // Desarrollo
-    if (__DEV__) {
-        // Android emulator
-        if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:3000/api';
-        }
-        // iOS emulator o web
-        return 'http://192.168.0.106:3000/api';
-    }
-    // Producción - cambiar por tu URL real
-    return 'https://tu-api-produccion.com/api';
-};
-
-const API_URL = getApiUrl();
-
-console.log('API URL:', API_URL);
+import { API_URL } from '../config/env';
 
 // ============================================
 // TIPOS DE DATOS COMPLETOS
@@ -178,22 +44,19 @@ export interface Evaluacion {
 export interface Tesis {
     id_tesis: number;
     titulo: string;
-    resumen?: string;
-    resumen_corto?: string;
-    fecha_publicacion?: string;
+    resumen?: string; 
+    anio_elaboracion?: number;  
     fecha_creacion: string;
     url_documento?: string;
     id_carrera: number;
     nombre_carrera?: string;
-    carrera?: Carrera;
     id_estado?: number;
     nombre_estado?: string;
-    estado?: Estado;
-    total_estudiantes?: number;
     promedio_nota?: number;
     estudiantes?: Estudiante[];
     evaluaciones?: Evaluacion[];
 }
+
 
 // Tipos para inputs
 export type EstudianteInput = 
@@ -215,7 +78,8 @@ export type CrearTesisInput = {
     titulo: string;
     resumen?: string;
     id_carrera: number;
-    url_documento?: string | null;
+    anio_elaboracion: number; 
+    url_documento: string | null;
     estudiantes: EstudianteInput[];
     evaluaciones: EvaluacionInput[];
 };
@@ -275,27 +139,25 @@ export const listarTesis = async (params: ListarTesisParams = {}): Promise<Pagin
     }
 };
 
-/**
- * Obtener tesis por ID (completa)
- */
-export const obtenerTesisPorId = async (id: number): Promise<Tesis | null> => {
+// Obtener tesis por ID
+export const getTesisById = async (id: number): Promise<Tesis | any> => {
     try {
-        const response = await fetch(`${API_URL}/tesis/${id}`);
+        const response = await fetch(`${API_URL}/tesis/byId/${id}`);
         const data = await response.json();
         
-        if (data.success) {
-            return data.data;
-        }
-        return null;
+        // if (data.success && data.data) {
+        //     return data.data;
+        // }
+        return data;
     } catch (error) {
         console.error('Error obteniendo tesis:', error);
-        return null;
+        return { success: false, error: 'Error de conexión' };
     }
 };
 
-/**
- * Crear nueva tesis
- */
+
+// Crear nueva tesis
+ 
 export const crearTesis = async (formData: FormData) => {
     try {
         const response = await fetch(`${API_URL}/tesis/save`, {
@@ -353,14 +215,19 @@ export const restaurarTesis = async (id: number) => {
  */
 export const buscarPorCedula = async (tipo: 'estudiante' | 'jurado', cedula: string) => {
     try {
-        const response = await fetch(`${API_URL}/${tipo}s/cedula/${cedula}`);
+        const response = await fetch(`${API_URL}/tesis/${tipo}s/cedula/${cedula}`);
         
         if (response.status === 404) {
             return { success: false, data: null, error: 'No encontrado' };
         }
         
         const data = await response.json();
-        return { success: true, data };
+         return {
+            success: true,
+            data: Array.isArray(data.data) ? data.data : [data],
+            multiple: data.multiple || (data.data && data.data.length > 1)
+        };
+        // return { success: true, data };
     } catch (error) {
         console.error(`Error buscando ${tipo}:`, error);
         return { success: false, error: 'Error de conexión', data: null };
@@ -428,21 +295,15 @@ export const getEstados = async (entidad?: string): Promise<Estado[]> => {
     }
 };
 
-// ============================================
-// FUNCIONES AUXILIARES
-// ============================================
-
-/**
- * Obtener años disponibles para filtros
- */
+// Obtener años disponibles para filtros
 export const getAniosDisponibles = async (): Promise<number[]> => {
     try {
         const response = await fetch(`${API_URL}/tesis/anios`);
-        const data = await response.json();
-        return data.success ? data.data : [];
+        const data = await response.json(); 
+        return data.success ? data.data : []; 
     } catch (error) {
-        console.error('Error obteniendo años:', error);
-        return [];
+        console.error('Error obteniendo años disponibles:', error);
+        return []; 
     }
 };
 

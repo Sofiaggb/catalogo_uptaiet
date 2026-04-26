@@ -47,9 +47,12 @@ export const useEvaluaciones = () => {
 
     // Estado para el modal (compartido con estudiantes)
     const [modalVisible, setModalVisible] = useState(false);
-    const [resultadoBusqueda, setResultadoBusqueda] = useState<ResultadoBusquedaJurado | null>(null);
+    // const [resultadoBusqueda, setResultadoBusqueda] = useState<ResultadoBusquedaJurado | null>(null);
     const [indiceEditando, setIndiceEditando] = useState<number | null>(null);
     const [buscando, setBuscando] = useState(false);
+    const [multipleModalVisible, setMultipleModalVisible] = useState(false);
+    const [resultadoBusqueda, setResultadoBusqueda] = useState<any>(null);
+    const [resultadosMultiples, setResultadosMultiples] = useState<any[]>([]);
 
     // ============================================
     // FUNCIONES PARA EVALUACIONES
@@ -106,17 +109,23 @@ export const useEvaluaciones = () => {
     // BÚSQUEDA DE JURADO POR CÉDULA
     // ============================================
 
-    const buscarJuradoPorCedula = async (evalIndex: number, cedula: string) => {
-        if (!cedula || cedula.length < 5) return;
-
+   const buscarJuradoPorCedula = async (evalIndex: number, cedula: string) => {
+        if (!cedula || cedula.length < 3) return;
+        
         setBuscando(true);
         setIndiceEditando(evalIndex);
-
+        
         try {
             const resultado = await buscarPorCedula('jurado', cedula);
-            if (resultado.success && resultado.data) {
-                setResultadoBusqueda(resultado.data);
-                setModalVisible(true);
+            
+            if (resultado.success && resultado.data && resultado.data.length > 0) {
+                if (resultado.multiple || resultado.data.length > 1) {
+                    setResultadosMultiples(resultado.data);
+                    setMultipleModalVisible(true);
+                } else {
+                    setResultadoBusqueda(resultado.data[0]);
+                    setModalVisible(true);
+                }
             }
         } catch (error) {
             console.error('Error buscando jurado:', error);
@@ -125,7 +134,6 @@ export const useEvaluaciones = () => {
         }
     };
 
-    // Usar jurado existente (confirmar en modal)
     const usarJuradoExistente = () => {
         if (resultadoBusqueda && indiceEditando !== null) {
             const nuevos = [...evaluaciones];
@@ -143,12 +151,31 @@ export const useEvaluaciones = () => {
         setIndiceEditando(null);
     };
 
-    // Continuar con jurado nuevo (cancelar modal)
-    const continuarConNuevoJurado = () => {
-        setModalVisible(false);
-        setResultadoBusqueda(null);
+    const usarJuradoMultiple = (jurado: any) => {
+        if (jurado && indiceEditando !== null) {
+            const nuevos = [...evaluaciones];
+            nuevos[indiceEditando].jurado = {
+                id_jurado: jurado.id_jurado,
+                nombre_completo: jurado.nombre_completo,
+                cedula: jurado.cedula,
+                titulo_profesional: jurado.titulo_profesional || '',
+                esExistente: true
+            };
+            setEvaluaciones(nuevos);
+        }
+        setMultipleModalVisible(false);
+        setResultadosMultiples([]);
         setIndiceEditando(null);
     };
+
+    const continuarConNuevoJurado = () => {
+        setModalVisible(false);
+        setMultipleModalVisible(false);
+        setResultadoBusqueda(null);
+        setResultadosMultiples([]);
+        setIndiceEditando(null);
+    };
+
 
     // ============================================
     // FUNCIONES AUXILIARES
@@ -223,6 +250,9 @@ export const useEvaluaciones = () => {
         evaluaciones,
         buscando,
         modalVisible,
+
+        multipleModalVisible,
+        resultadosMultiples,
         resultadoBusqueda,
         indiceEditando,
         
@@ -236,6 +266,7 @@ export const useEvaluaciones = () => {
         // Acciones de jurados
         buscarJuradoPorCedula,
         usarJuradoExistente,
+        usarJuradoMultiple,
         continuarConNuevoJurado,
         
         // Utilidades

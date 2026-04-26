@@ -3,8 +3,8 @@ import { pool } from '../config/db.js';
 
 export const tesisController = {
   createTesis: async (req, res) => {
-    const { titulo, resumen, id_carrera, estudiantes, evaluaciones } = req.body;
-    
+    const { titulo, resumen, id_carrera,anio_elaboracion, estudiantes, evaluaciones } = req.body;
+    console.log('anio_elaboracion',anio_elaboracion)
     // Obtener la ruta del archivo subido (si existe)
     let url_documento = null;
     console.log('req.file',req.file)
@@ -17,11 +17,12 @@ export const tesisController = {
 
     try {
       const result = await pool.query(
-        `SELECT tesis.crear_tesis($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7) AS resultado`,
+        `SELECT tesis.crear_tesis($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8) AS resultado`,
         [
           titulo,
           resumen || null,
           id_carrera,
+          anio_elaboracion,
           url_documento || null,
           JSON.stringify(JSON.parse(estudiantes) || []),
           JSON.stringify(JSON.parse(evaluaciones) || []),
@@ -271,16 +272,22 @@ export const tesisController = {
 // ============================================
 
 // Buscar estudiante por cédula
-searchEstudianteCedula :async (req, res) => {
+// backend/src/controllers/tesisController.js
+
+searchEstudianteCedula: async (req, res) => {
     const { cedula } = req.params;
     
     try {
+        // ✅ CORRECTO: Usar $1 con CONCAT o directamente
         const result = await pool.query(
-            `SELECT id_estudiante, nombre_completo, cedula, email, id_carrera
+            `SELECT id_estudiante, nombre_completo, cedula, email
              FROM personas.estudiante
-             WHERE cedula = $1 AND fecha_eliminacion IS NULL`,
+             WHERE cedula ILIKE  '%' || $1 || '%' AND fecha_eliminacion IS NULL`,
             [cedula]
         );
+        
+        // También puedes usar CONCAT:
+        // WHERE cedula ILIKE CONCAT('%', $1)
         
         if (result.rows.length === 0) {
             return res.status(404).json({ 
@@ -289,22 +296,27 @@ searchEstudianteCedula :async (req, res) => {
             });
         }
         
-        res.json(result.rows[0]);
+        // Si hay múltiples resultados, devolver todos
+        res.json({
+            success: true,
+            data: result.rows,
+            multiple: result.rows.length > 1
+        });
+        
     } catch (error) {
         console.error('Error buscando estudiante:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({success: false, error: 'Error interno del servidor' });
     }
 },
 
-// Buscar jurado por cédula
- searchJuradosCedula : async (req, res) => {
+searchJuradosCedula: async (req, res) => {
     const { cedula } = req.params;
     
     try {
         const result = await pool.query(
             `SELECT id_jurado, nombre_completo, cedula, titulo_profesional
              FROM personas.jurado
-             WHERE cedula = $1 AND fecha_eliminacion IS NULL`,
+             WHERE cedula ILIKE  '%' || $1 || '%'  AND fecha_eliminacion IS NULL`,
             [cedula]
         );
         
@@ -315,12 +327,37 @@ searchEstudianteCedula :async (req, res) => {
             });
         }
         
-        res.json(result.rows[0]);
+        res.json({
+            success: true,
+            data: result.rows,
+            multiple: result.rows.length > 1
+        });
+        
     } catch (error) {
         console.error('Error buscando jurado:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+},
 
+getAniosDisponibles: async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT DISTINCT anio_elaboracion as anio
+             FROM tesis.tesis
+             WHERE fecha_eliminacion IS NULL
+             ORDER BY anio_elaboracion DESC`
+        );
+        
+        const anios = result.rows.map(row => parseInt(row.anio));
+        
+        res.json({
+            success: true,
+            data: anios
+        });
+    } catch (error) {
+        console.error('Error obteniendo años disponibles:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+}
 
 }
