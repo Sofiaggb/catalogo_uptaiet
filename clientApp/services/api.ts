@@ -177,6 +177,20 @@ export const crearTesis = async (formData: FormData) => {
     }
 };
 
+
+export const actualizarTesis = async (id: number, formData: FormData) => {
+    try {
+        const response = await fetch(`${API_URL}/tesis/upload/${id}`, {
+            method: 'PUT',
+            body: formData,
+        });
+        return await response.json();
+    } catch (error) {
+        console.error('Error actualizando tesis:', error);
+        return { success: false, error: 'Error de conexión' };
+    }
+};
+
 /**
  * Eliminar tesis (soft delete)
  */

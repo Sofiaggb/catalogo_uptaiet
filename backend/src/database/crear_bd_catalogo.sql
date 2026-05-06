@@ -118,6 +118,18 @@ CREATE TABLE tesis.tesis (
 CREATE INDEX idx_tesis_anio_elaboracion ON tesis.tesis(anio_elaboracion);
 
 
+
+-- Agregar columnas de modificación a la tabla tesis
+ALTER TABLE tesis.tesis 
+ADD COLUMN IF NOT EXISTS id_usuario_modificacion INTEGER,
+ADD COLUMN IF NOT EXISTS fecha_modificacion TIMESTAMP DEFAULT NOW();
+
+-- Agregar columna de modificación a evaluacion_tesis
+ALTER TABLE tesis.evaluacion_tesis 
+ADD COLUMN IF NOT EXISTS id_usuario_modificacion INTEGER,
+ADD COLUMN IF NOT EXISTS fecha_modificacion TIMESTAMP DEFAULT NOW();
+
+
 /*
 
 alter table tesis.tesis 

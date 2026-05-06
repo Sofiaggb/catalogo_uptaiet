@@ -502,3 +502,298 @@ EXCEPTION
         );
 END;
 $$ LANGUAGE plpgsql;
+
+
+
+
+
+
+
+---------------- editar tesis ----------------------------------------------------------------
+
+-- =====================================================
+-- FUNCIÓN: editar_tesis
+-- DESCRIPCIÓN: Actualiza una tesis existente
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION tesis.editar_tesis(
+    p_id_tesis INT,
+    p_titulo VARCHAR(300),
+    p_resumen TEXT,
+    p_id_carrera INT,
+    p_anio_elaboracion INT,
+    p_url_documento VARCHAR(500) DEFAULT NULL,
+    p_estudiantes JSONB DEFAULT '[]'::jsonb,
+    p_evaluaciones JSONB DEFAULT '[]'::jsonb,
+    p_editado_por INTEGER DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_titulo_anterior VARCHAR(300);
+    v_estudiante JSONB;
+    v_evaluacion JSONB;
+    v_id_estudiante INT;
+    v_id_jurado INT;
+    v_estudiantes_creados INT := 0;
+    v_estudiantes_existentes INT := 0;
+    v_estudiantes_eliminados INT := 0;
+    v_jurados_creados INT := 0;
+    v_jurados_existentes INT := 0;
+    v_jurados_eliminados INT := 0;
+BEGIN
+    -- Verificar que la tesis existe y no está eliminada
+    IF NOT EXISTS (SELECT 1 FROM tesis.tesis WHERE id_tesis = p_id_tesis AND fecha_eliminacion IS NULL) THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'status', 404,
+            'message', 'La tesis no existe o ya fue eliminada'
+        );
+    END IF;
+
+    -- Guardar título anterior para auditoría
+    SELECT titulo INTO v_titulo_anterior FROM tesis.tesis WHERE id_tesis = p_id_tesis;
+    
+    -- Validar carrera
+    IF NOT EXISTS (SELECT 1 FROM catalogo.carrera WHERE id_carrera = p_id_carrera AND fecha_eliminacion IS NULL) THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'status', 400,
+            'message', 'La carrera seleccionada no existe'
+        );
+    END IF;
+    
+    -- Validar URL del documento
+  /*  IF p_url_documento IS NULL THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'status', 400,
+            'message', 'Debe cargar el archivo PDF de la tesis'
+        );
+    END IF; */
+    
+    -- Validar al menos un estudiante
+    IF jsonb_array_length(p_estudiantes) = 0 THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'status', 400,
+            'error', 'Debe especificar al menos un estudiante como autor de la tesis'
+        );
+    END IF;
+    
+    -- ==========================================
+    --  DATOS BÁSICOS
+    -- ==========================================
+    
+    UPDATE tesis.tesis
+    SET titulo = TRIM(p_titulo),
+        resumen = p_resumen,
+        url_documento = p_url_documento,
+        id_carrera = p_id_carrera,
+        anio_elaboracion = p_anio_elaboracion,
+        id_usuario_modificacion = p_editado_por,
+        fecha_modificacion = NOW()
+    WHERE id_tesis = p_id_tesis;
+    
+    -- ==========================================
+    -- ESTUDIANTES
+    -- (Primero eliminar los que no están en la nueva lista)
+    -- ==========================================
+    
+    -- Eliminar estudiantes que ya no están en la tesis
+    DELETE FROM tesis.tesis_estudiante
+    WHERE id_tesis = p_id_tesis
+    AND id_estudiante NOT IN (
+        SELECT (elem->>'id_estudiante')::INT
+        FROM jsonb_array_elements(p_estudiantes) elem
+        WHERE elem ? 'id_estudiante' AND (elem->>'id_estudiante') IS NOT NULL
+    );
+    
+    GET DIAGNOSTICS v_estudiantes_eliminados = ROW_COUNT;
+    
+    -- ==========================================
+    -- AGREGAR O ACTUALIZAR ESTUDIANTES
+    -- ==========================================
+    
+    FOR v_estudiante IN SELECT * FROM jsonb_array_elements(p_estudiantes)
+    LOOP
+        -- Caso 1: Ya viene con ID
+        IF v_estudiante ? 'id_estudiante' AND (v_estudiante->>'id_estudiante') IS NOT NULL THEN
+            v_id_estudiante := (v_estudiante->>'id_estudiante')::INT;
+            
+            -- Verificar que existe
+            IF EXISTS (SELECT 1 FROM personas.estudiante WHERE id_estudiante = v_id_estudiante AND fecha_eliminacion IS NULL) THEN
+                v_estudiantes_existentes := v_estudiantes_existentes + 1;
+                
+                -- Asegurar que está vinculado (si no existe el vínculo, crearlo)
+                INSERT INTO tesis.tesis_estudiante (id_tesis, id_estudiante, id_usuario_creacion)
+                VALUES (p_id_tesis, v_id_estudiante, p_editado_por)
+                ON CONFLICT (id_tesis, id_estudiante) DO NOTHING;
+            ELSE
+                RAISE EXCEPTION 'Estudiante con ID % no existe', v_id_estudiante;
+            END IF;
+        
+        -- Caso 2: No tiene ID, crear por nombre/cedula/email
+        ELSIF v_estudiante ? 'nombre_completo' AND (v_estudiante->>'nombre_completo') IS NOT NULL THEN
+            
+            -- Verificar si ya existe por cédula o email
+            SELECT id_estudiante INTO v_id_estudiante
+            FROM personas.estudiante
+            WHERE (cedula = (v_estudiante->>'cedula') OR email = (v_estudiante->>'email'))
+            AND fecha_eliminacion IS NULL
+            LIMIT 1;
+            
+            IF v_id_estudiante IS NOT NULL THEN
+                -- Ya existe, solo se vincula
+                v_estudiantes_existentes := v_estudiantes_existentes + 1;
+                
+                INSERT INTO tesis.tesis_estudiante (id_tesis, id_estudiante, id_usuario_creacion)
+                VALUES (p_id_tesis, v_id_estudiante, p_editado_por)
+                ON CONFLICT (id_tesis, id_estudiante) DO NOTHING;
+            ELSE
+                -- Crear nuevo estudiante
+                INSERT INTO personas.estudiante (
+                    nombre_completo,
+                    cedula,
+                    email,
+                    id_usuario_creacion
+                ) VALUES (
+                    v_estudiante->>'nombre_completo',
+                    v_estudiante->>'cedula',
+                    v_estudiante->>'email',
+                    p_editado_por
+                )
+                RETURNING id_estudiante INTO v_id_estudiante;
+                
+                v_estudiantes_creados := v_estudiantes_creados + 1;
+                
+                -- Vincular nuevo estudiante a la tesis
+                INSERT INTO tesis.tesis_estudiante (id_tesis, id_estudiante, id_usuario_creacion)
+                VALUES (p_id_tesis, v_id_estudiante, p_editado_por);
+            END IF;
+        ELSE
+            RAISE WARNING 'Estudiante inválido, se omite: %', v_estudiante;
+            CONTINUE;
+        END IF;
+    END LOOP;
+    
+    -- ==========================================
+    -- EVALUACIONES Y JURADOS
+    -- (Primero eliminar evaluaciones que no están en la nueva lista)
+    -- ==========================================
+    
+    -- Primero, obtener IDs de evaluaciones a mantener
+    -- Eliminar evaluaciones que ya no están
+    DELETE FROM tesis.evaluacion_tesis
+    WHERE id_tesis = p_id_tesis
+    AND id_evaluacion NOT IN (
+        SELECT (elem->>'id_evaluacion')::INT
+        FROM jsonb_array_elements(p_evaluaciones) elem
+        WHERE elem ? 'id_evaluacion' AND (elem->>'id_evaluacion') IS NOT NULL
+    );
+    
+    GET DIAGNOSTICS v_jurados_eliminados = ROW_COUNT;
+    
+    -- ==========================================
+    --  AGREGAR O ACTUALIZAR EVALUACIONES
+    -- ==========================================
+    
+    FOR v_evaluacion IN SELECT * FROM jsonb_array_elements(p_evaluaciones)
+    LOOP
+        -- Procesar jurado
+        IF v_evaluacion ? 'jurado' THEN
+            
+            -- Caso 1: Jurado con ID existente
+            IF v_evaluacion->'jurado' ? 'id_jurado' AND (v_evaluacion->'jurado'->>'id_jurado') IS NOT NULL THEN
+                v_id_jurado := (v_evaluacion->'jurado'->>'id_jurado')::INT;
+                
+                IF EXISTS (SELECT 1 FROM personas.jurado WHERE id_jurado = v_id_jurado AND fecha_eliminacion IS NULL) THEN
+                    v_jurados_existentes := v_jurados_existentes + 1;
+                ELSE
+                    RAISE EXCEPTION 'Jurado con ID % no existe', v_id_jurado;
+                END IF;
+            
+            -- Caso 2: Crear jurado por nombre/cedula
+            ELSIF v_evaluacion->'jurado' ? 'nombre_completo' THEN
+                
+                -- Verificar si ya existe por cedula
+                SELECT id_jurado INTO v_id_jurado
+                FROM personas.jurado
+                WHERE cedula = (v_evaluacion->'jurado'->>'cedula')
+                AND fecha_eliminacion IS NULL
+                LIMIT 1;
+                
+                IF v_id_jurado IS NOT NULL THEN
+                    v_jurados_existentes := v_jurados_existentes + 1;
+                ELSE
+                    -- Crear nuevo jurado
+                    INSERT INTO personas.jurado (
+                        nombre_completo,
+                        titulo_profesional,
+                        cedula,
+                        id_usuario_creacion
+                    ) VALUES (
+                        v_evaluacion->'jurado'->>'nombre_completo',
+                        v_evaluacion->'jurado'->>'titulo_profesional',
+                        v_evaluacion->'jurado'->>'cedula',
+                        p_editado_por
+                    )
+                    RETURNING id_jurado INTO v_id_jurado;
+                    
+                    v_jurados_creados := v_jurados_creados + 1;
+                END IF;
+            ELSE
+                RAISE WARNING 'Jurado inválido, se omite: %', v_evaluacion;
+                CONTINUE;
+            END IF;
+            
+            -- Verificar si la evaluación ya existe (por ID)
+            IF v_evaluacion ? 'id_evaluacion' AND (v_evaluacion->>'id_evaluacion') IS NOT NULL THEN
+                -- Actualizar evaluación existente
+                UPDATE tesis.evaluacion_tesis
+                SET 
+                    id_jurado = v_id_jurado,
+                    nota = COALESCE((v_evaluacion->>'nota')::DECIMAL(4,2), 0),
+                    fecha_evaluacion = COALESCE((v_evaluacion->>'fecha_evaluacion')::DATE, NOW()),
+                    comentarios = v_evaluacion->>'comentarios',
+                    id_usuario_modificacion = p_editado_por,
+                    fecha_modificacion = NOW()
+                WHERE id_evaluacion = (v_evaluacion->>'id_evaluacion')::INT
+                AND id_tesis = p_id_tesis;
+            ELSE
+                -- Crear nueva evaluación
+                INSERT INTO tesis.evaluacion_tesis (
+                    id_tesis,
+                    id_jurado,
+                    nota,
+                    fecha_evaluacion,
+                    comentarios,
+                    id_usuario_creacion
+                ) VALUES (
+                    p_id_tesis,
+                    v_id_jurado,
+                    COALESCE((v_evaluacion->>'nota')::DECIMAL(4,2), 0),
+                    COALESCE((v_evaluacion->>'fecha_evaluacion')::DATE, NOW()),
+                    v_evaluacion->>'comentarios',
+                    p_editado_por
+                );
+            END IF;
+        END IF;
+    END LOOP;
+    
+    --  RESULTADO    
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'status', 200,
+        'message', 'Tesis actualizada exitosamente'
+    );
+    
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 400,
+            'error', SQLERRM,
+            'codigo', SQLSTATE
+        );
+END;
+$$ LANGUAGE plpgsql;

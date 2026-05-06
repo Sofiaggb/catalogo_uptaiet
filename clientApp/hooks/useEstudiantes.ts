@@ -170,6 +170,7 @@ export const useEstudiantes = () => {
 
         multipleModalVisible,
         resultadosMultiples,
+        setEstudiantes,
         agregarEstudiante,
         eliminarEstudiante,
         actualizarEstudiante,

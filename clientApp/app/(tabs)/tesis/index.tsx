@@ -69,7 +69,7 @@ export default function TesisListScreen() {
 
     const cargarAniosDisponibles = async () => {
         const years = await getAniosDisponibles();
-        console.log('reas>>>>>> ', years)
+      //  console.log('reas>>>>>> ', years)
         setAniosDisponibles(years);
     };
 

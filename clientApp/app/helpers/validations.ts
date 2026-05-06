@@ -104,14 +104,14 @@ export const validateTesisForm = (form: {
     titulo: string;
     id_carrera: string;
     id_year: string;
-    documento: any;
+    tieneDocumento: boolean;  
 }): {
     isValid: boolean; errors: {
         titulo?: string; id_carrera?: string; id_year?: string;
         documento?: string
     }
 } => {
-    const errors: { titulo?: string; id_carrera?: string; id_year?: string; documento?: string } = {};
+    const errors: any = {};
 
     const tituloError = validateRequired(form.titulo, 'El título');
     if (tituloError) errors.titulo = tituloError;
@@ -122,8 +122,8 @@ export const validateTesisForm = (form: {
     const yearError = validateYear(form.id_year);
     if (yearError) errors.id_year = yearError;
 
-    if (!form.documento) {
-        errors.documento = 'Debes seleccionar un archivo PDF';
+      if (!form.tieneDocumento) {
+        errors.documento = 'Debes tener un archivo PDF de la tesis';
     }
 
     return {

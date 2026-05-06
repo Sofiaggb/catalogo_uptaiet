@@ -131,8 +131,10 @@ export const tesisController = {
   // Editar tesis existente
   updateTesis: async (req, res) => {
     const { id } = req.params;
+    const { titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones} = req.body;
     let url_documento = null;
     let oldFilePath = null;
+    console.log(titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones)
     
     // Procesar nuevo archivo si existe
     if (req.file) {
@@ -154,15 +156,16 @@ export const tesisController = {
             
       // Llamar a la función de PostgreSQL
       const result = await pool.query(
-        `SELECT tesis.editar_tesis($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8 ) AS resultado`,
+        `SELECT tesis.editar_tesis($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9 ) AS resultado`,
         [
           id,                                 
-          req.body.titulo || null,           
-          req.body.resumen || null,            
-          req.body.id_carrera || null,           
+          titulo || null,           
+          resumen || null,            
+          id_carrera || null,   
+          anio_elaboracion || null,           
           url_documento,                       
-          req.body.estudiantes ? JSON.stringify(JSON.parse(estudiantes) || []): null,  
-          req.body.evaluaciones ? JSON.stringify(JSON.parse(evaluaciones) || []) : null, 
+          estudiantes ? JSON.stringify(JSON.parse(estudiantes) || []): null,  
+          evaluaciones ? JSON.stringify(JSON.parse(evaluaciones) || []) : null, 
           req.usuario?.id_usuario || null       
         ]
       );
@@ -194,12 +197,12 @@ export const tesisController = {
       res.status(resultado.status || 200).json(resultado);
       
     } catch (error) {
-      console.error('❌ Error en updateTesis:', error);
+      console.error('Error en updateTesis:', error);
       
       // Limpiar archivo nuevo si hay error
       if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
-        console.log('🗑️ Archivo nuevo eliminado por error');
+        console.log('Archivo nuevo eliminado por error');
       }
       
       res.status(500).json({
@@ -210,6 +213,8 @@ export const tesisController = {
       });
     }
   },
+
+
 
   deleteTesis: async (req, res) => {
     const { id } = req.params;
@@ -278,7 +283,6 @@ searchEstudianteCedula: async (req, res) => {
     const { cedula } = req.params;
     
     try {
-        // ✅ CORRECTO: Usar $1 con CONCAT o directamente
         const result = await pool.query(
             `SELECT id_estudiante, nombre_completo, cedula, email
              FROM personas.estudiante

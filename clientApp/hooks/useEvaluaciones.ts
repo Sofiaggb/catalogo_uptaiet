@@ -262,6 +262,7 @@ export const useEvaluaciones = () => {
         actualizarEvaluacion,
         actualizarJurado,
         limpiarEvaluaciones,
+        setEvaluaciones,
         
         // Acciones de jurados
         buscarJuradoPorCedula,

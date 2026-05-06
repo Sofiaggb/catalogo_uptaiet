@@ -8,35 +8,42 @@ import { useEstudiantes } from '@/hooks/useEstudiantes';
 import { useEvaluaciones } from '@/hooks/useEvaluaciones';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
-} from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
-import {
-    crearTesis,
-    getCarreras
-} from '../../../services/api';
+import { actualizarTesis, crearTesis, getCarreras, getTesisById } from '../../services/api';
 
 // Interfaces locales para el estado del formulario
 interface Carrera {
     id_carrera: number;
     nombre: string;
 }
+// recibe las props directamente
+interface TesisFormProps {
+    mode?: 'create' | 'edit';
+    tesisId?: string;
+}
 
-export default function CrearTesisScreen() {
+export default function TesisForm({ mode: propMode, tesisId: propTesisId }: TesisFormProps = {}) {
+    const router = useRouter();
+    const params = useLocalSearchParams();
+
+    // Determinar modo: primero de props, luego de params, luego por defecto 'create'
+    const isEditing = propMode === 'edit' || params.mode === 'edit';
+    const tesisId = propTesisId || (params.id as string);
+    //  console.log(tesisId)
     const [loading, setLoading] = useState(false);
+    const [loadingData, setLoadingData] = useState(isEditing);
     const [carreras, setCarreras] = useState<Carrera[]>([]);
-    const [cargandoCarreras, setCargandoCarreras] = useState(true);
+
+    // Dropdowns
     const [open, setOpen] = useState(false);
-    // Hooks
+    const [selectedCarrera, setSelectedCarrera] = useState(null);
+    const [anioElaboracion, setAnioElaboracion] = useState<number | null>(null);
+    const [openAnio, setOpenAnio] = useState(false);
+
+    // Hooks estudiantes evaluaciones
     const {
         estudiantes,
         buscando: buscandoEstudiante,
@@ -51,6 +58,7 @@ export default function CrearTesisScreen() {
         usarEstudianteExistente,
         usarEstudianteMultiple,
         continuarConNuevoEstudiante,
+        setEstudiantes
     } = useEstudiantes();
 
     const {
@@ -58,7 +66,6 @@ export default function CrearTesisScreen() {
         buscando: buscandoJurado,
         modalVisible: modalJuradoVisible,
         resultadoBusqueda: resultadoJurado,
-
         multipleModalVisible: multipleJuradoVisible,
         resultadosMultiples: resultadosMultiplesJurados,
         agregarEvaluacion,
@@ -69,6 +76,7 @@ export default function CrearTesisScreen() {
         usarJuradoExistente,
         usarJuradoMultiple,
         continuarConNuevoJurado,
+        setEvaluaciones
     } = useEvaluaciones();
 
     // Datos principales de la tesis
@@ -76,13 +84,25 @@ export default function CrearTesisScreen() {
         titulo: '',
         resumen: '',
         id_carrera: '',
-        id_year:'',
+        id_year: '',
         url_documento: ''
     });
 
-    //  year de elaboracion de la tesis
-    const [anioElaboracion, setAnioElaboracion] = useState<number | null>(null);
-    const [openAnio, setOpenAnio] = useState(false);
+    const [documento, setDocumento] = useState<{
+        uri: string;
+        name: string;
+        size: number;
+        mimeType: string;
+    } | null>(null);
+
+    const [documentoOriginal, setDocumentoOriginal] = useState<string | null>(null);
+    const [removerDocumento, setRemoverDocumento] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState<{
+        titulo?: string;
+        id_carrera?: string;
+        id_year?: string;
+        documento?: string;
+    }>({});
 
     // Generar años disponibles (desde 1990 hasta el próximo año)
     const aniosDisponibles = useMemo(() => {
@@ -94,21 +114,87 @@ export default function CrearTesisScreen() {
         return years;
     }, []);
 
-    const [documento, setDocumento] = useState<{
-        uri: string;
-        name: string;
-        size: number;
-        mimeType: string;
-    } | null>(null);
+    // Cargar carreras al iniciar
+    useEffect(() => {
+        cargarCarreras();
+    }, []);
 
-    // Estados para errores visuales
-    const [fieldErrors, setFieldErrors] = useState<{
-        titulo?: string;
-        id_carrera?: string;
-        id_year?: string;
-        documento?: string;
-    }>({});
+    // Cargar datos si es edición
+    useEffect(() => {
+        if (isEditing && tesisId) {
+            // console.log('si paso a editdm')
+            cargarDatosTesis();
+        }
+    }, [isEditing, tesisId]);
 
+    const cargarCarreras = async () => {
+        const lista = await getCarreras();
+        // console.log('lista carreras >> ', lista)
+        setCarreras(lista);
+    };
+
+    const cargarDatosTesis = async () => {
+        setLoadingData(true);
+        try {
+            const response = await getTesisById(Number(tesisId));
+            if (response.success && response.data) {
+                const tesis = response.data;
+                // console.log(tesis)
+                // Cargar datos principales
+                setForm({
+                    titulo: tesis.titulo || '',
+                    resumen: tesis.resumen || '',
+                    id_carrera: tesis.id_carrera ? tesis.id_carrera.toString() : '',
+                    id_year: tesis.anio_elaboracion ? tesis.anio_elaboracion.toString() : '',
+                    url_documento: tesis.url_documento || ''
+                });
+                setSelectedCarrera(tesis.id_carrera.toString());
+                console.log(tesis.id_carrera)
+
+                setAnioElaboracion(tesis.anio_elaboracion);
+                setDocumentoOriginal(tesis.url_documento);
+
+                // Cargar estudiantes
+                if (tesis.estudiantes && tesis.estudiantes.length > 0) {
+                    const estudiantesCargados = tesis.estudiantes.map((est: any) => ({
+                        id_estudiante: est.id_estudiante,
+                        nombre_completo: est.nombre_completo,
+                        cedula: est.cedula,
+                        email: est.email || '',
+                        esExistente: true
+                    }));
+                    setEstudiantes(estudiantesCargados);
+                }
+
+                // Cargar evaluaciones
+                if (tesis.evaluaciones && tesis.evaluaciones.length > 0) {
+                    const evaluacionesCargadas = tesis.evaluaciones.map((ev: any) => ({
+                        id_evaluacion: ev.id_evaluacion,
+                        nota: ev.nota.toString(),
+                        fecha_evaluacion: ev.fecha_evaluacion,
+                        comentarios: ev.comentarios || '',
+                        jurado: {
+                            id_jurado: ev.jurado.id_jurado,
+                            nombre_completo: ev.jurado.nombre_completo,
+                            cedula: ev.jurado.cedula,
+                            titulo_profesional: ev.jurado.titulo_profesional || '',
+                            esExistente: true
+                        }
+                    }));
+                    setEvaluaciones(evaluacionesCargadas);
+                }
+            }
+        } catch (error) {
+            console.error('Error cargando tesis:', error);
+            Alert.alert('Error', 'No se pudo cargar la tesis para editar');
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    /////////////////////////////////////
+    // documenos 
+    ////////////////////////////////////
     // Función para seleccionar archivo
     const seleccionarDocumento = async () => {
         try {
@@ -138,23 +224,10 @@ export default function CrearTesisScreen() {
 
     // Función para limpiar el archivo seleccionado
     const limpiarDocumento = () => {
-        setDocumento(null);
-        setForm({ ...form, url_documento: '' });
-    };
-
-
-
-    // Cargar carreras al iniciar
-    useEffect(() => {
-        cargarCarreras();
-    }, []);
-
-    const cargarCarreras = async () => {
-        setCargandoCarreras(true);
-        const lista = await getCarreras();
-        // console.log('lista carreras >> ', lista)
-        setCarreras(lista);
-        setCargandoCarreras(false);
+        if (documento) {
+            setDocumento(null);
+            setForm(prev => ({ ...prev, url_documento: '' }));
+        }
     };
 
     // Usar useMemo para evitar recalcular items en cada render
@@ -164,9 +237,6 @@ export default function CrearTesisScreen() {
             value: c.id_carrera.toString()
         }));
     }, [carreras]);  // Solo se recalcula cuando carreras cambia
-
-    // Estado para el valor del dropdown
-    const [selectedCarrera, setSelectedCarrera] = useState(null);
 
     // Manejar cambio de carrera
     const handleCarreraChange = useCallback((val: any) => {
@@ -178,13 +248,13 @@ export default function CrearTesisScreen() {
 
 
     // manejar cambio de año 
-  const handleAnioChange = useCallback((val: number | null) => {
-    console.log('Año seleccionado:', val); // Para debug
-    setAnioElaboracion(val);
-    setForm(prev => ({ ...prev, id_year:  val?.toString() || '' }));
-    // Limpiar error del año usando la misma clave que en fieldErrors
-    setFieldErrors(prev => ({ ...prev, id_year: undefined }));
-}, []);
+    const handleAnioChange = useCallback((val: number | null) => {
+        console.log('Año seleccionado:', val); // Para debug
+        setAnioElaboracion(val);
+        setForm(prev => ({ ...prev, id_year: val?.toString() || '' }));
+        // Limpiar error del año usando la misma clave que en fieldErrors
+        setFieldErrors(prev => ({ ...prev, id_year: undefined }));
+    }, []);
 
 
     // Manejar cambios en campos principales
@@ -201,11 +271,12 @@ export default function CrearTesisScreen() {
 
     const handleSubmit = async () => {
         // Validaciones
+        const tieneDocumento = !!(documento || (isEditing && documentoOriginal));
         const tesisValidation = validateTesisForm({
             titulo: form.titulo,
             id_carrera: form.id_carrera,
             id_year: form.id_year,
-            documento
+            tieneDocumento: tieneDocumento
         });
 
         if (!tesisValidation.isValid) {
@@ -253,14 +324,33 @@ export default function CrearTesisScreen() {
         formData.append('id_carrera', form.id_carrera);
         formData.append('anio_elaboracion', form.id_year);
 
-        // Agregar el archivo PDF
-        if (documento) {
-            const fileInfo = {
-                uri: documento.uri,
-                type: documento.mimeType || 'application/pdf',
-                name: documento.name || 'documento.pdf'
-            };
-            formData.append('archivo_pdf', fileInfo as any);
+        // Agregar el archivo PDF o modificar
+        if (isEditing) {
+            // Modo edición
+            if (documento) {
+                // Hay un documento NUEVO seleccionado - reemplazar
+                const fileInfo = {
+                    uri: documento.uri,
+                    type: documento.mimeType || 'application/pdf',
+                    name: documento.name || 'documento.pdf'
+                };
+                formData.append('archivo_pdf', fileInfo as any);
+                formData.append('reemplazar_documento', 'true');
+            } else if (documentoOriginal) {
+                // Mantener el documento original
+                formData.append('mantener_documento', 'true');
+                formData.append('url_documento_original', documentoOriginal);
+            }
+        } else {
+            // Modo creación
+            if (documento) {
+                const fileInfo = {
+                    uri: documento.uri,
+                    type: documento.mimeType || 'application/pdf',
+                    name: documento.name || 'documento.pdf'
+                };
+                formData.append('archivo_pdf', fileInfo as any);
+            }
         }
 
         const estudiantesData = estudiantes.map(est => {
@@ -297,7 +387,14 @@ export default function CrearTesisScreen() {
         formData.append('evaluaciones', JSON.stringify(evaluacionesData));
 
         console.log(evaluacionesData)
-        const resultado = await crearTesis(formData);
+        let resultado;
+        if (isEditing) {
+            resultado = await actualizarTesis(Number(tesisId), formData);
+            console.log('actualizar', resultado)
+
+        } else {
+            resultado = await crearTesis(formData);
+        }
         setLoading(false);
 
         if (resultado.success) {
@@ -305,9 +402,18 @@ export default function CrearTesisScreen() {
                 { text: 'OK', onPress: () => router.back() }
             ]);
         } else {
-            Alert.alert('Error', resultado.error || 'No se pudo crear la tesis');
+            Alert.alert('Error', resultado.message || 'No se pudo crear la tesis');
         }
     };
+
+    if (loadingData) {
+        return (
+            <View className="flex-1 bg-white justify-center items-center">
+                <ActivityIndicator size="large" color="#FFD700" />
+                <Text className="text-gray-500 mt-4">Cargando tesis...</Text>
+            </View>
+        );
+    }
 
     return (
         <ScrollView className="flex-1 bg-white">
@@ -318,8 +424,12 @@ export default function CrearTesisScreen() {
                         <Ionicons name="arrow-back-outline" size={28} color="#FFD700" />
                     </TouchableOpacity>
                     <View>
-                        <Text className="text-yellow-500 text-2xl font-bold">Crear Tesis</Text>
-                        <Text className="text-white text-sm">Completa todos los campos</Text>
+                        <Text className="text-yellow-500 text-2xl font-bold">
+                            {isEditing ? 'Editar Tesis' : 'Crear Tesis'}
+                        </Text>
+                        <Text className="text-white text-sm">
+                            {isEditing ? 'Modifica los datos de la tesis' : 'Completa todos los campos'}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -395,39 +505,39 @@ export default function CrearTesisScreen() {
                             <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.id_carrera}</Text>
                         )}
 
-                       {/* ==================== AÑO DE ELABORACIÓN ==================== */}
-<Text className="text-base font-semibold text-gray-700 mb-2">
-    Año de Elaboración <Text className="text-red-500">*</Text>
-</Text>
-<View className={`mb-4 z-10`}>
-    <DropDownPicker
-        open={openAnio}
-        value={anioElaboracion}
-        items={aniosDisponibles}
-        setOpen={setOpenAnio}
-        setValue={setAnioElaboracion}
-        placeholder="Selecciona el año de elaboración"
-        searchable={true}
-        searchPlaceholder="🔍 Buscar año..."
-        listMode="MODAL"
-        style={{
-            backgroundColor: '#FFFFFF',
-            borderColor: fieldErrors.id_year ? '#EF4444' : '#D1D5DB',
-            borderRadius: 8,
-        }}
-        dropDownContainerStyle={{
-            backgroundColor: '#FFFFFF',
-            borderColor: '#D1D5DB',
-        }}
-        onChangeValue={handleAnioChange}
-    />
-    {fieldErrors.id_year && (
-        <Text className="text-red-500 text-sm mt-1">{fieldErrors.id_year}</Text>
-    )}
-</View>
+                        {/* ==================== AÑO DE ELABORACIÓN ==================== */}
+                        <Text className="text-base font-semibold text-gray-700 mb-2">
+                            Año de Elaboración <Text className="text-red-500">*</Text>
+                        </Text>
+                        <View className={`mb-4 z-10`}>
+                            <DropDownPicker
+                                open={openAnio}
+                                value={anioElaboracion}
+                                items={aniosDisponibles}
+                                setOpen={setOpenAnio}
+                                setValue={setAnioElaboracion}
+                                placeholder="Selecciona el año de elaboración"
+                                searchable={true}
+                                searchPlaceholder="🔍 Buscar año..."
+                                listMode="MODAL"
+                                style={{
+                                    backgroundColor: '#FFFFFF',
+                                    borderColor: fieldErrors.id_year ? '#EF4444' : '#D1D5DB',
+                                    borderRadius: 8,
+                                }}
+                                dropDownContainerStyle={{
+                                    backgroundColor: '#FFFFFF',
+                                    borderColor: '#D1D5DB',
+                                }}
+                                onChangeValue={handleAnioChange}
+                            />
+                            {fieldErrors.id_year && (
+                                <Text className="text-red-500 text-sm mt-1">{fieldErrors.id_year}</Text>
+                            )}
+                        </View>
 
 
-                        {/* Documento PDF */}
+                        {/* Documento PDF
                         <Text className="text-base font-semibold text-gray-700 mb-2">
                             Documento PDF *
                         </Text>
@@ -464,7 +574,44 @@ export default function CrearTesisScreen() {
                                     <Text className="text-red-500 text-sm mt-2">{fieldErrors.documento}</Text>
                                 )}
                             </>
+                        )} */}
+                        {/* Documento actual (en edición) */}
+                        {documentoOriginal && !documento && (
+                            <View className="bg-gray-50 border border-gray-300 rounded-lg p-3 mb-3">
+                                <View className="flex-row items-center">
+                                    <Ionicons name="document-text" size={20} color="#6B7280" />
+                                    <Text className="text-gray-600 text-sm ml-2 flex-1" numberOfLines={1}>
+                                        Documento actual: {documentoOriginal.split('/').pop()}
+                                    </Text>
+                                </View>
+                            </View>
                         )}
+
+                        {/* Nuevo documento seleccionado */}
+                        {documento && (
+                            <View className="bg-green-50 border border-green-300 rounded-lg p-3 mb-3 flex-row justify-between items-center">
+                                <Text className="text-green-700 flex-1">{documento.name}</Text>
+                                <TouchableOpacity onPress={limpiarDocumento}>
+                                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+
+                        {/* Botón para cambiar documento */}
+                        {!documento && (
+                            <TouchableOpacity
+                                className="bg-gray-50 border border-gray-300 rounded-lg p-4 items-center border-dashed"
+                                onPress={seleccionarDocumento}
+                            >
+                                <Ionicons name="cloud-upload-outline" size={32} color="#6B7280" />
+                                <Text className="text-gray-600 text-base mt-2">
+                                    {documentoOriginal ? 'Cambiar documento PDF' : 'Seleccionar documento PDF'}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+
+
+
                     </View>
                 </View>
 
@@ -564,7 +711,7 @@ export default function CrearTesisScreen() {
                     ) : (
                         <>
                             <Ionicons name="checkmark-circle" size={24} color="#000000" />
-                            <Text className="text-black text-lg font-bold ml-2">Crear Tesis</Text>
+                            <Text className="text-black text-lg font-bold ml-2">Guardar</Text>
                         </>
                     )}
                 </TouchableOpacity>
