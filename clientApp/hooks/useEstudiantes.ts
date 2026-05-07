@@ -1,24 +1,8 @@
 // hooks/useEstudiantes.ts
+import { busquedaApi } from '@/services/api/endpoints/busqueda';
+import { Estudiante } from '@/services/api/types';
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { buscarPorCedula } from '../services/api';
-
-// Tipo de dato para un estudiante
-interface Estudiante {
-    id_estudiante?: number;
-    nombre_completo: string;
-    cedula: string;
-    email: string;
-    esExistente: boolean;
-}
-
-// Tipo para resultado de búsqueda
-interface ResultadoBusqueda {
-    id_estudiante: number;
-    nombre_completo: string;
-    cedula: string;
-    email: string;
-}
 
 export const useEstudiantes = () => {
     // Estado principal: lista de estudiantes
@@ -28,7 +12,6 @@ export const useEstudiantes = () => {
     
     // Estado para el modal
     const [modalVisible, setModalVisible] = useState(false);
-    // const [resultadoBusqueda, setResultadoBusqueda] = useState<ResultadoBusqueda | null>(null);
     const [indiceEditando, setIndiceEditando] = useState<number | null>(null);
     const [buscando, setBuscando] = useState(false);
     const [multipleModalVisible, setMultipleModalVisible] = useState(false);
@@ -69,7 +52,7 @@ export const useEstudiantes = () => {
         setIndiceEditando(index);
         
         try {
-            const resultado = await buscarPorCedula('estudiante', cedula);
+            const resultado = await busquedaApi.buscarPorCedula('estudiante', cedula);
                     // console.log('res estudiantes', resultado)
             
             if (resultado.success && resultado.data && resultado.data.length > 0) {

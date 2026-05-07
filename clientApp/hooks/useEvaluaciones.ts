@@ -1,33 +1,9 @@
 // hooks/useEvaluaciones.ts
+import { busquedaApi } from '@/services/api/endpoints/busqueda';
+import { Evaluacion, Jurado } from '@/services/api/types';
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { buscarPorCedula } from '../services/api';
 
-// ============================================
-// INTERFACES
-
-interface Jurado {
-    id_jurado?: number;
-    nombre_completo: string;
-    cedula: string;
-    titulo_profesional: string;
-    esExistente: boolean;
-}
-
-interface Evaluacion {
-    id_evaluacion?: number;
-    nota: string;
-    fecha_evaluacion: string;
-    comentarios: string;
-    jurado: Jurado;
-}
-
-interface ResultadoBusquedaJurado {
-    id_jurado: number;
-    nombre_completo: string;
-    cedula: string;
-    titulo_profesional: string;
-}
 
 
 export const useEvaluaciones = () => {
@@ -48,7 +24,6 @@ export const useEvaluaciones = () => {
 
     // Estado para el modal (compartido con estudiantes)
     const [modalVisible, setModalVisible] = useState(false);
-    // const [resultadoBusqueda, setResultadoBusqueda] = useState<ResultadoBusquedaJurado | null>(null);
     const [indiceEditando, setIndiceEditando] = useState<number | null>(null);
     const [buscando, setBuscando] = useState(false);
     const [multipleModalVisible, setMultipleModalVisible] = useState(false);
@@ -117,7 +92,7 @@ export const useEvaluaciones = () => {
         setIndiceEditando(evalIndex);
         
         try {
-            const resultado = await buscarPorCedula('jurado', cedula);
+            const resultado = await busquedaApi.buscarPorCedula('jurado', cedula);
             
             if (resultado.success && resultado.data && resultado.data.length > 0) {
                 if (resultado.multiple || resultado.data.length > 1) {

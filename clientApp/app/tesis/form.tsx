@@ -6,13 +6,14 @@ import { ConfirmarDatosModal } from '@/components/ui/ConfirmarDatosModal';
 import { MultipleResultsModal } from '@/components/ui/multipleResultsmodal';
 import { useEstudiantes } from '@/hooks/useEstudiantes';
 import { useEvaluaciones } from '@/hooks/useEvaluaciones';
+import { carrerasApi } from '@/services/api/endpoints/carreras';
+import { tesisApi } from '@/services/api/endpoints/tesis';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
-import { actualizarTesis, crearTesis, getCarreras, getTesisById } from '../../services/api';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 // Interfaces locales para el estado del formulario
 interface Carrera {
@@ -127,7 +128,7 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
     }, [isEditing, tesisId]);
 
     const cargarCarreras = async () => {
-        const lista = await getCarreras();
+        const lista = await carrerasApi.getAll();
         // console.log('lista carreras >> ', lista)
         setCarreras(lista);
     };
@@ -135,7 +136,7 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
     const cargarDatosTesis = async () => {
         setLoadingData(true);
         try {
-            const response = await getTesisById(Number(tesisId));
+            const response = await tesisApi.getById(Number(tesisId));
             if (response.success && response.data) {
                 const tesis = response.data;
                 // console.log(tesis)
@@ -395,11 +396,11 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
         console.log(evaluacionesData)
         let resultado;
         if (isEditing) {
-            resultado = await actualizarTesis(Number(tesisId), formData);
+            resultado = await tesisApi.actualizar(Number(tesisId), formData);
             console.log('actualizar', resultado)
 
         } else {
-            resultado = await crearTesis(formData);
+            resultado = await tesisApi.crear(formData);
         }
         setLoading(false);
 

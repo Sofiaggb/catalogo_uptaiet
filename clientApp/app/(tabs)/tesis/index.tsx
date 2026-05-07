@@ -1,4 +1,7 @@
 // app/(tabs)/tesis/index.tsx
+import { carrerasApi } from '@/services/api/endpoints/carreras';
+import { tesisApi } from '@/services/api/endpoints/tesis';
+import { Carrera, Tesis } from '@/services/api/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -13,7 +16,6 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { getAniosDisponibles, getCarreras, listarTesis, type Carrera, type Tesis } from '../../../services/api';
 
 export default function TesisListScreen() {
     const router = useRouter();
@@ -21,10 +23,6 @@ export default function TesisListScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [carreras, setCarreras] = useState<Carrera[]>([]);
-
-    // ============================================
-    // FILTROS
-    // ============================================
 
     const [carrerasSeleccionadas, setCarrerasSeleccionadas] = useState<number[]>([]);
     const [aniosDisponibles, setAniosDisponibles] = useState<number[]>([]);
@@ -60,12 +58,12 @@ export default function TesisListScreen() {
     // ============================================
 
     const cargarCarreras = async () => {
-        const data = await getCarreras();
+        const data = await carrerasApi.getAll();
         setCarreras(data);
     };
 
     const cargarAniosDisponibles = async () => {
-        const years = await getAniosDisponibles();
+        const years = await tesisApi.getAniosDisponibles();
       //  console.log('reas>>>>>> ', years)
         setAniosDisponibles(years);
     };
@@ -92,7 +90,7 @@ export default function TesisListScreen() {
             params.buscar = buscar;
         }
 
-        const result = await listarTesis(params);
+        const result = await tesisApi.listar(params);
         console.log('resultado tesis >>>> ',result)
         if (result.success) {
             if (page === 1) {

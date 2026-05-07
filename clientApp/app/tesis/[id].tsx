@@ -1,6 +1,7 @@
 // app/(tabs)/tesis/[id].tsx
 import { STATIC_URL } from '@/config/env';
-import { getTesisById, Tesis } from '@/services/api';
+import { tesisApi } from '@/services/api/endpoints/tesis';
+import { Tesis } from '@/services/api/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -30,7 +31,7 @@ export default function TesisDetailScreen() {
         setError(null);
 
         try {
-            const response = await getTesisById(Number(id));
+            const response = await tesisApi.getById(Number(id));
             if (response.success && response.data) {
                 setTesis(response.data);         
                 // console.log(response.data)
