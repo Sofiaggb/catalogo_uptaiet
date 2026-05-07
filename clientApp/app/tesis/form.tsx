@@ -13,7 +13,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { actualizarTesis, crearTesis, getCarreras, getTesisById } from '../../services/api';
-
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 // Interfaces locales para el estado del formulario
 interface Carrera {
     id_carrera: number;
@@ -96,7 +96,6 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
     } | null>(null);
 
     const [documentoOriginal, setDocumentoOriginal] = useState<string | null>(null);
-    const [removerDocumento, setRemoverDocumento] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<{
         titulo?: string;
         id_carrera?: string;
@@ -355,7 +354,10 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
 
         const estudiantesData = estudiantes.map(est => {
             if (est.id_estudiante) {
-                return { id_estudiante: est.id_estudiante };
+                return { id_estudiante: est.id_estudiante,
+                        nombre_completo: est.nombre_completo,
+                        email: est.email || undefined
+                    };
             } else {
                 return {
                     nombre_completo: est.nombre_completo,
@@ -369,7 +371,10 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
         const evaluacionesData = evaluaciones.map(ev => {
             let jurado: any;
             if (ev.jurado.id_jurado) {
-                jurado = { id_jurado: ev.jurado.id_jurado };
+                jurado = { id_jurado: ev.jurado.id_jurado,
+                    nombre_completo: ev.jurado.nombre_completo,
+                    titulo_profesional: ev.jurado.titulo_profesional || undefined 
+                };
             } else {
                 jurado = {
                     nombre_completo: ev.jurado.nombre_completo,
@@ -378,6 +383,7 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
                 };
             }
             return {
+                id_evaluacion: ev.id_evaluacion, 
                 nota: parseFloat(ev.nota),
                 fecha_evaluacion: ev.fecha_evaluacion,
                 comentarios: ev.comentarios || undefined,
@@ -398,7 +404,7 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
         setLoading(false);
 
         if (resultado.success) {
-            Alert.alert('Éxito', 'Tesis creada correctamente', [
+            Alert.alert('Éxito', resultado.message, [
                 { text: 'OK', onPress: () => router.back() }
             ]);
         } else {
@@ -416,349 +422,313 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
     }
 
     return (
-        <ScrollView className="flex-1 bg-white">
-            {/* Header con los colores de la app */}
-            <View className="bg-black pt-16 pb-6 px-5">
-                <View className="flex-row items-center">
-                    <TouchableOpacity onPress={() => router.back()} className="mr-3">
-                        <Ionicons name="arrow-back-outline" size={28} color="#FFD700" />
-                    </TouchableOpacity>
-                    <View>
-                        <Text className="text-yellow-500 text-2xl font-bold">
-                            {isEditing ? 'Editar Tesis' : 'Crear Tesis'}
-                        </Text>
-                        <Text className="text-white text-sm">
-                            {isEditing ? 'Modifica los datos de la tesis' : 'Completa todos los campos'}
-                        </Text>
+        <KeyboardAwareScrollView
+            className="flex-1 bg-gray-100"
+            keyboardShouldPersistTaps="handled"
+            extraScrollHeight={100}
+            enableOnAndroid={true}
+        >
+            <ScrollView className="flex-1 bg-white">
+                {/* Header con los colores de la app */}
+                <View className=" pt-6 pb-6 px-5">
+                    <View className="flex-row items-center">
+                        <TouchableOpacity onPress={() => router.back()} className="mr-3">
+                            <Ionicons name="arrow-back-outline" size={28} color="#0ea5e8" />
+                        </TouchableOpacity>
+                        <View>
+                            <Text className="text-cyan-600 text-2xl font-bold">
+                                {isEditing ? 'Editar proyecto' : 'Crear proyecto'}
+                            </Text>
+                            <Text className="text-sky-400 text-sm">
+                                {isEditing ? 'Modifica los datos del proyecto' : 'Completa todos los campos'}
+                            </Text>
+                        </View>
                     </View>
                 </View>
-            </View>
 
-            {/* Formulario */}
-            <View className="p-5">
-                {/* ==================== DATOS BÁSICOS ==================== */}
-                <View className="mb-6">
-                    <View className="flex-row items-center mb-3">
-                        <View className="bg-yellow-500 rounded-full w-6 h-6 items-center justify-center mr-2">
-                            <Text className="text-black text-xs font-bold">1</Text>
-                        </View>
-                        <Text className="text-black text-lg font-bold">Datos Básicos</Text>
-                    </View>
-
-                    <View className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                        <Text className="text-base font-semibold text-gray-700 mb-2">
-                            Título *
-                        </Text>
-                        <TextInput
-                            className={`bg-white border rounded-lg p-3 text-base mb-4 ${fieldErrors.titulo ? 'border-red-500' : 'border-gray-300'
-                                }`}
-                            value={form.titulo}
-                            onChangeText={(text) => handleChange('titulo', text)}
-                            placeholder="Ingrese el título de la tesis"
-                            placeholderTextColor="#999"
-                        />
-                        {fieldErrors.titulo && (
-                            <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.titulo}</Text>
-                        )}
-
-                        <Text className="text-base font-semibold text-gray-700 mb-2">
-                            Resumen
-                        </Text>
-                        <TextInput
-                            className="bg-white border border-gray-300 rounded-lg p-3 text-base mb-4 min-h-[100px]"
-                            value={form.resumen}
-                            onChangeText={(text) => handleChange('resumen', text)}
-                            placeholder="Breve descripción de la tesis"
-                            placeholderTextColor="#999"
-                            multiline
-                            numberOfLines={4}
-                            textAlignVertical="top"
-                        />
-
-                        <Text className="text-base font-semibold text-gray-700 mb-2">
-                            Carrera *
-                        </Text>
-                        <View className={`mb-4 z-10 ${fieldErrors.id_carrera ? 'border-red-500 border rounded-lg' : ''}`}>
-                            <DropDownPicker
-                                open={open}
-                                value={selectedCarrera}
-                                items={dropdownItems}
-                                setOpen={setOpen}
-                                setValue={setSelectedCarrera}
-                                placeholder="Selecciona una carrera"
-                                searchable={true}
-                                searchPlaceholder="🔍 Buscar carrera..."
-                                listMode="MODAL"
-                                style={{
-                                    backgroundColor: '#FFFFFF',
-                                    borderColor: fieldErrors.id_carrera ? '#EF4444' : '#D1D5DB',
-                                    borderRadius: 8,
-                                }}
-                                dropDownContainerStyle={{
-                                    backgroundColor: '#FFFFFF',
-                                    borderColor: '#D1D5DB',
-                                }}
-                                onChangeValue={handleCarreraChange}
-                            />
-                        </View>
-                        {fieldErrors.id_carrera && (
-                            <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.id_carrera}</Text>
-                        )}
-
-                        {/* ==================== AÑO DE ELABORACIÓN ==================== */}
-                        <Text className="text-base font-semibold text-gray-700 mb-2">
-                            Año de Elaboración <Text className="text-red-500">*</Text>
-                        </Text>
-                        <View className={`mb-4 z-10`}>
-                            <DropDownPicker
-                                open={openAnio}
-                                value={anioElaboracion}
-                                items={aniosDisponibles}
-                                setOpen={setOpenAnio}
-                                setValue={setAnioElaboracion}
-                                placeholder="Selecciona el año de elaboración"
-                                searchable={true}
-                                searchPlaceholder="🔍 Buscar año..."
-                                listMode="MODAL"
-                                style={{
-                                    backgroundColor: '#FFFFFF',
-                                    borderColor: fieldErrors.id_year ? '#EF4444' : '#D1D5DB',
-                                    borderRadius: 8,
-                                }}
-                                dropDownContainerStyle={{
-                                    backgroundColor: '#FFFFFF',
-                                    borderColor: '#D1D5DB',
-                                }}
-                                onChangeValue={handleAnioChange}
-                            />
-                            {fieldErrors.id_year && (
-                                <Text className="text-red-500 text-sm mt-1">{fieldErrors.id_year}</Text>
-                            )}
-                        </View>
-
-
-                        {/* Documento PDF
-                        <Text className="text-base font-semibold text-gray-700 mb-2">
-                            Documento PDF *
-                        </Text>
-                        {documento ? (
-                            <View className="bg-green-50 border border-green-300 rounded-lg p-3 flex-row justify-between items-center">
-                                <View className="flex-1">
-                                    <View className="flex-row items-center">
-                                        <Ionicons name="document-text" size={20} color="#059669" />
-                                        <Text className="text-green-700 font-semibold ml-2">Archivo seleccionado</Text>
-                                    </View>
-                                    <Text className="text-gray-600 text-sm mt-1" numberOfLines={1}>
-                                        {documento.name}
-                                    </Text>
-                                    <Text className="text-gray-400 text-xs">
-                                        {(documento.size / 1024).toFixed(2)} KB
-                                    </Text>
-                                </View>
-                                <TouchableOpacity onPress={limpiarDocumento} className="ml-3">
-                                    <Ionicons name="close-circle" size={24} color="#EF4444" />
-                                </TouchableOpacity>
+                {/* Formulario */}
+                <View className="p-5">
+                    {/* ==================== DATOS BÁSICOS ==================== */}
+                    <View className="mb-6">
+                        <View className="flex-row items-center mb-3">
+                            <View className="bg-cyan-200 rounded-full w-6 h-6 items-center justify-center mr-2">
+                                <Text className="text-black text-xs font-bold">1</Text>
                             </View>
-                        ) : (
-                            <>
+                            <Text className="text-black text-lg font-bold">Datos Básicos</Text>
+                        </View>
+
+                        <View className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                            <Text className="text-base font-semibold text-gray-700 mb-2">
+                                Título *
+                            </Text>
+                            <TextInput
+                                className={`bg-white border rounded-lg p-3 text-base mb-4 ${fieldErrors.titulo ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                value={form.titulo}
+                                onChangeText={(text) => handleChange('titulo', text)}
+                                placeholder="Ingrese el título de la tesis"
+                                placeholderTextColor="#999"
+                            />
+                            {fieldErrors.titulo && (
+                                <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.titulo}</Text>
+                            )}
+
+                            <Text className="text-base font-semibold text-gray-700 mb-2">
+                                Resumen
+                            </Text>
+                            <TextInput
+                                className="bg-white border border-gray-300 rounded-lg p-3 text-base mb-4 min-h-[100px]"
+                                value={form.resumen}
+                                onChangeText={(text) => handleChange('resumen', text)}
+                                placeholder="Breve descripción de la tesis"
+                                placeholderTextColor="#999"
+                                multiline
+                                numberOfLines={4}
+                                textAlignVertical="top"
+                            />
+
+                            <Text className="text-base font-semibold text-gray-700 mb-2">
+                                Carrera *
+                            </Text>
+                            <View className={`mb-4 z-10 ${fieldErrors.id_carrera ? 'border-red-500 border rounded-lg' : ''}`}>
+                                <DropDownPicker
+                                    open={open}
+                                    value={selectedCarrera}
+                                    items={dropdownItems}
+                                    setOpen={setOpen}
+                                    setValue={setSelectedCarrera}
+                                    placeholder="Selecciona una carrera"
+                                    searchable={true}
+                                    searchPlaceholder="Buscar carrera..."
+                                    listMode="MODAL"
+                                    style={{
+                                        backgroundColor: '#FFFFFF',
+                                        borderColor: fieldErrors.id_carrera ? '#EF4444' : '#D1D5DB',
+                                        borderRadius: 8,
+                                    }}
+                                    dropDownContainerStyle={{
+                                        backgroundColor: '#FFFFFF',
+                                        borderColor: '#D1D5DB',
+                                    }}
+                                    onChangeValue={handleCarreraChange}
+                                />
+                            </View>
+                            {fieldErrors.id_carrera && (
+                                <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.id_carrera}</Text>
+                            )}
+
+                            {/* ==================== AÑO DE ELABORACIÓN ==================== */}
+                            <Text className="text-base font-semibold text-gray-700 mb-2">
+                                Año de Elaboración <Text className="text-red-500">*</Text>
+                            </Text>
+                            <View className={`mb-4 z-10`}>
+                                <DropDownPicker
+                                    open={openAnio}
+                                    value={anioElaboracion}
+                                    items={aniosDisponibles}
+                                    setOpen={setOpenAnio}
+                                    setValue={setAnioElaboracion}
+                                    placeholder="Selecciona el año de elaboración"
+                                    searchable={true}
+                                    searchPlaceholder="Buscar año..."
+                                    listMode="MODAL"
+                                    style={{
+                                        backgroundColor: '#FFFFFF',
+                                        borderColor: fieldErrors.id_year ? '#EF4444' : '#D1D5DB',
+                                        borderRadius: 8,
+                                    }}
+                                    dropDownContainerStyle={{
+                                        backgroundColor: '#FFFFFF',
+                                        borderColor: '#D1D5DB',
+                                    }}
+                                    onChangeValue={handleAnioChange}
+                                />
+                                {fieldErrors.id_year && (
+                                    <Text className="text-red-500 text-sm mt-1">{fieldErrors.id_year}</Text>
+                                )}
+                            </View>
+
+
+                            {/* Documento PDF  */}
+                            {/* Documento actual (en edición) */}
+                            {documentoOriginal && !documento && (
+                                <View className="bg-gray-50 border border-gray-300 rounded-lg p-3 mb-3">
+                                    <View className="flex-row items-center">
+                                        <Ionicons name="document-text" size={20} color="#6B7280" />
+                                        <Text className="text-gray-600 text-sm ml-2 flex-1" numberOfLines={1}>
+                                            Documento actual: {documentoOriginal.split('/').pop()}
+                                        </Text>
+                                    </View>
+                                </View>
+                            )}
+
+                            {/* Nuevo documento seleccionado */}
+                            {documento && (
+                                <View className="bg-green-50 border border-green-300 rounded-lg p-3 mb-3 flex-row justify-between items-center">
+                                    <Text className="text-green-700 flex-1">{documento.name}</Text>
+                                    <TouchableOpacity onPress={limpiarDocumento}>
+                                        <Ionicons name="close-circle" size={24} color="#EF4444" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
+                            {/* Botón para cambiar documento */}
+                            {!documento && (
                                 <TouchableOpacity
-                                    className={`bg-gray-50 border rounded-lg p-4 items-center border-dashed ${fieldErrors.documento ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                    className="bg-gray-50 border border-gray-300 rounded-lg p-4 items-center border-dashed"
                                     onPress={seleccionarDocumento}
                                 >
-                                    <Ionicons name="cloud-upload-outline" size={32} color={fieldErrors.documento ? "#EF4444" : "#6B7280"} />
-                                    <Text className="text-gray-600 text-base mt-2">Seleccionar archivo PDF</Text>
-                                    <Text className="text-gray-400 text-xs mt-1">Solo archivos PDF (máx 10MB)</Text>
-                                </TouchableOpacity>
-                                {fieldErrors.documento && (
-                                    <Text className="text-red-500 text-sm mt-2">{fieldErrors.documento}</Text>
-                                )}
-                            </>
-                        )} */}
-                        {/* Documento actual (en edición) */}
-                        {documentoOriginal && !documento && (
-                            <View className="bg-gray-50 border border-gray-300 rounded-lg p-3 mb-3">
-                                <View className="flex-row items-center">
-                                    <Ionicons name="document-text" size={20} color="#6B7280" />
-                                    <Text className="text-gray-600 text-sm ml-2 flex-1" numberOfLines={1}>
-                                        Documento actual: {documentoOriginal.split('/').pop()}
+                                    <Ionicons name="cloud-upload-outline" size={32} color="#6B7280" />
+                                    <Text className="text-gray-600 text-base mt-2">
+                                        {documentoOriginal ? 'Cambiar documento PDF' : 'Seleccionar documento PDF'}
                                     </Text>
-                                </View>
-                            </View>
-                        )}
-
-                        {/* Nuevo documento seleccionado */}
-                        {documento && (
-                            <View className="bg-green-50 border border-green-300 rounded-lg p-3 mb-3 flex-row justify-between items-center">
-                                <Text className="text-green-700 flex-1">{documento.name}</Text>
-                                <TouchableOpacity onPress={limpiarDocumento}>
-                                    <Ionicons name="close-circle" size={24} color="#EF4444" />
                                 </TouchableOpacity>
-                            </View>
-                        )}
+                            )}
 
-                        {/* Botón para cambiar documento */}
-                        {!documento && (
+                        </View>
+                    </View>
+
+                    {/* ==================== ESTUDIANTES ==================== */}
+                    <View className="mb-6">
+                        <View className="flex-row justify-between items-center mb-3">
+                            <View className="flex-row items-center">
+                                <View className="bg-cyan-200 rounded-full w-6 h-6 items-center justify-center mr-2">
+                                    <Text className="text-black text-xs font-bold">2</Text>
+                                </View>
+                                <Text className="text-black text-lg font-bold">Estudiantes</Text>
+                            </View>
                             <TouchableOpacity
-                                className="bg-gray-50 border border-gray-300 rounded-lg p-4 items-center border-dashed"
-                                onPress={seleccionarDocumento}
+                                className="bg-cyan-200 px-4 py-2 rounded-lg flex-row items-center"
+                                onPress={agregarEstudiante}
                             >
-                                <Ionicons name="cloud-upload-outline" size={32} color="#6B7280" />
-                                <Text className="text-gray-600 text-base mt-2">
-                                    {documentoOriginal ? 'Cambiar documento PDF' : 'Seleccionar documento PDF'}
-                                </Text>
+                                <Ionicons name="add" size={18} color="#000000" />
+                                <Text className="text-black font-bold ml-1">Agregar</Text>
                             </TouchableOpacity>
+                        </View>
+
+                        {estudiantes.length === 0 ? (
+                            <View className="bg-gray-50 rounded-xl p-8 items-center border border-gray-200 border-dashed">
+                                <Ionicons name="people-outline" size={48} color="#9CA3AF" />
+                                <Text className="text-gray-500 text-center mt-3">
+                                    No hay estudiantes agregados
+                                </Text>
+                                <Text className="text-gray-400 text-sm text-center">
+                                    Presiona "Agregar" para añadir autores
+                                </Text>
+                            </View>
+                        ) : (
+                            estudiantes.map((estudiante, idx) => (
+                                <EstudianteForm
+                                    key={idx}
+                                    index={idx}
+                                    estudiante={estudiante}
+                                    onUpdate={actualizarEstudiante}
+                                    onDelete={eliminarEstudiante}
+                                    onBuscar={buscarEstudiantePorCedula}
+                                />
+                            ))
                         )}
-
-
-
                     </View>
-                </View>
 
-                {/* ==================== ESTUDIANTES ==================== */}
-                <View className="mb-6">
-                    <View className="flex-row justify-between items-center mb-3">
-                        <View className="flex-row items-center">
-                            <View className="bg-yellow-500 rounded-full w-6 h-6 items-center justify-center mr-2">
-                                <Text className="text-black text-xs font-bold">2</Text>
+                    {/* ==================== EVALUACIONES ==================== */}
+                    <View className="mb-6">
+                        <View className="flex-row justify-between items-center mb-3">
+                            <View className="flex-row items-center">
+                                <View className="bg-cyan-200 rounded-full w-6 h-6 items-center justify-center mr-2">
+                                    <Text className="text-black text-xs font-bold">3</Text>
+                                </View>
+                                <Text className="text-black text-lg font-bold">Evaluaciones</Text>
                             </View>
-                            <Text className="text-black text-lg font-bold">Estudiantes</Text>
+                            <TouchableOpacity
+                                className="bg-cyan-200 px-4 py-2 rounded-lg flex-row items-center"
+                                onPress={agregarEvaluacion}
+                            >
+                                <Ionicons name="add" size={18} color="#000000" />
+                                <Text className="text-black font-bold ml-1">Agregar</Text>
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                            className="bg-yellow-500 px-4 py-2 rounded-lg flex-row items-center"
-                            onPress={agregarEstudiante}
-                        >
-                            <Ionicons name="add" size={18} color="#000000" />
-                            <Text className="text-black font-bold ml-1">Agregar</Text>
-                        </TouchableOpacity>
-                    </View>
 
-                    {estudiantes.length === 0 ? (
-                        <View className="bg-gray-50 rounded-xl p-8 items-center border border-gray-200 border-dashed">
-                            <Ionicons name="people-outline" size={48} color="#9CA3AF" />
-                            <Text className="text-gray-500 text-center mt-3">
-                                No hay estudiantes agregados
-                            </Text>
-                            <Text className="text-gray-400 text-sm text-center">
-                                Presiona "Agregar" para añadir autores
-                            </Text>
-                        </View>
-                    ) : (
-                        estudiantes.map((estudiante, idx) => (
-                            <EstudianteForm
-                                key={idx}
-                                index={idx}
-                                estudiante={estudiante}
-                                onUpdate={actualizarEstudiante}
-                                onDelete={eliminarEstudiante}
-                                onBuscar={buscarEstudiantePorCedula}
-                            />
-                        ))
-                    )}
-                </View>
-
-                {/* ==================== EVALUACIONES ==================== */}
-                <View className="mb-6">
-                    <View className="flex-row justify-between items-center mb-3">
-                        <View className="flex-row items-center">
-                            <View className="bg-yellow-500 rounded-full w-6 h-6 items-center justify-center mr-2">
-                                <Text className="text-black text-xs font-bold">3</Text>
+                        {evaluaciones.length === 0 ? (
+                            <View className="bg-gray-50 rounded-xl p-8 items-center border border-gray-200 border-dashed">
+                                <Ionicons name="clipboard-outline" size={48} color="#9CA3AF" />
+                                <Text className="text-gray-500 text-center mt-3">
+                                    No hay evaluaciones agregadas
+                                </Text>
+                                <Text className="text-gray-400 text-sm text-center">
+                                    Presiona "Agregar" para añadir jurados y notas
+                                </Text>
                             </View>
-                            <Text className="text-black text-lg font-bold">Evaluaciones</Text>
-                        </View>
-                        <TouchableOpacity
-                            className="bg-yellow-500 px-4 py-2 rounded-lg flex-row items-center"
-                            onPress={agregarEvaluacion}
-                        >
-                            <Ionicons name="add" size={18} color="#000000" />
-                            <Text className="text-black font-bold ml-1">Agregar</Text>
-                        </TouchableOpacity>
+                        ) : (
+                            evaluaciones.map((evaluacion, idx) => (
+                                <EvaluacionForm
+                                    key={`eval-${idx}`}
+                                    index={idx}
+                                    evaluacion={evaluacion}
+                                    onUpdateEvaluacion={actualizarEvaluacion}
+                                    onUpdateJurado={actualizarJurado}
+                                    onBuscarJurado={buscarJuradoPorCedula}
+                                    onDelete={eliminarEvaluacion}
+                                />
+                            ))
+                        )}
                     </View>
 
-                    {evaluaciones.length === 0 ? (
-                        <View className="bg-gray-50 rounded-xl p-8 items-center border border-gray-200 border-dashed">
-                            <Ionicons name="clipboard-outline" size={48} color="#9CA3AF" />
-                            <Text className="text-gray-500 text-center mt-3">
-                                No hay evaluaciones agregadas
-                            </Text>
-                            <Text className="text-gray-400 text-sm text-center">
-                                Presiona "Agregar" para añadir jurados y notas
-                            </Text>
-                        </View>
-                    ) : (
-                        evaluaciones.map((evaluacion, idx) => (
-                            <EvaluacionForm
-                                key={`eval-${idx}`}
-                                index={idx}
-                                evaluacion={evaluacion}
-                                onUpdateEvaluacion={actualizarEvaluacion}
-                                onUpdateJurado={actualizarJurado}
-                                onBuscarJurado={buscarJuradoPorCedula}
-                                onDelete={eliminarEvaluacion}
-                            />
-                        ))
-                    )}
+                    {/* Botón Enviar */}
+                    <TouchableOpacity
+                        className="bg-cyan-200 py-4 rounded-xl items-center mt-4 mb-10 flex-row justify-center"
+                        onPress={handleSubmit}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#000000" />
+                        ) : (
+                            <Text className=" text-lg font-bold ml-2">Guardar</Text>
+                        )}
+                    </TouchableOpacity>
                 </View>
 
-                {/* Botón Enviar */}
-                <TouchableOpacity
-                    className="bg-yellow-500 py-4 rounded-xl items-center mt-4 mb-10 flex-row justify-center"
-                    onPress={handleSubmit}
-                    disabled={loading}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="#000000" />
-                    ) : (
-                        <>
-                            <Ionicons name="checkmark-circle" size={24} color="#000000" />
-                            <Text className="text-black text-lg font-bold ml-2">Guardar</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-            </View>
+                {/* Modales y loading... */}
 
-            {/* Modales y loading... */}
+                {/* Modal para múltiples estudiantes */}
+                <MultipleResultsModal
+                    visible={multipleEstudianteVisible}
+                    title="Seleccionar Estudiante"
+                    results={resultadosMultiplesEstudiantes}
+                    onSelect={usarEstudianteMultiple}
+                    onCancel={continuarConNuevoEstudiante}
+                />
 
-            {/* Modal para múltiples estudiantes */}
-            <MultipleResultsModal
-                visible={multipleEstudianteVisible}
-                title="Seleccionar Estudiante"
-                results={resultadosMultiplesEstudiantes}
-                onSelect={usarEstudianteMultiple}
-                onCancel={continuarConNuevoEstudiante}
-            />
+                {/* Modal para múltiples jurados */}
+                <MultipleResultsModal
+                    visible={multipleJuradoVisible}
+                    title="Seleccionar Jurado"
+                    results={resultadosMultiplesJurados}
+                    onSelect={usarJuradoMultiple}
+                    onCancel={continuarConNuevoJurado}
+                />
+                <ConfirmarDatosModal
+                    visible={modalEstudianteVisible}
+                    titulo="Estudiante"
+                    datos={resultadoEstudiante}
+                    onConfirmar={usarEstudianteExistente}
+                    onCancelar={continuarConNuevoEstudiante}
+                />
 
-            {/* Modal para múltiples jurados */}
-            <MultipleResultsModal
-                visible={multipleJuradoVisible}
-                title="Seleccionar Jurado"
-                results={resultadosMultiplesJurados}
-                onSelect={usarJuradoMultiple}
-                onCancel={continuarConNuevoJurado}
-            />
-            <ConfirmarDatosModal
-                visible={modalEstudianteVisible}
-                titulo="Estudiante"
-                datos={resultadoEstudiante}
-                onConfirmar={usarEstudianteExistente}
-                onCancelar={continuarConNuevoEstudiante}
-            />
+                <ConfirmarDatosModal
+                    visible={modalJuradoVisible}
+                    titulo="Jurado"
+                    datos={resultadoJurado}
+                    onConfirmar={usarJuradoExistente}
+                    onCancelar={continuarConNuevoJurado}
+                />
 
-            <ConfirmarDatosModal
-                visible={modalJuradoVisible}
-                titulo="Jurado"
-                datos={resultadoJurado}
-                onConfirmar={usarJuradoExistente}
-                onCancelar={continuarConNuevoJurado}
-            />
-
-            {(buscandoEstudiante || buscandoJurado) && (
-                <View className="absolute inset-0 bg-black/50 justify-center items-center">
-                    <ActivityIndicator size="large" color="#FFD700" />
-                    <Text className="text-white mt-3">Buscando...</Text>
-                </View>
-            )}
-        </ScrollView>
-
+                {(buscandoEstudiante || buscandoJurado) && (
+                    <View className="absolute inset-0 bg-cyan-600/50 justify-center items-center">
+                        <ActivityIndicator size="large" color="#FFD700" />
+                        <Text className="text-white mt-3">Buscando...</Text>
+                    </View>
+                )}
+            </ScrollView>
+        </KeyboardAwareScrollView>
     );
 }

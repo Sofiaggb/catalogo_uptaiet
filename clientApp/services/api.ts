@@ -45,6 +45,7 @@ export interface Tesis {
     id_tesis: number;
     titulo: string;
     resumen?: string; 
+    resumen_corto?: string; 
     anio_elaboracion?: number;  
     fecha_creacion: string;
     url_documento?: string;

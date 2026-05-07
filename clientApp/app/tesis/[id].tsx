@@ -90,7 +90,7 @@ export default function TesisDetailScreen() {
                 <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
                 <Text className="text-red-500 text-center mt-4 text-lg">{error || 'Tesis no encontrada'}</Text>
                 <TouchableOpacity
-                    className="mt-6 bg-yellow-500 px-6 py-3 rounded-xl"
+                    className="mt-6 bg-sky-600 px-6 py-3 rounded-xl"
                     onPress={() => router.back()}
                 >
                     <Text className="text-black font-bold">Volver</Text>
@@ -102,13 +102,13 @@ export default function TesisDetailScreen() {
     return (
         <ScrollView className="flex-1 bg-white">
             {/* Header */}
-            <View className="bg-black pt-16 pb-6 px-5">
+            <View className=" pt-16 pb-6 px-5">
                 <View className="flex-row items-center">
                     <TouchableOpacity onPress={() => router.back()} className="mr-3">
-                        <Ionicons name="arrow-back-outline" size={28} color="#FFD700" />
+                        <Ionicons name="arrow-back-outline" size={28} color="#0ea5e9" />
                     </TouchableOpacity>
                     <View className="flex-1">
-                        <Text className="text-yellow-500 text-2xl font-bold">Detalle de la Tesis</Text>
+                        <Text className="text-cyan-600 text-2xl font-bold">Detalles del proyecto</Text>
                     </View>
                 </View>
             </View>
@@ -122,8 +122,8 @@ export default function TesisDetailScreen() {
                     <View className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2">
                         <Text className="text-gray-600 text-sm">{tesis.nombre_carrera}</Text>
                     </View>
-                    <View className="bg-yellow-100 rounded-full px-3 py-1 mr-2 mb-2">
-                        <Text className="text-yellow-800 text-sm">{tesis.anio_elaboracion}</Text>
+                    <View className="bg-cyan-100 rounded-full px-3 py-1 mr-2 mb-2">
+                        <Text className="text-cyan-800 text-sm">{tesis.anio_elaboracion}</Text>
                     </View>
                 </View>
             </View>
@@ -176,7 +176,7 @@ export default function TesisDetailScreen() {
                                 <Text className="text-black font-semibold">{evaluacion.jurado.titulo_profesional} {evaluacion.jurado.nombre_completo}</Text>
                                 <Text className="text-gray-500 text-sm mt-1">Cédula: {evaluacion.jurado.cedula}</Text>
                             </View>
-                            <View className="bg-yellow-500 rounded-full px-3 py-1">
+                            <View className="bg-yellow-100 border border-yellow-200 rounded-full px-3 py-1">
                                 <Text className="text-black font-bold text-lg">{evaluacion.nota}</Text>
                             </View>
                         </View>
@@ -192,11 +192,11 @@ export default function TesisDetailScreen() {
             <View className="px-5 mb-5 gap-3">
                 {/* Descargar PDF */}
                   <TouchableOpacity
-                    className="bg-black py-4 rounded-xl flex-row items-center justify-center"
+                    className="bg-cyan-500 py-4 rounded-xl flex-row items-center justify-center"
                     onPress={abrirDocumento}
                 >
-                    <Ionicons name="download-outline" size={24} color="#FFD700" />
-                    <Text className="text-yellow-500 font-bold text-lg ml-2">
+                    <Ionicons name="download-outline" size={24} color="#FFFFFF" />
+                    <Text className="text-white font-bold text-lg ml-2">
                         {tesis.url_documento ? 'Descargar PDF' : 'Documento no disponible'}
                     </Text>
                 </TouchableOpacity>

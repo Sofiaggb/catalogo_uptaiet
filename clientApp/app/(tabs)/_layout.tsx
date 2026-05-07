@@ -9,13 +9,13 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#FFD700',
         tabBarInactiveTintColor: '#FFFFFF',
         tabBarStyle: {
-          backgroundColor: '#000000',
+          backgroundColor: '#06b6d4',
           borderTopColor: '#FFD700',
           borderTopWidth: 2,
-          height: 60,
+          height: 70,
         },
-        headerStyle: { backgroundColor: '#000000' },
-        headerTitleStyle: { color: '#FFD700' },
+        headerStyle: { backgroundColor: '#FFFFFF' },
+        headerTitleStyle: { color: '#0891b2' },
       }}
     >
       <Tabs.Screen
@@ -30,7 +30,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="tesis/index"
         options={{
-          title: 'Tesis',
+          title: 'Proyectos',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="document-text-outline" size={size} color={color} />
           ),

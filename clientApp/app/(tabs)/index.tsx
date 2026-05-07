@@ -7,7 +7,7 @@ export default function HomeScreen() {
     return (
         <ScrollView className="flex-1 bg-white">
             {/* Header */}
-            <View className="bg-black pt-1 pb-6 px-5">
+            <View className=" pt-1 pb-6 px-5">
                 <View className="flex-row  items-center">
                     <Image
                         source={require('../../assets/images/logo_uptaiet.png')}
@@ -15,20 +15,20 @@ export default function HomeScreen() {
                         resizeMode="contain"
                     />
                     <View>
-                        <Text className="text-yellow-500 text-2xl font-bold">UPTAIET</Text>
-                        <Text className="text-white text-sm">Catálogo Digital</Text>
+                        <Text className="text-cyan-600 text-2xl font-bold">UPTAIET</Text>
+                        <Text className="text-cyan-600  text-sm">Catálogo Digital</Text>
                     </View>
                 </View>
             </View>
 
             {/* Banner principal */}
-            <View className="bg-yellow-500 mx-5 mt-5 rounded-2xl p-6">
-                <Text className="text-black text-2xl font-bold">Bienvenido</Text>
-                <Text className="text-black text-base mt-2">
-                    Explora nuestro catálogo de tesis, proyectos y recursos académicos
+            <View className="bg-cyan-200 mx-5 mt-5 rounded-2xl p-6">
+                <Text className=" text-2xl font-bold">Bienvenido</Text>
+                <Text className=" text-base mt-2">
+                    Explora nuestro catálogo de proyectos y recursos académicos
                 </Text>
-                <TouchableOpacity className="bg-black rounded-full px-6 py-3 mt-4 self-start">
-                    <Text className="text-yellow-500 font-bold">Explorar →</Text>
+                <TouchableOpacity className="bg-sky-700 rounded-full px-6 py-3 mt-4 self-start">
+                    <Text className="text-white font-bold">Explorar →</Text>
                 </TouchableOpacity>
             </View>
 
@@ -37,21 +37,21 @@ export default function HomeScreen() {
                 <Text className="text-black text-xl font-bold mb-4">Accesos Rápidos</Text>
                 <View className="flex-row flex-wrap justify-between gap-4">
 
-                    <QuickCard title="Tesis" iconName="document-text-outline"
+                    <QuickCard title="Proyectos" iconName="document-text-outline"
                         href="/tesis"
-                        colorVariant="black" />
-
-                    <QuickCard title="Carreras" iconName="school-outline"
-                        href="/carreras"
-                        colorVariant="yellow" />
+                        colorVariant="blue" />
 
                     <QuickCard title="Documentos" iconName="library-outline"
                         href="/docs"
-                        colorVariant="black" />
+                        colorVariant="blue" />
+
+                    <QuickCard title="Carreras" iconName="school-outline"
+                        href="/carreras"
+                        colorVariant="blue" />
 
                     <QuickCard title="Mi Perfil" iconName="person-circle-outline"
                         href="/auth/perfil"
-                        colorVariant="yellow" />
+                        colorVariant="blue" />
 
                 </View>
             </View>
@@ -59,10 +59,10 @@ export default function HomeScreen() {
             {/* Últimas tesis */}
             <View className="px-5 mt-6 pb-10">
                 <View className="flex-row justify-between items-center mb-4">
-                    <Text className="text-black text-xl font-bold">Últimas Tesis</Text>
-                    <Link href="/tesis/crear/" asChild>
+                    <Text className="text-black text-xl font-bold">Últimos proyectos</Text>
+                    <Link href="/tesis" asChild>
                         <TouchableOpacity>
-                            <Text className="text-yellow-600">Ver todas →</Text>
+                            <Text className="text-sky-600">Ver todos →</Text>
                         </TouchableOpacity>
                     </Link>
                 </View>
@@ -88,13 +88,13 @@ type QuickCardProps = {
     title: string;
     iconName: keyof typeof Ionicons.glyphMap;
     href: Href;
-    colorVariant: 'black' | 'yellow';
+    colorVariant: 'white' | 'blue';
 };
 
 function QuickCard({ title, iconName, href, colorVariant }: QuickCardProps) {
-    const bgColor = colorVariant === 'yellow' ? 'bg-yellow-500' : 'bg-black';
-    const textColor = colorVariant === 'yellow' ? 'text-black' : 'text-white';
-    const iconColor = colorVariant === 'yellow' ? '#000000' : '#FFFFFF';
+    const bgColor = colorVariant === 'blue' ? 'bg-cyan-600' : 'bg-sky-300';
+    const textColor = colorVariant === 'blue' ? 'text-white' : 'text-white';
+    const iconColor = colorVariant === 'blue' ? '#FFFFFF' : '#FFFFFF';
 
     return (
         <Link href={href} asChild>
@@ -113,7 +113,7 @@ function TesisCard({ titulo, autores, carrera }: any) {
             <Text className="text-gray-600 text-sm mt-1">{autores}</Text>
             <Text className="text-gray-500 text-xs mt-1">{carrera}</Text>
             <TouchableOpacity className="mt-3">
-                <Text className="text-yellow-600 font-semibold">Ver detalles →</Text>
+                <Text className="text-sky-600 font-semibold">Ver detalles →</Text>
             </TouchableOpacity>
         </View>
     );

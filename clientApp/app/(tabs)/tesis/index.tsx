@@ -23,13 +23,10 @@ export default function TesisListScreen() {
     const [carreras, setCarreras] = useState<Carrera[]>([]);
 
     // ============================================
-    // FILTROS MULTI-SELECT
+    // FILTROS
     // ============================================
 
-    // Filtro de carreras (múltiples IDs)
     const [carrerasSeleccionadas, setCarrerasSeleccionadas] = useState<number[]>([]);
-
-    // Filtro de años (disponibles dinámicamente)
     const [aniosDisponibles, setAniosDisponibles] = useState<number[]>([]);
     const [aniosSeleccionados, setAniosSeleccionados] = useState<number[]>([]);
 
@@ -96,7 +93,7 @@ export default function TesisListScreen() {
         }
 
         const result = await listarTesis(params);
-        // console.log('resultado tesis >>>> ',result)
+        console.log('resultado tesis >>>> ',result)
         if (result.success) {
             if (page === 1) {
                 setTesis(result.data);
@@ -158,14 +155,14 @@ export default function TesisListScreen() {
         >
             <Text className="text-black font-bold text-lg">{item.titulo}</Text>
             <Text className="text-gray-600 text-sm mt-1" numberOfLines={2}>
-                { item.resumen}
+                { item.resumen_corto}
             </Text>
             <View className="flex-row flex-wrap mt-2">
                 <View className="bg-gray-200 rounded-full px-3 py-1 mr-2 mb-1">
                     <Text className="text-xs text-gray-700">{item.nombre_carrera}</Text>
                 </View>
                 {item.promedio_nota && (
-                    <View className="bg-yellow-500 rounded-full px-3 py-1">
+                    <View className="bg-yellow-400 rounded-full px-3 py-1">
                         <Text className="text-xs text-black font-bold">
                             <Ionicons name='star' color='#FFFFFF' />
                             {item.promedio_nota}
@@ -183,7 +180,7 @@ export default function TesisListScreen() {
         return (
             <View className="flex-1 bg-white justify-center items-center">
                 <ActivityIndicator size="large" color="#FFD700" />
-                <Text className="text-gray-500 mt-4">Cargando tesis...</Text>
+                <Text className="text-gray-500 mt-4">Cargando proyectos...</Text>
             </View>
         );
     }
@@ -191,12 +188,12 @@ export default function TesisListScreen() {
     return (
         <View className="flex-1 bg-white">
             {/* ==================== HEADER ==================== */}
-            <View className="bg-black pt-2 pb-4 px-5">
-                <Text className="text-white text-sm">Explora todos los trabajos de investigación</Text>
+            <View className="bg-cyan-100 pt-2 pb-4 px-5">
+                <Text className=" text-sm">Explora todos los trabajos de investigación</Text>
 
                 {/* Contador de resultados */}
                 {!loading && totalResultados > 0 && (
-                    <Text className="text-gray-400 text-xs mt-2">
+                    <Text className=" text-xs mt-2">
                         {totalResultados} resultado{totalResultados !== 1 ? 's' : ''}
                     </Text>
                 )}
@@ -224,7 +221,6 @@ export default function TesisListScreen() {
                 </View>
             </View>
 
-            {/* Badges de filtros activos */}
             {/* Badges de filtros activos */}
             {totalFiltrosActivos > 0 && (
                 <View className="px-5 pb-3 mt-2">
@@ -331,7 +327,7 @@ export default function TesisListScreen() {
                 </ScrollView>
             </View>
 
-            {/* ==================== LISTA DE TESIS ==================== */}
+            {/* ==================== LISTA DE PROYECTOS ==================== */}
             <FlatList
                 data={tesis}
                 keyExtractor={(item) => item.id_tesis.toString()}
@@ -345,7 +341,7 @@ export default function TesisListScreen() {
                         <Ionicons name="document-text-outline" size={64} color="#D1D5DB" />
                         <Text className="text-gray-500 text-center mt-4">No hay tesis disponibles</Text>
                         <Text className="text-gray-400 text-center text-sm mt-2">
-                            Prueba con otros filtros o crea una nueva tesis
+                            Prueba con otros filtros
                         </Text>
                     </View>
                 )}
@@ -397,7 +393,7 @@ export default function TesisListScreen() {
                                 <Text className="text-center text-gray-700">Limpiar todo</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                className="flex-1 bg-yellow-500 py-3 rounded-xl"
+                                className="flex-1 bg-cyan-300 py-3 rounded-xl"
                                 onPress={() => setModalCarrerasVisible(false)}
                             >
                                 <Text className="text-center text-black font-bold">
@@ -449,7 +445,7 @@ export default function TesisListScreen() {
                                 <Text className="text-center text-gray-700">Limpiar todo</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                className="flex-1 bg-yellow-500 py-3 rounded-xl"
+                                className="flex-1 bg-cyan-300 py-3 rounded-xl"
                                 onPress={() => setModalAniosVisible(false)}
                             >
                                 <Text className="text-center text-black font-bold">
@@ -461,9 +457,9 @@ export default function TesisListScreen() {
                 </View>
             </Modal>
 
-            {/* Botón Flotante (FAB) */}
+            {/* Botón Flotante para crear*/}
             <Pressable
-                className="absolute bottom-6 right-6 bg-yellow-500 rounded-full p-4 shadow-lg"
+                className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
                 onPress={() => router.push('/tesis/create')}
             >
                 <Ionicons name="add" size={28} color="#000000" />

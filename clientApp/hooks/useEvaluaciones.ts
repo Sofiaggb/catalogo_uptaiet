@@ -15,6 +15,7 @@ interface Jurado {
 }
 
 interface Evaluacion {
+    id_evaluacion?: number;
     nota: string;
     fecha_evaluacion: string;
     comentarios: string;
@@ -32,7 +33,7 @@ interface ResultadoBusquedaJurado {
 export const useEvaluaciones = () => {
     // Estado principal: lista de evaluaciones
     const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([
-        {
+        {   id_evaluacion: undefined,
             nota: '',
             fecha_evaluacion: new Date().toISOString().split('T')[0],
             comentarios: '',
@@ -62,7 +63,7 @@ export const useEvaluaciones = () => {
     const agregarEvaluacion = () => {
         setEvaluaciones([
             ...evaluaciones,
-            {
+            {   id_evaluacion: undefined,
                 nota: '',
                 fecha_evaluacion: new Date().toISOString().split('T')[0],
                 comentarios: '',
@@ -184,7 +185,7 @@ export const useEvaluaciones = () => {
     // Limpiar todas las evaluaciones
     const limpiarEvaluaciones = () => {
         setEvaluaciones([
-            {
+            {   id_evaluacion: undefined, 
                 nota: '',
                 fecha_evaluacion: new Date().toISOString().split('T')[0],
                 comentarios: '',
@@ -216,6 +217,7 @@ export const useEvaluaciones = () => {
             }
 
             return {
+                id_evaluacion: ev.id_evaluacion,
                 nota: parseFloat(ev.nota),
                 fecha_evaluacion: ev.fecha_evaluacion,
                 comentarios: ev.comentarios || undefined,

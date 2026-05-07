@@ -1,5 +1,7 @@
 // src/controllers/tesisController.js
 import { pool } from '../config/db.js';
+import fs from 'fs';
+import path from 'path';
 
 export const tesisController = {
   createTesis: async (req, res) => {
@@ -39,10 +41,6 @@ export const tesisController = {
         }
         return res.status(resultado.status || 400).json(resultado);
       }
-
-      // Agregar información del archivo a la respuesta
-      resultado.data.archivo_subido = !!req.file;
-      resultado.data.ruta_archivo = url_documento; 
 
       // Usar el status que viene de la función
       res.status(resultado.status || (resultado.success ? 201 : 400)).json(resultado);
@@ -182,18 +180,15 @@ export const tesisController = {
       }
       
       // Si se reemplazó el archivo, eliminar el anterior
-      if (resultado.data.archivo_reemplazado && oldFilePath) {
+      if (resultado.success && url_documento && oldFilePath) {
+        // console.log( 'url_documento && oldFilePath>>>> ',url_documento, oldFilePath)
         const oldFullPath = path.join(process.cwd(), oldFilePath);
         if (fs.existsSync(oldFullPath)) {
           fs.unlinkSync(oldFullPath);
           console.log('Archivo anterior eliminado:', oldFilePath);
         }
       }
-      
-      // Agregar información del archivo a la respuesta
-      resultado.data.nuevo_archivo_subido = !!req.file;
-      resultado.data.ruta_nuevo_archivo = url_documento;
-      
+          
       res.status(resultado.status || 200).json(resultado);
       
     } catch (error) {

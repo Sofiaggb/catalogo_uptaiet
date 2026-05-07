@@ -35,6 +35,14 @@ export default function RootLayout() {
             headerTitleStyle: { color: '#FFD700' }
           }} 
         />
+
+        <Stack.Screen 
+            name="tesis/edit/[id]" 
+            options={{ 
+                presentation: 'modal',
+                title: 'Editar Tesis'
+            }} 
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
