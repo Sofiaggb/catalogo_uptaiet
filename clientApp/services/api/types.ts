@@ -1,13 +1,19 @@
 // services/api/types.ts
 
-// Entidades base
+export interface TipoCarrera {
+    id_tipo_carrera: number;
+    nombre: string;
+    descripcion?: string;
+}
+
 export interface Carrera {
     id_carrera: number;
     nombre: string;
     descripcion?: string;
     id_tipo_carrera?: number;
+    tipo_carrera?: TipoCarrera;
+    fecha_creacion?: string;
 }
-
 // export interface Estudiante {
 //     id_estudiante: number;
 //     nombre_completo: string;

@@ -20,4 +20,22 @@ export const carrerasApi = {
         const response = await apiClient.get<{ success: boolean; data: any[] }>('/tipos-carrera');
         return response.success ? response.data : [];
     },
+
+    // Crear nueva carrera
+    create: async (data: Carrera): Promise<Carrera | null> => {
+        const response = await apiClient.post<{ success: boolean; data: Carrera }>('/carreras', data);
+        return response.success ? response.data : null;
+    },
+
+    // Actualizar carrera
+    update: async (id: number, data: Carrera): Promise<Carrera | null> => {
+        const response = await apiClient.put<{ success: boolean; data: Carrera }>(`/carreras/${id}`, data);
+        return response.success ? response.data : null;
+    },
+
+    // Eliminar carrera (soft delete)
+    delete: async (id: number): Promise<boolean> => {
+        const response = await apiClient.delete<{ success: boolean }>(`/carreras/${id}`);
+        return response.success;
+    },
 };

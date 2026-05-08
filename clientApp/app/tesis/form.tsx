@@ -8,6 +8,7 @@ import { useEstudiantes } from '@/hooks/useEstudiantes';
 import { useEvaluaciones } from '@/hooks/useEvaluaciones';
 import { carrerasApi } from '@/services/api/endpoints/carreras';
 import { tesisApi } from '@/services/api/endpoints/tesis';
+import { Carrera } from '@/services/api/types';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { router, useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,10 +17,6 @@ import { ActivityIndicator, Alert, ScrollView, Text, TextInput, TouchableOpacity
 import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 // Interfaces locales para el estado del formulario
-interface Carrera {
-    id_carrera: number;
-    nombre: string;
-}
 // recibe las props directamente
 interface TesisFormProps {
     mode?: 'create' | 'edit';
