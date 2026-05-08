@@ -1,6 +1,6 @@
-// app/(tabs)/carreras/create.tsx
+// app/carreras/form.tsx
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -13,15 +13,21 @@ import {
 } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { carrerasApi } from '@/services/api/endpoints/carreras';
-import type { TipoCarrera } from '@/services/api/types';
+import type { Carrera, TipoCarrera } from '@/services/api/types';
 
-export default function CreateCarreraScreen() {
+interface CarreraFormProps {
+    mode: 'create' | 'edit';
+}
+
+export default function CarreraForm({ mode }: CarreraFormProps) {
+    const { id } = useLocalSearchParams<{ id?: string }>();
+    const isEditing = mode === 'edit';
     const [loading, setLoading] = useState(false);
-    const [cargandoTipos, setCargandoTipos] = useState(true);
-    const [tiposCarrera, setTiposCarrera] = useState<TipoCarrera[]>([]);
+    const [loadingData, setLoadingData] = useState(isEditing);
     
-    // Dropdown
+    // Dropdown tipos de carrera
     const [open, setOpen] = useState(false);
+    const [tiposCarrera, setTiposCarrera] = useState<TipoCarrera[]>([]);
     const [selectedTipo, setSelectedTipo] = useState<number | null>(null);
     
     // Formulario
@@ -34,20 +40,35 @@ export default function CreateCarreraScreen() {
         nombre: '',
     });
 
+    // Cargar tipos de carrera
     useEffect(() => {
         cargarTipos();
     }, []);
 
+    // Cargar datos si es edición
+    useEffect(() => {
+        if (isEditing && id) {
+            cargarDatos();
+        }
+    }, [isEditing, id]);
+
     const cargarTipos = async () => {
         const tipos = await carrerasApi.getTipos();
         setTiposCarrera(tipos);
-        setCargandoTipos(false);
     };
 
-    const dropdownItems = tiposCarrera.map(t => ({
-        label: t.nombre,
-        value: t.id_tipo_carrera
-    }));
+    const cargarDatos = async () => {
+        setLoadingData(true);
+        const carrera = await carrerasApi.getById(Number(id));
+        if (carrera) {
+            setForm({
+                nombre: carrera.nombre || '',
+                descripcion: carrera.descripcion || '',
+            });
+            setSelectedTipo(carrera.id_tipo_carrera || null);
+        }
+        setLoadingData(false);
+    };
 
     const handleSubmit = async () => {
         // Validar
@@ -57,33 +78,61 @@ export default function CreateCarreraScreen() {
         }
 
         setLoading(true);
-        const result = await carrerasApi.create({
-            nombre: form.nombre,
-            descripcion: form.descripcion || undefined,
-            id_tipo_carrera: selectedTipo || undefined
-        });
+        
+        let result;
+        // if (isEditing && id) {
+        //     result = await carrerasApi.update(Number(id), {
+        //         nombre: form.nombre,
+        //         descripcion: form.descripcion || undefined,
+        //         id_tipo_carrera: selectedTipo || undefined
+        //     });
+        // } else {
+        //     result = await carrerasApi.create({
+        //         nombre: form.nombre,
+        //         descripcion: form.descripcion || undefined,
+        //         id_tipo_carrera: selectedTipo || undefined
+        //     });
+        // }
 
         if (result) {
-            Alert.alert('Éxito', 'Carrera creada correctamente', [
+            Alert.alert('Éxito', `Carrera ${isEditing ? 'actualizada' : 'creada'} correctamente`, [
                 { text: 'OK', onPress: () => router.back() }
             ]);
         } else {
-            Alert.alert('Error', 'No se pudo crear la carrera');
+            Alert.alert('Error', `No se pudo ${isEditing ? 'actualizar' : 'crear'} la carrera`);
         }
         setLoading(false);
     };
 
+    const dropdownItems = tiposCarrera.map(t => ({
+        label: t.nombre,
+        value: t.id_tipo_carrera
+    }));
+
+    if (loadingData) {
+        return (
+            <View className="flex-1 bg-white justify-center items-center">
+                <ActivityIndicator size="large" color="#3B82F6" />
+                <Text className="text-gray-500 mt-4">Cargando datos...</Text>
+            </View>
+        );
+    }
+
     return (
-        <ScrollView className="flex-1 bg-white">
+        <ScrollView className="flex-1 ">
             {/* Header */}
-            <View className="bg-black pt-16 pb-6 px-5">
+            <View className=" pt-6 pb-6 px-5">
                 <View className="flex-row items-center">
                     <TouchableOpacity onPress={() => router.back()} className="mr-3">
-                        <Ionicons name="arrow-back-outline" size={28} color="#FFD700" />
+                        <Ionicons name="arrow-back-outline" size={28} color="#0ea5e8" />
                     </TouchableOpacity>
                     <View>
-                        <Text className="text-yellow-500 text-2xl font-bold">Crear Carrera</Text>
-                        <Text className="text-white text-sm">Completa los datos de la nueva carrera</Text>
+                        <Text className="text-cyan-600 text-2xl font-bold">
+                            {isEditing ? 'Editar Carrera' : 'Crear Carrera'}
+                        </Text>
+                        <Text className="text-sky-400 text-sm">
+                            {isEditing ? 'Modifica los datos de la carrera' : 'Completa los datos de la nueva carrera'}
+                        </Text>
                     </View>
                 </View>
             </View>
@@ -112,30 +161,26 @@ export default function CreateCarreraScreen() {
 
                 {/* Tipo de carrera */}
                 <Text className="text-base font-semibold text-gray-700 mb-2">Tipo de carrera</Text>
-                {cargandoTipos ? (
-                    <ActivityIndicator size="small" color="#3B82F6" />
-                ) : (
-                    <DropDownPicker
-                        open={open}
-                        value={selectedTipo}
-                        items={dropdownItems}
-                        setOpen={setOpen}
-                        setValue={setSelectedTipo}
-                        placeholder="Selecciona un tipo"
-                        searchable={true}
-                        searchPlaceholder="🔍 Buscar tipo..."
-                        listMode="MODAL"
-                        style={{
-                            backgroundColor: '#FFFFFF',
-                            borderColor: '#D1D5DB',
-                            borderRadius: 8,
-                        }}
-                        dropDownContainerStyle={{
-                            backgroundColor: '#FFFFFF',
-                            borderColor: '#D1D5DB',
-                        }}
-                    />
-                )}
+                <DropDownPicker
+                    open={open}
+                    value={selectedTipo}
+                    items={dropdownItems}
+                    setOpen={setOpen}
+                    setValue={setSelectedTipo}
+                    placeholder="Selecciona un tipo"
+                    searchable={true}
+                    searchPlaceholder="🔍 Buscar tipo..."
+                    listMode="MODAL"
+                    style={{
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#D1D5DB',
+                        borderRadius: 8,
+                    }}
+                    dropDownContainerStyle={{
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#D1D5DB',
+                    }}
+                />
 
                 {/* Descripción */}
                 <Text className="text-base font-semibold text-gray-700 mb-2 mt-4">Descripción</Text>
@@ -159,7 +204,9 @@ export default function CreateCarreraScreen() {
                     {loading ? (
                         <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                        <Text className="text-white text-lg font-bold">Crear Carrera</Text>
+                        <Text className="text-white text-lg font-bold">
+                            {isEditing ? 'Actualizar Carrera' : 'Crear Carrera'}
+                        </Text>
                     )}
                 </TouchableOpacity>
             </View>

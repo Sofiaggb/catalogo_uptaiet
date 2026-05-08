@@ -12,10 +12,13 @@ const getApiUrl = (): string => {
         // Android Emulator
         if (Platform.OS === 'android') {
             return 'http://10.0.2.2:3000/api';
+
         }
         // iOS Emulator
         if (Platform.OS === 'ios') {
-            return 'http://10.8.1.7:3000/api';
+            return 'http://192.168.0.106:3000/api';
+
+            // return 'http://10.8.1.7:3000/api';
         }
         // Web
         return 'http://localhost:3000/api';

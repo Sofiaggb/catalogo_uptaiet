@@ -1,4 +1,4 @@
-// app/(tabs)/carreras/index.tsx
+// app/carreras/index.tsx - VERSIÓN CON BOTÓN DE VOLVER
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -24,7 +24,7 @@ const CarreraCard = ({ carrera, onPress }: { carrera: Carrera; onPress: () => vo
     >
         <View className="flex-row justify-between items-start">
             <View className="flex-1">
-                <Text className="text-black font-bold text-lg">{carrera.nombre}</Text>
+                <Text className=" font-bold text-lg">{carrera.nombre}</Text>
                 {carrera.descripcion && (
                     <Text className="text-gray-500 text-sm mt-1" numberOfLines={2}>
                         {carrera.descripcion}
@@ -96,12 +96,22 @@ export default function CarrerasListScreen() {
 
     return (
         <View className="flex-1 bg-white">
-            {/* Header */}
-            <View className="pt-12 pb-4 px-5">
-                <Text className="text-cyan-500 text-center text-2xl font-bold">Carreras</Text>
-                <Text className="text-cyan-400 text-sm">Explora todas las carreras disponibles</Text>
-            </View>
+            {/* ==================== HEADER CON BOTÓN VOLVER ==================== */}
+            <View className=" pt-16 pb-4 px-5">
+                <View className="flex-row items-center">
+                    <TouchableOpacity onPress={() => router.back()} className="w-10">
+                        <Ionicons name="arrow-back-outline" size={28} color="#06b6d4" />
+                    </TouchableOpacity>
 
+                    <View className="flex-1 flex-row items-center justify-center gap-2">
+                        <Text className="text-cyan-600 text-xl font-bold">
+                            Carreras
+                        </Text>
+                    </View>
+
+                    <View className="w-10" />
+                </View>
+            </View>
             {/* Buscador */}
             <View className="px-5 py-3">
                 <View className="flex-row items-center bg-gray-100 rounded-xl">
@@ -160,10 +170,10 @@ export default function CarrerasListScreen() {
 
             {/* Botón flotante para crear */}
             <Pressable
-                className="absolute bottom-6 right-6 bg-blue-500 rounded-full p-4 shadow-lg"
+                className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
                 onPress={() => router.push('/carreras/create')}
             >
-                <Ionicons name="add" size={28} color="#FFFFFF" />
+                <Ionicons name="add" size={28} color="#00000" />
             </Pressable>
         </View>
     );

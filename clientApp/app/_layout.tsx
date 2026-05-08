@@ -16,32 +16,48 @@ export default function RootLayout() {
       >
         {/* LAS TABS - grupo (tabs) */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        
+
         {/* PANTALLAS MODALES (fuera de tabs) */}
-        <Stack.Screen 
-          name="tesis/create" 
-          options={{ 
+        <Stack.Screen
+          name="tesis/create"
+          options={{
             title: 'Crear Tesis',
             presentation: 'modal'
-          }} 
+          }}
         />
-        
-          {/* Detalle de tesis (dentro de tabs pero se maneja automáticamente) */}
-        <Stack.Screen 
-          name="tesis/[id]" 
-          options={{ 
+
+        {/* Detalle de tesis (dentro de tabs pero se maneja automáticamente) */}
+        <Stack.Screen
+          name="tesis/[id]"
+          options={{
             title: 'Detalle de Tesis',
             headerStyle: { backgroundColor: '#000000' },
             headerTitleStyle: { color: '#FFD700' }
-          }} 
+          }}
         />
 
-        <Stack.Screen 
-            name="tesis/edit/[id]" 
-            options={{ 
-                presentation: 'modal',
-                title: 'Editar Tesis'
-            }} 
+        <Stack.Screen
+          name="tesis/edit/[id]"
+          options={{
+            presentation: 'modal',
+            title: 'Editar Tesis'
+          }}
+        />
+
+        <Stack.Screen
+          name="carreras/create"
+          options={{
+            presentation: 'modal',
+            title: 'Crear Carrera'
+          }}
+        />
+
+        <Stack.Screen
+          name="carreras/edit/[id]"
+          options={{
+            presentation: 'modal',
+            title: 'Editar Carrera'
+          }}
         />
       </Stack>
       <StatusBar style="auto" />
