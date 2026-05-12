@@ -59,6 +59,22 @@ export default function RootLayout() {
             title: 'Editar Carrera'
           }}
         />
+
+        <Stack.Screen
+          name="materias/create"
+          options={{
+            presentation: 'modal',
+            title: 'Crear Carrera'
+          }}
+        />
+
+        <Stack.Screen
+          name="materias/edit/[id]"
+          options={{
+            presentation: 'modal',
+            title: 'Editar Carrera'
+          }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -96,11 +96,16 @@ CREATE TABLE catalogo.carrera (
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
 
+
+/*
+alter table catalogo.materia
+drop column  id_carrera
+drop column  codigo
+*/
 CREATE TABLE catalogo.materia (
     id_materia SERIAL PRIMARY KEY,
     nombre VARCHAR(200) NOT NULL,
-    codigo VARCHAR(20) UNIQUE,
-    id_carrera INT NOT NULL REFERENCES catalogo.carrera(id_carrera) ON DELETE CASCADE,
+    --id_carrera INT NOT NULL REFERENCES catalogo.carrera(id_carrera) ON DELETE CASCADE,
 	fecha_creacion timestamp DEFAULT NOW(),	
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 	fecha_eliminacion timestamp,	

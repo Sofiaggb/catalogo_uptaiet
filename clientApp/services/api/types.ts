@@ -116,3 +116,22 @@ export interface PaginatedResponse<T> {
         pages: number;
     };
 }
+
+// materias
+
+export interface Materia {
+    id_materia: number;
+    nombre: string;
+}
+
+export interface CrearMateriaInput {
+    nombre: string;
+}
+
+export interface ListarMateriasParams {
+    id_carrera?: number;
+    semestre?: number;
+    buscar?: string;
+    limit?: number;
+    page?: number;
+}

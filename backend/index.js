@@ -23,7 +23,8 @@ console.log('Ruta de uploads:', path.join(__dirname, '../uploads/tesis'));
 // Importar rutas
 import carreraRoutes from './src/routes/carreraRoutes.js';
 import tesisRoutes from './src/routes/tesisRoutes.js';
-
+import materiaRoutes from './src/routes/materiaRoutes.js';
+ 
 // Middlewares
 // Configuración de cors
 app.use(cors({
@@ -39,6 +40,8 @@ app.use(morgan('dev'));  // 'dev' muestra: POST /api/tesis 200 15ms - 200b
 // Rutas
 app.use('/api/carreras', carreraRoutes);
 app.use('/api/tesis', tesisRoutes);
+app.use('/api/materias', materiaRoutes);
+
 
 // Ruta de prueba
 app.get('/', (req, res) => {
