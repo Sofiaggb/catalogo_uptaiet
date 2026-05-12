@@ -33,7 +33,7 @@ const CarreraCard = ({ carrera, onPress }: { carrera: Carrera; onPress: () => vo
                 {carrera.tipo_carrera && (
                     <View className="mt-2">
                         <View className="bg-blue-100 self-start rounded-full px-3 py-1">
-                            <Text className="text-blue-700 text-xs">{carrera.tipo_carrera.nombre}</Text>
+                            <Text className="text-blue-700 text-xs">{carrera.tipo_carrera}</Text>
                         </View>
                     </View>
                 )}
@@ -62,6 +62,7 @@ export default function CarrerasListScreen() {
     const cargarCarreras = async () => {
         setLoading(true);
         const data = await carrerasApi.getAll();
+        // console.log('data carrear',data)
         setCarreras(data);
         setFilteredCarreras(data);
         setLoading(false);

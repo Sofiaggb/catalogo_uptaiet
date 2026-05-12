@@ -132,7 +132,7 @@ export const tesisController = {
     const { titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones} = req.body;
     let url_documento = null;
     let oldFilePath = null;
-    console.log(titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones)
+    // console.log(titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones)
     
     // Procesar nuevo archivo si existe
     if (req.file) {

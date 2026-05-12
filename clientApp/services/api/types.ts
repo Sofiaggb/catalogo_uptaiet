@@ -1,4 +1,3 @@
-// services/api/types.ts
 
 export interface TipoCarrera {
     id_tipo_carrera: number;
@@ -6,20 +5,30 @@ export interface TipoCarrera {
     descripcion?: string;
 }
 
+export interface TipoTrabajo {
+    id_tipo_trabajo: number;
+    nombre: string;
+}
+
 export interface Carrera {
-    id_carrera: number;
+    id_carrera: number;  
     nombre: string;
     descripcion?: string;
     id_tipo_carrera?: number;
-    tipo_carrera?: TipoCarrera;
-    fecha_creacion?: string;
+    tipo_carrera?: string; 
+    id_tipo_trabajo?: number;   
+    tipo_trabajo?: string; 
 }
-// export interface Estudiante {
-//     id_estudiante: number;
-//     nombre_completo: string;
-//     cedula: string;
-//     email?: string;
-// }
+
+// Para creación/edición
+export interface CrearCarreraInput {
+    id_carrera?: number | null;  
+    nombre: string;
+    descripcion?: string;
+    id_tipo_carrera?: number | null;
+    id_tipo_trabajo?: number | null;  
+}
+
 
 export interface Estudiante {
     id_estudiante?: number;
@@ -28,20 +37,6 @@ export interface Estudiante {
     email: string;
     esExistente: boolean;
 }
-// export interface Jurado {
-//     id_jurado: number;
-//     nombre_completo: string;
-//     cedula: string;
-//     titulo_profesional?: string;
-// }
-
-// export interface Evaluacion {
-//     id_evaluacion: number;
-//     nota: number;
-//     fecha_evaluacion: string;
-//     comentarios?: string;
-//     jurado: Jurado;
-// }
 
 export interface Jurado {
     id_jurado?: number;

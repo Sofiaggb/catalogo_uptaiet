@@ -1,7 +1,7 @@
 // app/carreras/form.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { carrerasApi } from '@/services/api/endpoints/carreras';
-import type { Carrera, TipoCarrera } from '@/services/api/types';
+import type { Carrera, TipoCarrera, TipoTrabajo } from '@/services/api/types';
+import { validateRequired } from '../helpers/validations';
 
 interface CarreraFormProps {
     mode: 'create' | 'edit';
@@ -24,21 +25,27 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
     const isEditing = mode === 'edit';
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(isEditing);
-    
+
     // Dropdown tipos de carrera
     const [open, setOpen] = useState(false);
     const [tiposCarrera, setTiposCarrera] = useState<TipoCarrera[]>([]);
     const [selectedTipo, setSelectedTipo] = useState<number | null>(null);
-    
+    const [tiposTrabajo, setTiposTrabajo] = useState<TipoTrabajo[]>([]);
+    const [selectedTipoTrabajo, setSelectedTipoTrabajo] = useState<number | null>(null);
+    const [cargandoTipos, setCargandoTipos] = useState(false);
+    const [openTipoTrabajo, setOpenTipoTrabajo] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
     // Formulario
     const [form, setForm] = useState({
         nombre: '',
         descripcion: '',
     });
-    
-    const [errors, setErrors] = useState({
-        nombre: '',
-    });
+
+    const [fieldErrors, setFieldErrors] = useState<{
+        nombre?: string;
+        tipo_carrera?: string;
+        tipo_trabajo?: string;
+    }>({});
 
     // Cargar tipos de carrera
     useEffect(() => {
@@ -51,6 +58,16 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
             cargarDatos();
         }
     }, [isEditing, id]);
+
+    useEffect(() => {
+        if (!isInitialLoad && selectedTipo) {
+            cargarTiposTrabajo(selectedTipo);
+        } else {
+            setTiposTrabajo([]);
+            setSelectedTipoTrabajo(null);
+        }
+    }, [selectedTipo, isInitialLoad]);
+
 
     const cargarTipos = async () => {
         const tipos = await carrerasApi.getTipos();
@@ -66,44 +83,113 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
                 descripcion: carrera.descripcion || '',
             });
             setSelectedTipo(carrera.id_tipo_carrera || null);
+            cargarTiposTrabajo(carrera.id_carrera, carrera.id_tipo_trabajo )
+            // Marcamos que la carga inicial terminó
+            setIsInitialLoad(false);
         }
         setLoadingData(false);
     };
 
+    // FUNCIÓN PARA CARGAR TIPOS DE TRABAJO
+    const cargarTiposTrabajo = async (idCarrera: number, idTrabajo?:number) => {
+        setCargandoTipos(true);
+        try {
+            const tipos = await carrerasApi.getTiposTrabajoByCarrera(idCarrera);
+            setTiposTrabajo(tipos);
+            // Si solo hay un tipo, seleccionarlo automáticamente
+            if (idTrabajo) {
+                setSelectedTipoTrabajo(idTrabajo);                
+            } else if (tipos.length === 1) {
+                setSelectedTipoTrabajo(tipos[0].id_tipo_trabajo);
+            } else {
+                setSelectedTipoTrabajo(null);
+            }
+        } catch (error) {
+            console.error('Error cargando tipos de trabajo:', error);
+            setTiposTrabajo([]);
+        } finally {
+            setCargandoTipos(false);
+        }
+    };
+
+    // PREPARAR ITEMS PARA EL DROPDOWN
+    // ============================================
+    const tipoTrabajoItems = useMemo(() => {
+        return tiposTrabajo.map(t => ({
+            label: t.nombre,
+            value: t.id_tipo_trabajo
+        }));
+    }, [tiposTrabajo]);
+
+    // ============================================
+    // MANEJAR CAMBIO DE TIPO DE TRABAJO
+    // ============================================
+    const handleTipoTrabajoChange = useCallback((val: number | null) => {
+        setSelectedTipoTrabajo(val);
+    }, []);
+
+        // Manejar cambios en campos principales
+    const handleChange = (campo: string, valor: string) => {
+        setForm({ ...form, [campo]: valor });
+        // Limpiar error del campo cuando el usuario escribe
+        if (fieldErrors[campo as keyof typeof fieldErrors]) {
+            setFieldErrors(prev => ({ ...prev, [campo]: undefined }));
+        }
+    };
+
     const handleSubmit = async () => {
-        // Validar
+        // Validaciones
+        const errors: { nombre?: string; tipo_carrera?: string; tipo_trabajo?: string} = {};
+    
         if (!form.nombre.trim()) {
-            setErrors({ nombre: 'El nombre es obligatorio' });
+            errors.nombre = 'El nombre de la carrera es obligatorio';
+        } else if (form.nombre.length < 3) {
+            errors.nombre = 'El nombre debe tener al menos 3 caracteres';
+        }
+        
+        if (!selectedTipo) {
+            errors.tipo_carrera = 'Debes seleccionar un tipo de carrera';
+        }
+         
+        if (!selectedTipoTrabajo) {
+            errors.tipo_trabajo = 'Debes seleccionar un tipo de trabajo';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            Alert.alert('Error', 'Por favor completa los campos obligatorios');
             return;
         }
 
         setLoading(true);
-        
-        let result;
-        // if (isEditing && id) {
-        //     result = await carrerasApi.update(Number(id), {
-        //         nombre: form.nombre,
-        //         descripcion: form.descripcion || undefined,
-        //         id_tipo_carrera: selectedTipo || undefined
-        //     });
-        // } else {
-        //     result = await carrerasApi.create({
-        //         nombre: form.nombre,
-        //         descripcion: form.descripcion || undefined,
-        //         id_tipo_carrera: selectedTipo || undefined
-        //     });
-        // }
 
-        if (result) {
-            Alert.alert('Éxito', `Carrera ${isEditing ? 'actualizada' : 'creada'} correctamente`, [
+        const data = {
+                nombre: form.nombre,
+                descripcion: form.descripcion ,
+                id_tipo_carrera: selectedTipo   ,
+                id_tipo_trabajo: selectedTipoTrabajo  
+            }
+            console.log('data carrera>>>>>>>>>>>< ',data)
+
+        let result;
+        if (isEditing && id) {
+            result = await carrerasApi.update(Number(id), data);
+        } else {
+            result = await carrerasApi.create(data);
+        }
+            // console.log('result carrera>>>>>>>>>>>< ',result)
+
+        if (result.success) {
+            Alert.alert('Éxito', result.message, [
                 { text: 'OK', onPress: () => router.back() }
             ]);
         } else {
-            Alert.alert('Error', `No se pudo ${isEditing ? 'actualizar' : 'crear'} la carrera`);
+            console.log('result carrera>',result)
+            Alert.alert('Error', result.message || 'No se pudo crear la tesis');
         }
         setLoading(false);
     };
-
+ 
     const dropdownItems = tiposCarrera.map(t => ({
         label: t.nombre,
         value: t.id_tipo_carrera
@@ -144,50 +230,98 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
                     Nombre de la carrera <Text className="text-red-500">*</Text>
                 </Text>
                 <TextInput
-                    className={`bg-white border rounded-lg p-3 text-base mb-2 ${
-                        errors.nombre ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`bg-white border rounded-lg p-3 text-base mb-4 
+                        ${fieldErrors.nombre ? 'border-red-500' : 'border-gray-300'}`}
                     value={form.nombre}
-                    onChangeText={(text) => {
-                        setForm({ ...form, nombre: text });
-                        if (errors.nombre) setErrors({ nombre: '' });
-                    }}
+                    onChangeText={(text) => handleChange('nombre', text)}
                     placeholder="Ej: Ingeniería Informática"
                     placeholderTextColor="#999"
                 />
-                {errors.nombre && (
-                    <Text className="text-red-500 text-sm mb-3">{errors.nombre}</Text>
+                {fieldErrors.nombre && (
+                    <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.nombre}</Text>
                 )}
 
                 {/* Tipo de carrera */}
                 <Text className="text-base font-semibold text-gray-700 mb-2">Tipo de carrera</Text>
-                <DropDownPicker
-                    open={open}
-                    value={selectedTipo}
-                    items={dropdownItems}
-                    setOpen={setOpen}
-                    setValue={setSelectedTipo}
-                    placeholder="Selecciona un tipo"
-                    searchable={true}
-                    searchPlaceholder="🔍 Buscar tipo..."
-                    listMode="MODAL"
-                    style={{
-                        backgroundColor: '#FFFFFF',
-                        borderColor: '#D1D5DB',
-                        borderRadius: 8,
-                    }}
-                    dropDownContainerStyle={{
-                        backgroundColor: '#FFFFFF',
-                        borderColor: '#D1D5DB',
-                    }}
+                <View className={`mb-4 z-10 ${fieldErrors.tipo_carrera ? 'border-red-500 border rounded-lg' : ''}`}>
+                    <DropDownPicker
+                        open={open}
+                        value={selectedTipo}
+                        items={dropdownItems}
+                        setOpen={setOpen}
+                        setValue={setSelectedTipo}
+                        placeholder="Selecciona un tipo"
+                        searchable={true}
+                        searchPlaceholder="Buscar tipo..."
+                        listMode="MODAL"
+                        style={{
+                            backgroundColor: '#FFFFFF',
+                            borderColor: '#D1D5DB',
+                            borderRadius: 8,
+                        }}
+                        dropDownContainerStyle={{
+                            backgroundColor: '#FFFFFF',
+                            borderColor: '#D1D5DB',
+                        }}
                 />
+                </View>
+                {fieldErrors.tipo_carrera && (
+                    <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.tipo_carrera}</Text>
+                )}
+
+                {/* ==================== TIPO DE TRABAJO ==================== */}
+                {tiposTrabajo.length > 0 && (
+                    <>
+                   <View className={`mb-4 z-10 ${fieldErrors.tipo_trabajo ? 'border-red-500 border rounded-lg' : ''}`}>
+                     <Text className="text-base font-semibold text-gray-700 mb-2">
+                            Tipo de Trabajo {tiposTrabajo.length === 1 && <Text className="text-blue-500">(automático)</Text>}
+                        </Text>
+
+                        {cargandoTipos ? (
+                            <ActivityIndicator size="small" color="#3B82F6" />
+                        ) : tiposTrabajo.length === 1 ? (
+                            // Mostrar como texto si solo hay una opción
+                            <View className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <Text className="text-blue-700 font-semibold">{tiposTrabajo[0].nombre}</Text>
+                            </View>
+                        ) : (
+                            // Dropdown si hay múltiples opciones
+                            <DropDownPicker
+                                open={openTipoTrabajo}
+                                value={selectedTipoTrabajo}
+                                items={tipoTrabajoItems}
+                                setOpen={setOpenTipoTrabajo}
+                                setValue={setSelectedTipoTrabajo}
+                                placeholder="Selecciona el tipo de trabajo"
+                                searchable={true}
+                                searchPlaceholder="🔍 Buscar tipo..."
+                                listMode="MODAL"
+                                style={{
+                                    backgroundColor: '#FFFFFF',
+                                    borderColor: '#D1D5DB',
+                                    borderRadius: 8,
+                                }}
+                                dropDownContainerStyle={{
+                                    backgroundColor: '#FFFFFF',
+                                    borderColor: '#D1D5DB',
+                                }}
+                                onChangeValue={handleTipoTrabajoChange}
+                            />
+                        )}
+                    </View>
+                    {fieldErrors.tipo_trabajo && (
+                        <Text className="text-red-500 text-sm -mt-2 mb-2">{fieldErrors.tipo_trabajo}</Text>
+                    )}
+                    </>
+                    
+                )}
 
                 {/* Descripción */}
                 <Text className="text-base font-semibold text-gray-700 mb-2 mt-4">Descripción</Text>
                 <TextInput
                     className="bg-white border border-gray-300 rounded-lg p-3 text-base min-h-[100px]"
                     value={form.descripcion}
-                    onChangeText={(text) => setForm({ ...form, descripcion: text })}
+                    onChangeText={(text) => handleChange('descripcion', text)}
                     placeholder="Descripción de la carrera"
                     placeholderTextColor="#999"
                     multiline
@@ -205,7 +339,7 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
                         <ActivityIndicator color="#FFFFFF" />
                     ) : (
                         <Text className="text-white text-lg font-bold">
-                            {isEditing ? 'Actualizar Carrera' : 'Crear Carrera'}
+                            {isEditing ? 'Actualizar ' : 'Registrar '}
                         </Text>
                     )}
                 </TouchableOpacity>

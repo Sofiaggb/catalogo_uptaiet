@@ -33,7 +33,7 @@ export default function CarreraDetailScreen() {
     const handleDelete = () => {
         Alert.alert(
             'Eliminar Carrera',
-            `¿Estás seguro de eliminar "${carrera?.nombre}"?`,
+            `¿Estás seguro de eliminar "${carrera?.nombre}"?\n\nEsta acción eliminará también todas las tesis asociadas a esta carrera.`,
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
@@ -42,7 +42,7 @@ export default function CarreraDetailScreen() {
                     onPress: async () => {
                         const success = await carrerasApi.delete(Number(id));
                         if (success) {
-                            Alert.alert('Éxito', 'Carrera eliminada', [
+                            Alert.alert('Éxito', 'Carrera eliminada correctamente', [
                                 { text: 'OK', onPress: () => router.back() }
                             ]);
                         } else {
@@ -57,8 +57,8 @@ export default function CarreraDetailScreen() {
     if (loading) {
         return (
             <View className="flex-1 bg-white justify-center items-center">
-                <ActivityIndicator size="large" color="#3B82F6" />
-                <Text className="text-gray-500 mt-4">Cargando...</Text>
+                <ActivityIndicator size="large" color="#0ea5e9" />
+                <Text className="text-gray-500 mt-4">Cargando detalles...</Text>
             </View>
         );
     }
@@ -69,7 +69,7 @@ export default function CarreraDetailScreen() {
                 <Ionicons name="alert-circle-outline" size={64} color="#EF4444" />
                 <Text className="text-red-500 text-center mt-4 text-lg">Carrera no encontrada</Text>
                 <TouchableOpacity
-                    className="mt-6 bg-blue-500 px-6 py-3 rounded-xl"
+                    className="mt-6 bg-cyan-500 px-6 py-3 rounded-xl"
                     onPress={() => router.back()}
                 >
                     <Text className="text-white font-bold">Volver</Text>
@@ -78,58 +78,100 @@ export default function CarreraDetailScreen() {
         );
     }
 
+    // Determinar colores según el tipo de carrera
+    const getTipoCarreraColor = (tipo: string) => {
+        switch (tipo?.toLowerCase()) {
+            case 'pregrado': return { bg: '#EFF6FF', text: '#2563EB', icon: 'school-outline' };
+            case 'especialización': return { bg: '#FEF3C7', text: '#D97706', icon: 'medal-outline' };
+            case 'maestría': return { bg: '#ECFDF5', text: '#059669', icon: 'ribbon-outline' };
+            case 'doctorado': return { bg: '#F3E8FF', text: '#7E22CE', icon: 'flask-outline' };
+            default: return { bg: '#F3F4F6', text: '#4B5563', icon: 'school-outline' };
+        }
+    };
+
+    const tipoColor = getTipoCarreraColor(carrera.tipo_carrera || '');
+
     return (
         <ScrollView className="flex-1 bg-white">
-            {/* Header */}
-            <View className="bg-black pt-12 pb-6 px-5">
+            {/* Header con gradiente (simulado) */}
+            <View className=" pt-16 pb-8 px-5">
                 <View className="flex-row items-center">
                     <TouchableOpacity onPress={() => router.back()} className="mr-3">
-                        <Ionicons name="arrow-back-outline" size={28} color="#FFD700" />
+                        <Ionicons name="arrow-back-outline" size={28} color="#0ea5e9" />
                     </TouchableOpacity>
-                    <Text className="text-yellow-500 text-2xl font-bold flex-1">Detalle de Carrera</Text>
+                    <Text className="text-cyan-600 text-2xl font-semibold flex-1">Detalle de Carrera</Text>
                 </View>
             </View>
 
-            {/* Contenido */}
-            <View className="p-5">
-                <Text className="text-3xl font-bold text-black">{carrera.nombre}</Text>
+            {/* Contenido principal */}
+            <View className="p-5 -mt-6">
+                {/* Tarjeta principal */}
+                <View >
+                    {/* Nombre de la carrera */}
+                    <Text className="text-3xl font-bold text-gray-800">{carrera.nombre}</Text>
+                    
+                    {/* Tipo de carrera con badge */}
+                    <View className="mt-4 flex-row items-center">
+                        <View className={`rounded-full px-4 py-2 flex-row items-center`} style={{ backgroundColor: tipoColor.bg }}>
+                            <Ionicons name={tipoColor.icon as any} size={18} color={tipoColor.text} />
+                            <Text className="ml-2 font-semibold" style={{ color: tipoColor.text }}>
+                                {carrera.tipo_carrera || 'No especificado'}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
 
-                {carrera.tipo_carrera && (
-                    <View className="mt-3">
-                        <View className="bg-blue-100 rounded-full px-3 py-1 self-start">
-                            <Text className="text-blue-700 font-semibold">{carrera.tipo_carrera.nombre}</Text>
+                {/* Sección de tipo de trabajo (si existe) */}
+                {carrera.tipo_trabajo && (
+                    <View className="mt-6 bg-blue-50 rounded-2xl p-6 border border-blue-100">
+                        <View className="flex-row items-center mb-3">
+                            <Ionicons name="briefcase-outline" size={22} color="#2563EB" />
+                            <Text className="text-lg font-semibold text-gray-800 ml-2">Modalidad de Trabajo de Grado</Text>
+                        </View>
+                        
+                        <View className="bg-white rounded-xl p-4 border border-blue-100">
+                            <Text className="text-blue-700 font-bold text-lg">{carrera.tipo_trabajo}</Text>
+                            <Text className="text-gray-500 text-sm mt-1">
+                                Esta es la modalidad de titulación para esta carrera
+                            </Text>
                         </View>
                     </View>
                 )}
 
-                {carrera.descripcion && (
-                    <View className="mt-6">
-                        <Text className="text-gray-700 leading-6">{carrera.descripcion}</Text>
+                  {/* Sección de descripción */}
+                {carrera.descripcion ? (
+                    <View className="mt-6 bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                        <View className="flex-row items-center mb-3">
+                            <Ionicons name="document-text-outline" size={22} color="#0ea5e9" />
+                            <Text className="text-lg font-semibold text-gray-800 ml-2">Descripción</Text>
+                        </View>
+                        <Text className="text-gray-600 leading-6">{carrera.descripcion}</Text>
+                    </View>
+                ) : (
+                    <View className="mt-6 bg-gray-50 rounded-2xl p-6 border border-gray-100 items-center">
+                        <Ionicons name="document-text-outline" size={32} color="#9CA3AF" />
+                        <Text className="text-gray-400 text-center mt-2">Sin descripción disponible</Text>
                     </View>
                 )}
 
-                {carrera.fecha_creacion && (
-                    <Text className="text-gray-400 text-xs mt-6">
-                        Creada: {new Date(carrera.fecha_creacion).toLocaleDateString()}
-                    </Text>
-                )}
-
-                {/* Botones de acción */}
-                <View className="flex-row gap-3 mt-8">
+                {/* Acciones */}
+                <View className="flex-row gap-4 mt-8 mb-10">
                     <TouchableOpacity
-                        className="flex-1 bg-yellow-500 py-3 rounded-xl flex-row items-center justify-center"
+                        className="flex-1 bg-yellow-500 py-4 rounded-xl flex-row items-center justify-center"
                         onPress={() => router.push(`/carreras/edit/${carrera.id_carrera}`)}
+                        activeOpacity={0.8}
                     >
-                        <Ionicons name="create-outline" size={20} color="#000000" />
-                        <Text className="text-black font-bold ml-2">Editar</Text>
+                        <Ionicons name="create-outline" size={22} color="#000000" />
+                        <Text className="text-black font-bold text-base ml-2">Editar Carrera</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        className="flex-1 bg-red-500 py-3 rounded-xl flex-row items-center justify-center"
+                        className="flex-1 bg-red-500 py-4 rounded-xl flex-row items-center justify-center"
                         onPress={handleDelete}
+                        activeOpacity={0.8}
                     >
-                        <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
-                        <Text className="text-white font-bold ml-2">Eliminar</Text>
+                        <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
+                        <Text className="text-white font-bold text-base ml-2">Eliminar</Text>
                     </TouchableOpacity>
                 </View>
             </View>

@@ -86,7 +86,7 @@ export default function TesisDetailScreen() {
                     className="mt-6 bg-sky-600 px-6 py-3 rounded-xl"
                     onPress={() => router.back()}
                 >
-                    <Text className="text-black font-bold">Volver</Text>
+                    <Text className="text-sky-500 font-bold">Volver</Text>
                 </TouchableOpacity>
             </View>
         );

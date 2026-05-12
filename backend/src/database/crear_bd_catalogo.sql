@@ -28,9 +28,60 @@ INSERT INTO catalogo.tipo_carrera (nombre, descripcion) VALUES
 ('Maestria', 'Postgrado académico o profesional (2 años) que otorga título de magíster'),
 ('Doctorado', 'Máximo nivel académico (3-5 años) que otorga título de doctor'),
 
--- OTRAS MODALIDADES
-('Diplomado', 'Programa corto de actualización (3-6 meses) sin título de postgrado');
 
+-- Tabla de tipos de trabajo de grado
+CREATE TABLE catalogo.tipo_trabajo (
+    id_tipo_trabajo SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) UNIQUE NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+    fecha_eliminacion TIMESTAMP
+);
+
+-- Insertar los tipos de trabajo
+INSERT INTO catalogo.tipo_trabajo (nombre ) VALUES
+-- PREGRADO
+('Proyecto Socio Tecnológico'),
+('Proyecto Socio Integrador'),
+('Proyecto Productivo'),
+-- POSTGRADO
+('Trabajo Especial de Grado'),
+('Tesis');
+
+CREATE TABLE catalogo.carrera_tipo_trabajo (
+    id_carrera_tipo_trabajo SERIAL PRIMARY KEY,
+    id_tipo_carrera INT NOT NULL REFERENCES catalogo.tipo_carrera(id_tipo_carrera),
+    id_tipo_trabajo INT NOT NULL REFERENCES catalogo.tipo_trabajo(id_tipo_trabajo),
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+	fecha_eliminacion TIMESTAMP,
+    UNIQUE(id_tipo_carrera, id_tipo_trabajo)
+);
+
+INSERT INTO catalogo.carrera_tipo_trabajo ( id_tipo_carrera, id_tipo_trabajo) VALUES
+/*tecnico superior
+Proyecto socio tecnológico 
+Proyecto socio integrador 
+Proyecto productivo */
+( 1, 1),
+( 1, 2),
+( 1, 3),
+/* pregrado
+Proyecto socio tecnológico 
+Proyecto socio integrador 
+Proyecto productivo */
+( 2, 1),
+( 2, 2),
+( 2, 3),
+-- Trabajo especial de grado es para posgrado especialización y maestrías 
+( 3, 4),
+( 4, 4),
+--Doctorado - tesis
+( 5, 5);
+
+
+
+
+alter table catalogo.carrera
+add column  id_tipo_trabajo INT REFERENCES catalogo.tipo_trabajo(id_tipo_trabajo);
 
 
 CREATE TABLE catalogo.carrera (
@@ -38,6 +89,7 @@ CREATE TABLE catalogo.carrera (
     nombre VARCHAR(150) NOT NULL,
     descripcion TEXT,
     id_tipo_carrera INT REFERENCES catalogo.tipo_carrera(id_tipo_carrera),
+    id_tipo_trabajo INT REFERENCES catalogo.tipo_trabajo(id_tipo_trabajo),
 	fecha_creacion timestamp DEFAULT NOW(),
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 	fecha_eliminacion timestamp,	

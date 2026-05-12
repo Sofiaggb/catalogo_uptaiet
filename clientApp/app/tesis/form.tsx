@@ -680,7 +680,9 @@ export default function TesisForm({ mode: propMode, tesisId: propTesisId }: Tesi
                         {loading ? (
                             <ActivityIndicator color="#000000" />
                         ) : (
-                            <Text className=" text-lg font-bold ml-2">Guardar</Text>
+                            <Text className=" text-lg font-bold ml-2">
+                                 {isEditing ? 'Actualizar ' : 'Registrar '}
+                            </Text>
                         )}
                     </TouchableOpacity>
                 </View>
