@@ -3,9 +3,9 @@ import { STATIC_URL } from '@/config/env';
 import { tesisApi } from '@/services/api/endpoints/tesis';
 import { Tesis } from '@/services/api/types';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, ScrollView, Text, TouchableOpacity, View} from 'react-native';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TesisDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -14,9 +14,12 @@ export default function TesisDetailScreen() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        cargarTesis();
-    }, [id]);
+    // Recargar cada vez que la pantalla recibe foco
+    useFocusEffect(
+        useCallback(() => {
+            cargarTesis();
+        }, [id])
+    );
 
     const cargarTesis = async () => {
         setLoading(true);
@@ -25,7 +28,7 @@ export default function TesisDetailScreen() {
         try {
             const response = await tesisApi.getById(Number(id));
             if (response.success && response.data) {
-                setTesis(response.data);         
+                setTesis(response.data);
                 // console.log(response.data)
             } else {
                 console.log(response)
@@ -180,11 +183,11 @@ export default function TesisDetailScreen() {
                     </View>
                 ))}
             </View>
-     
+
             {/* ==================== ACCIONES ==================== */}
             <View className="px-5 mb-5 gap-3">
                 {/* Descargar PDF */}
-                  <TouchableOpacity
+                <TouchableOpacity
                     className="bg-cyan-500 py-4 rounded-xl flex-row items-center justify-center"
                     onPress={abrirDocumento}
                 >

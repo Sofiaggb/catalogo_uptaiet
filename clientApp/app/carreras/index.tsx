@@ -1,7 +1,7 @@
 // app/carreras/index.tsx - VERSIÓN CON BOTÓN DE VOLVER
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -51,9 +51,12 @@ export default function CarrerasListScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [searchText, setSearchText] = useState('');
 
-    useEffect(() => {
-        cargarCarreras();
-    }, []);
+    // Recargar cada vez que la pantalla recibe foco
+    useFocusEffect(
+        useCallback(() => {
+            cargarCarreras();
+        }, [])
+    );
 
     useEffect(() => {
         filtrarCarreras();

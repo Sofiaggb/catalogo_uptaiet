@@ -1,7 +1,7 @@
 // app/carreras/form.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -23,6 +23,7 @@ interface CarreraFormProps {
 export default function CarreraForm({ mode }: CarreraFormProps) {
     const { id } = useLocalSearchParams<{ id?: string }>();
     const isEditing = mode === 'edit';
+    const isFirstLoad = useRef(true);
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(isEditing);
 
@@ -34,7 +35,6 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
     const [selectedTipoTrabajo, setSelectedTipoTrabajo] = useState<number | null>(null);
     const [cargandoTipos, setCargandoTipos] = useState(false);
     const [openTipoTrabajo, setOpenTipoTrabajo] = useState(false);
-    const [isInitialLoad, setIsInitialLoad] = useState(true);
     // Formulario
     const [form, setForm] = useState({
         nombre: '',
@@ -60,13 +60,19 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
     }, [isEditing, id]);
 
     useEffect(() => {
-        if (!isInitialLoad && selectedTipo) {
+         // Saltar la primera ejecución (carga inicial de edición)
+        if ( isEditing && isFirstLoad.current) {
+            return;
+        }
+
+        if ( selectedTipo) {
+            setSelectedTipoTrabajo(null);
             cargarTiposTrabajo(selectedTipo);
         } else {
             setTiposTrabajo([]);
             setSelectedTipoTrabajo(null);
         }
-    }, [selectedTipo, isInitialLoad]);
+    }, [selectedTipo]);
 
 
     const cargarTipos = async () => {
@@ -82,24 +88,37 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
                 nombre: carrera.nombre || '',
                 descripcion: carrera.descripcion || '',
             });
-            setSelectedTipo(carrera.id_tipo_carrera || null);
-            cargarTiposTrabajo(carrera.id_carrera, carrera.id_tipo_trabajo )
+
+            // 2. Marcar que estamos en carga inicial para evitar efectos
+                isFirstLoad.current = true;
+                
+                // 3. Setear tipo de carrera (esto NO debería disparar el efecto)
+                setSelectedTipo(carrera.id_tipo_carrera || null);
+                
+                // 4. Cargar tipos de trabajo disponibles para esta carrera
+                if (carrera.id_tipo_carrera) {
+                    const tipos = await carrerasApi.getTiposTrabajoByCarrera(carrera.id_tipo_carrera);
+                    setTiposTrabajo(tipos);
+                }
+                
+                // 5. Setear tipo de trabajo (si existe)
+                if (carrera.id_tipo_trabajo) {
+                    setSelectedTipoTrabajo(carrera.id_tipo_trabajo);
+                }
             // Marcamos que la carga inicial terminó
-            setIsInitialLoad(false);
+            isFirstLoad.current = false;
         }
         setLoadingData(false);
     };
 
     // FUNCIÓN PARA CARGAR TIPOS DE TRABAJO
-    const cargarTiposTrabajo = async (idCarrera: number, idTrabajo?:number) => {
+    const cargarTiposTrabajo = async (idCarrera: number) => {
         setCargandoTipos(true);
         try {
             const tipos = await carrerasApi.getTiposTrabajoByCarrera(idCarrera);
             setTiposTrabajo(tipos);
             // Si solo hay un tipo, seleccionarlo automáticamente
-            if (idTrabajo) {
-                setSelectedTipoTrabajo(idTrabajo);                
-            } else if (tipos.length === 1) {
+             if (tipos.length === 1) {
                 setSelectedTipoTrabajo(tipos[0].id_tipo_trabajo);
             } else {
                 setSelectedTipoTrabajo(null);

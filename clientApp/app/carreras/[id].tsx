@@ -1,7 +1,7 @@
 // app/(tabs)/carreras/[id].tsx
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -19,13 +19,17 @@ export default function CarreraDetailScreen() {
     const [carrera, setCarrera] = useState<Carrera | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        cargarCarrera();
-    }, [id]);
-
+    // Recargar cada vez que la pantalla recibe foco
+    useFocusEffect(
+        useCallback(() => {
+            cargarCarrera();
+        }, [id])
+    );
+    
     const cargarCarrera = async () => {
         setLoading(true);
         const data = await carrerasApi.getById(Number(id));
+        console.log('id carrera>>> ', data, Number(id))
         setCarrera(data);
         setLoading(false);
     };
@@ -33,7 +37,8 @@ export default function CarreraDetailScreen() {
     const handleDelete = () => {
         Alert.alert(
             'Eliminar Carrera',
-            `¿Estás seguro de eliminar "${carrera?.nombre}"?\n\nEsta acción eliminará también todas las tesis asociadas a esta carrera.`,
+            `¿Estás seguro de eliminar "${carrera?.nombre}"?
+            \n\nNo podra registrar mas proyectos asociadas a esta carrera.`,
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {

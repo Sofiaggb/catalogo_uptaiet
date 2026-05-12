@@ -48,6 +48,10 @@ export default function HomeScreen() {
                     <QuickCard title="Carreras" iconName="school-outline"
                         href="/carreras"
                         colorVariant="blue" />
+                    
+                    <QuickCard title="Materias" iconName="book-outline"
+                        href="/materias"
+                        colorVariant="blue" />
 
                     <QuickCard title="Mi Perfil" iconName="person-circle-outline"
                         href="/auth/perfil"

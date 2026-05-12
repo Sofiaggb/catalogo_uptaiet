@@ -81,9 +81,9 @@ export const carreraController = {
         'SELECT catalogo.carrera_obtener($1) AS resultado',
         [id]
       );
-      const tesisCompleta = result.rows[0].resultado;
-
-      res.json(tesisCompleta);
+      const carrera = result.rows[0].resultado;
+      // console.log(carrera)
+      res.json(carrera);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Error al obtener la carrera' });
@@ -144,25 +144,36 @@ export const carreraController = {
       });
     }
   },
-
-  // Actualizar carrera (soft delete)
-  deleteCarrera: async (req, res) => {
+  
+deleteCarrera: async (req, res) => {
     const { id } = req.params;
     try {
-      const result = await pool.query(
-        'UPDATE catalogo.carrera SET fecha_eliminacion = NOW() WHERE id_carrera = $1 RETURNING *',
-        [id]
-      );
+        const result = await pool.query(
+            `UPDATE catalogo.carrera 
+             SET fecha_eliminacion = NOW() 
+             WHERE id_carrera = $1 
+             AND fecha_eliminacion IS NULL
+             RETURNING id_carrera`,
+            [id]
+        );
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Carrera no encontrada' });
-      }
+        if (result.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Carrera no encontrada' 
+            });
+        }
 
-      res.json({ message: 'Carrera eliminada correctamente' });
+        res.json({ 
+            success: true, 
+            message: 'Carrera eliminada correctamente' 
+        });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Error al eliminar la carrera' });
+        res.status(500).json({ 
+            success: false, 
+            error: 'Error al eliminar la carrera' 
+        });
     }
-  },
+},
 
 }

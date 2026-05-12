@@ -66,7 +66,7 @@ BEGIN
          tt.nombre as tipo_trabajo
 	    FROM catalogo.carrera c
 	    JOIN catalogo.tipo_carrera tc ON tc.id_tipo_carrera = c.id_tipo_carrera
-	    JOIN catalogo.tipo_trabajo tt ON tt.id_tipo_trabajo = c.id_tipo_trabajo
+	    left JOIN catalogo.tipo_trabajo tt ON tt.id_tipo_trabajo = c.id_tipo_trabajo
 	    WHERE c.id_carrera = p_id_carrera
 	) AS carrera_data;
 
