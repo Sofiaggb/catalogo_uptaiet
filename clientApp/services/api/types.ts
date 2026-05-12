@@ -118,7 +118,6 @@ export interface PaginatedResponse<T> {
 }
 
 // materias
-
 export interface Materia {
     id_materia: number;
     nombre: string;
@@ -131,6 +130,33 @@ export interface CrearMateriaInput {
 export interface ListarMateriasParams {
     id_carrera?: number;
     semestre?: number;
+    buscar?: string;
+    limit?: number;
+    page?: number;
+}
+
+//  documento 
+export interface Documento {
+    id_documento: number;
+    titulo: string;
+    autor?: string;
+    url_recurso?: string;
+    descripcion?: string;
+    id_materia: number;
+    materia?: string; 
+    fecha_creacion?: string;
+}
+
+export interface CrearDocumentoInput {
+    titulo: string;
+    autor?: string;
+    url_recurso?: string;
+    descripcion?: string;
+    id_materia: number;
+}
+
+export interface ListarDocumentosParams {
+    id_materia?: number;
     buscar?: string;
     limit?: number;
     page?: number;

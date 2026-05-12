@@ -162,7 +162,6 @@ CREATE TABLE tesis.tesis (
     resumen TEXT,
     anio_elaboracion INTEGER,
     url_documento VARCHAR(500),  -- guardar PDF en un servidor
-    archivo_pdf BYTEA,            -- opcional: guardar el binario en la BD (no muy recomendado)
     id_carrera INT NOT NULL REFERENCES catalogo.carrera(id_carrera),
     id_estado int REFERENCES control.estado(id_estado),
 	fecha_creacion timestamp DEFAULT NOW(),
@@ -257,21 +256,15 @@ CREATE SCHEMA recursos;
 
 
 -- Tipos específicos para documentos
-CREATE TABLE recursos.tipo_documento (
-    id_tipo_documento SERIAL PRIMARY KEY,
-    nombre VARCHAR(50) UNIQUE NOT NULL,
-    descripcion TEXT,
-    peso_max_mb INT DEFAULT 10,
-	fecha_creacion timestamp DEFAULT NOW(),
-	fecha_eliminacion timestamp
-);
+/*
+drop table if exists recursos.tipo_documento;
+drop table if exists recursos.documento_soporte;
+*/
 
-
-CREATE TABLE recursos.documento_soporte (
+CREATE TABLE recursos.documento (
     id_documento SERIAL PRIMARY KEY,
     titulo VARCHAR(300) NOT NULL,
     autor VARCHAR(200),
-    id_tipo_documento INT REFERENCES recursos.tipo_documento(id_tipo_documento),
     url_recurso VARCHAR(500),
     descripcion TEXT,
     id_materia INT NOT NULL REFERENCES catalogo.materia(id_materia) ON DELETE CASCADE,

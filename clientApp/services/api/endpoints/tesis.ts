@@ -3,7 +3,6 @@ import { apiClient } from '../client';
 import type { 
     Tesis, 
     PaginatedResponse,
-    CrearTesisInput, 
     ListarTesisParams
 } from '../types';
 
