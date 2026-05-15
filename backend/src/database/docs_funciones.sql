@@ -2,24 +2,17 @@
 
 --------- crear tesis
 
-CREATE OR REPLACE FUNCTION tesis.crear_tesis(
+CREATE OR REPLACE FUNCTION recursos.libro_crear(
+	p_id_materia INTEGER,
     p_titulo VARCHAR(300),
-    p_resumen TEXT,
-    p_id_carrera INT,	
-	p_anio_elaboracion INT ,
+    p_autor VARCHAR,
+    p_editorial VARCHAR,	
+	p_year INT ,
     p_url_documento VARCHAR(500) DEFAULT NULL,    
-    p_estudiantes JSONB DEFAULT '[]'::jsonb,    
-    p_evaluaciones JSONB DEFAULT '[]'::jsonb,    
     p_creado_por INTEGER DEFAULT NULL
 )
 RETURNS JSONB AS $$
 DECLARE
-    v_id_tesis INT;
-    v_estudiante JSONB;
-    v_evaluacion JSONB;
-    v_id_estudiante INT;
-    v_id_jurado INT;
-    v_error TEXT;
 BEGIN
 
 	-- cargar ruta arc
@@ -27,161 +20,38 @@ BEGIN
         RETURN jsonb_build_object(
         'success', false,
         'status', 400,
-        'message', 'no de a cargado el archivo'
+        'message', 'no se ha cargado el archivo'
         );
     END IF;
 	
-    -- Validar carrera  
-    IF NOT EXISTS (SELECT 1 FROM catalogo.carrera WHERE id_carrera = p_id_carrera AND fecha_eliminacion IS NULL) THEN
+    -- Validar materia  
+    IF NOT EXISTS (SELECT 1 FROM catalogo.materia WHERE id_materia = p_id_materia AND fecha_eliminacion IS NULL) THEN
         RETURN jsonb_build_object(
         'success', false,
         'status', 400,
-        'message', 'carrera seleccionada no existe'
+        'message', 'materia seleccionada no existe'
         );
     END IF;
 
     
     --  CREAR LA TESIS    
-    INSERT INTO tesis.tesis (
-        titulo,
-        resumen,
-        url_documento,
-        id_carrera,
-        id_estado,
-		anio_elaboracion,
+    INSERT INTO recursos.libro (
+		id_materia ,
+	    titulo,
+	    autor ,
+	    editorial ,
+	    year ,
+	    url_recurso ,   
         id_usuario_creacion
     ) VALUES (
+		p_id_materia,
         TRIM(p_titulo),
-        p_resumen,
+        p_autor,
+		p_editorial,
+		p_year,
         p_url_documento,
-        p_id_carrera,
-        1, -- publicada
-		p_anio_elaboracion,
         p_creado_por
-    )
-    RETURNING id_tesis INTO v_id_tesis;
-    
-    ---------------------------
-    --  ESTUDIANTES
-	---------------------------    
-    FOR v_estudiante IN SELECT * FROM jsonb_array_elements(p_estudiantes)
-    LOOP
-        -- Caso 1: Ya viene con ID
-        IF v_estudiante ? 'id_estudiante' AND (v_estudiante->>'id_estudiante') IS NOT NULL THEN
-            v_id_estudiante := (v_estudiante->>'id_estudiante')::INT;
-            
-            -- Verificar que existe
-            IF EXISTS (SELECT 1 FROM personas.estudiante WHERE id_estudiante = v_id_estudiante AND fecha_eliminacion IS NULL) THEN
-                UPDATE personas.estudiante
-			    SET nombre_completo = v_estudiante->>'nombre_completo',
-                    email = v_estudiante->>'email'
-			    WHERE id_estudiante = v_id_estudiante;
-            END IF;
-        
-        -- Caso 2: No tiene ID, crear por nombre/cedula/email
-        ELSIF v_estudiante ? 'nombre_completo' AND (v_estudiante->>'nombre_completo') IS NOT NULL THEN
-		 	            
-            -- Verificar si ya existe por cédula o email
-            SELECT id_estudiante INTO v_id_estudiante
-            FROM personas.estudiante
-            WHERE (cedula = (v_estudiante->>'cedula') OR email = (v_estudiante->>'email'))
-            AND fecha_eliminacion IS NULL
-            LIMIT 1;
-            
-            IF v_id_estudiante IS  NULL THEN
-                -- Crear nuevo estudiante
-                INSERT INTO personas.estudiante (
-                    nombre_completo,
-                    cedula,
-                    email,
-					id_usuario_creacion
-                ) VALUES (
-                    v_estudiante->>'nombre_completo',
-                    v_estudiante->>'cedula',
-                    v_estudiante->>'email',
-                    p_creado_por
-                )
-                RETURNING id_estudiante INTO v_id_estudiante;
-                
-            END IF;
-        ELSE
-            RAISE WARNING 'Estudiante inválido, se omite: %', v_estudiante;
-            CONTINUE;
-        END IF;
-        
-        -- Vincular estudiante a la tesis
-        INSERT INTO tesis.tesis_estudiante (id_tesis, id_estudiante, id_usuario_creacion)
-        VALUES (v_id_tesis, v_id_estudiante, p_creado_por )
-        ON CONFLICT (id_tesis, id_estudiante) DO NOTHING;
-        
-    END LOOP;
-    
-    -----------------------------------
-    -- EVALUACIONES y JURADOS
-    ----------------------------------
-    FOR v_evaluacion IN SELECT * FROM jsonb_array_elements(p_evaluaciones) LOOP
-        IF v_evaluacion ? 'jurado' THEN
-            
-            -- Caso 1: Jurado con ID existente
-             IF v_evaluacion->'jurado' ? 'id_jurado' AND (v_evaluacion->'jurado'->>'id_jurado') IS NOT NULL THEN
-                v_id_jurado := (v_evaluacion->'jurado'->>'id_jurado')::INT;
-                
-              IF EXISTS (SELECT 1 FROM personas.jurado WHERE id_jurado = v_id_jurado AND fecha_eliminacion IS NULL) THEN
-                    UPDATE personas.jurado
-					SET nombre_completo = v_evaluacion->'jurado'->>'nombre_completo',
-						titulo_profesional = v_evaluacion->'jurado'->>'titulo_profesional'
-					WHERE id_jurado = v_id_jurado;
-               END IF;
-            
-            --  Crear jurado por nombre/cedula
-            ELSIF v_evaluacion->'jurado' ? 'nombre_completo' THEN
-                
-                -- Verificar si ya existe por cedula
-                SELECT id_jurado INTO v_id_jurado
-                FROM personas.jurado
-                WHERE cedula = (v_evaluacion->'jurado'->>'cedula')
-                AND fecha_eliminacion IS NULL
-                LIMIT 1;
-                
-                IF v_id_jurado IS  NULL THEN
-                    -- Crear nuevo jurado
-                    INSERT INTO personas.jurado (
-                        nombre_completo,
-                        titulo_profesional,
-                        cedula,
-						id_usuario_creacion
-                    ) VALUES (
-                        v_evaluacion->'jurado'->>'nombre_completo',
-                        v_evaluacion->'jurado'->>'titulo_profesional',
-                        v_evaluacion->'jurado'->>'cedula',
-                        p_creado_por
-                    )
-                    RETURNING id_jurado INTO v_id_jurado;
-                    
-                END IF;
-            ELSE
-                RAISE WARNING 'Jurado inválido, se omite: %', v_evaluacion;
-                CONTINUE;
-            END IF;
-            
-            -- Crear evaluación
-            INSERT INTO tesis.evaluacion_tesis (
-                id_tesis,
-                id_jurado,
-                nota,
-                fecha_evaluacion,
-                comentarios,
-				id_usuario_creacion
-            ) VALUES (
-                v_id_tesis,
-                v_id_jurado,
-                COALESCE((v_evaluacion->>'nota')::DECIMAL(4,2), 0),
-                COALESCE((v_evaluacion->>'fecha_evaluacion')::DATE, NOW()),
-                v_evaluacion->>'comentarios',
-                p_creado_por
-            );
-        END IF;
-    END LOOP;
+    );
     
     
     --  RESULTADO    
@@ -322,7 +192,7 @@ $$ LANGUAGE plpgsql;
 
 ---------- devolver todas las docs
 
-CREATE OR REPLACE FUNCTION recursos.documento_listar(
+CREATE OR REPLACE FUNCTION recursos.libros_listar(
     p_id_materia INT DEFAULT NULL,
     p_buscar VARCHAR(200) DEFAULT NULL,
     p_limit INT DEFAULT 50,
@@ -335,7 +205,7 @@ DECLARE
 BEGIN
 
   SELECT COUNT(*) INTO v_total
-    FROM recursos.documento d
+    FROM recursos.libro d
     WHERE d.fecha_eliminacion IS NULL
     AND (p_id_materia IS NULL OR d.id_materia = p_id_materia)
     AND (p_buscar IS NULL OR 
@@ -346,14 +216,14 @@ BEGIN
     SELECT jsonb_agg(data_docs) INTO v_resultado
     FROM(
         SELECT 
-            d.id_documento,
+            d.id_libro,
             d.titulo,
             d.autor,
             d.url_recurso,
             d.descripcion,
             m.id_materia,
             m.nombre AS nombre_materia
-        FROM recursos.documento d
+        FROM recursos.libro d
         JOIN catalogo.materia m ON m.id_materia = d.id_materia
         WHERE d.fecha_eliminacion IS NULL
         AND (p_id_materia IS NULL OR d.id_materia = p_id_materia)

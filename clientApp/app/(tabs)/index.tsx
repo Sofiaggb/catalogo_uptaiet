@@ -41,8 +41,8 @@ export default function HomeScreen() {
                         href="/tesis"
                         colorVariant="blue" />
 
-                    <QuickCard title="Documentos" iconName="library-outline"
-                        href="/docs"
+                    <QuickCard title="Libros" iconName="library-outline"
+                        href="/libros"
                         colorVariant="blue" />
 
                     <QuickCard title="Carreras" iconName="school-outline"

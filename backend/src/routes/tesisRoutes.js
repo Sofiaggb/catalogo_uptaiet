@@ -4,12 +4,12 @@ import { tesisController } from '../controllers/tesisController.js';
 const router = express.Router();
 
 // Definir las rutas
-router.post('/testtesis', upload.single('archivo_pdf'), tesisController.testUpload);
+router.post('/testtesis', upload.tesis.single('archivo_pdf'), tesisController.testUpload);
 
 router.get('/', tesisController.getTesis);
 router.get('/byId/:id', tesisController.getTesisById);
-router.post('/save', upload.single('archivo_pdf'),  tesisController.createTesis);
-router.put('/upload/:id', upload.single('archivo_pdf'), tesisController.updateTesis);
+router.post('/save', upload.tesis.single('archivo_pdf'),  tesisController.createTesis);
+router.put('/upload/:id', upload.tesis.single('archivo_pdf'), tesisController.updateTesis);
 router.delete('/:id', tesisController.deleteTesis);
 
 router.get('/jurados/cedula/:cedula' , tesisController.searchJuradosCedula);

@@ -99,13 +99,12 @@ CREATE TABLE catalogo.carrera (
 
 /*
 alter table catalogo.materia
-drop column  id_carrera
+drop column  id_carrera,
 drop column  codigo
 */
 CREATE TABLE catalogo.materia (
     id_materia SERIAL PRIMARY KEY,
     nombre VARCHAR(200) NOT NULL,
-    --id_carrera INT NOT NULL REFERENCES catalogo.carrera(id_carrera) ON DELETE CASCADE,
 	fecha_creacion timestamp DEFAULT NOW(),	
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 	fecha_eliminacion timestamp,	
@@ -257,14 +256,16 @@ CREATE SCHEMA recursos;
 
 -- Tipos específicos para documentos
 /*
-drop table if exists recursos.tipo_documento;
+drop table if exists recursos.libros;
 drop table if exists recursos.documento_soporte;
 */
 
-CREATE TABLE recursos.documento (
-    id_documento SERIAL PRIMARY KEY,
+CREATE TABLE recursos.libro (
+    id_libro SERIAL PRIMARY KEY,
     titulo VARCHAR(300) NOT NULL,
-    autor VARCHAR(200),
+    autor VARCHAR,
+    editorial VARCHAR,
+    year integer,
     url_recurso VARCHAR(500),
     descripcion TEXT,
     id_materia INT NOT NULL REFERENCES catalogo.materia(id_materia) ON DELETE CASCADE,

@@ -64,7 +64,7 @@ export default function RootLayout() {
           name="materias/create"
           options={{
             presentation: 'modal',
-            title: 'Crear Carrera'
+            title: 'Crear materia'
           }}
         />
 
@@ -72,7 +72,23 @@ export default function RootLayout() {
           name="materias/edit/[id]"
           options={{
             presentation: 'modal',
-            title: 'Editar Carrera'
+            title: 'Editar materia'
+          }}
+        />
+        {/* libros */}
+        <Stack.Screen
+          name="libros/create"
+          options={{
+            presentation: 'modal',
+            title: 'Crear libro'
+          }}
+        />
+
+        <Stack.Screen
+          name="libros/edit/[id]"
+          options={{
+            presentation: 'modal',
+            title: 'Editar libro'
           }}
         />
       </Stack>

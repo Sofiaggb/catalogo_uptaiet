@@ -136,11 +136,13 @@ export interface ListarMateriasParams {
 }
 
 //  documento 
-export interface Documento {
-    id_documento: number;
+export interface Libros {
+    id_libro: number;
     titulo: string;
     autor?: string;
-    url_recurso?: string;
+    editorial?:string;
+    id_year:string;
+    url_documento?: string;
     descripcion?: string;
     id_materia: number;
     materia?: string; 

@@ -3,15 +3,14 @@ import { pool } from '../config/db.js';
 import fs from 'fs';
 import path from 'path';
 
-export const docsController = {
-  createDoc: async (req, res) => {
-    const { titulo, resumen, id_carrera,anio_elaboracion, estudiantes, evaluaciones } = req.body;
-    console.log('anio_elaboracion',anio_elaboracion)
+export const libroController = {
+  createLibro: async (req, res) => {
+    const { id_materia, titulo, autor, editorial, year} = req.body;
     // Obtener la ruta del archivo subido (si existe)
     let url_documento = null;
     console.log('req.file',req.file)
      if (req.file) {
-        url_documento = `/uploads/tesis/${req.file.filename}`;
+        url_documento = `/uploads/libros/${req.file.filename}`;
         console.log('Archivo recibido:', req.file.filename);
     } else {
         console.log('No se recibió ningún archivo');
@@ -19,15 +18,13 @@ export const docsController = {
 
     try {
       const result = await pool.query(
-        `SELECT tesis.crear_tesis($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8) AS resultado`,
-        [
+        `SELECT recursos.libro_crear($1, $2, $3, $4, $5, $6,$7) AS resultado`,
+        [ id_materia,
           titulo,
-          resumen || null,
-          id_carrera,
-          anio_elaboracion,
+          autor ,
+          editorial,
+          year,
           url_documento || null,
-          JSON.stringify(JSON.parse(estudiantes) || []),
-          JSON.stringify(JSON.parse(evaluaciones) || []),
           req.usuario?.id_usuario || null
         ]
       );
@@ -46,7 +43,7 @@ export const docsController = {
       res.status(resultado.status || (resultado.success ? 201 : 400)).json(resultado);
 
     } catch (error) {
-      console.error('Error en createTesis:', error);
+      console.error('Error en createlibro:', error);
         // Limpiar archivo si hay error
         if (req.file) {
             const fs = await import('fs');
@@ -63,7 +60,7 @@ export const docsController = {
   },
 
 
-  getDocById: async (req, res) => {
+  getLibroById: async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -96,7 +93,7 @@ export const docsController = {
     }
   },
 
-  getDocs: async (req, res) => {
+  getLibros: async (req, res) => {
     const {
       id_materia,
       buscar,
@@ -108,7 +105,7 @@ export const docsController = {
 
     try {
       const result = await pool.query(
-        `SELECT recursos.documento_listar($1, $2, $3, $4) AS resultado`,
+        `SELECT recursos.libros_listar($1, $2, $3, $4) AS resultado`,
         [id_materia  || null, buscar || null, limit, offset]
       );
       console.log(result)
@@ -125,7 +122,7 @@ export const docsController = {
   },
   
   // Editar tesis existente
-  updateDoc: async (req, res) => {
+  updateLibro: async (req, res) => {
     const { id } = req.params;
     const { titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones} = req.body;
     let url_documento = null;
@@ -209,7 +206,7 @@ export const docsController = {
 
 
 
-  deleteDoc: async (req, res) => {
+  deleteLibro: async (req, res) => {
     const { id } = req.params;
     const { forzar_fisico = false } = req.query;
 

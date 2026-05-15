@@ -21,8 +21,8 @@ export const validateYear = (year: string): string | null => {
         return 'El año debe ser un número válido';
     }
 
-    if (yearNum < 1900 || yearNum > currentYear + 1) {
-        return `El año debe estar entre 1900 y ${currentYear + 1}`;
+    if (yearNum < 1600 || yearNum > currentYear + 1) {
+        return `El año debe estar entre 1600 y ${currentYear + 1}`;
     }
 
     return null;
@@ -195,6 +195,48 @@ export const validateEvaluacion = (evaluacion: {
 
     return {
         isValid: errors.length === 0,
+        errors
+    };
+};
+
+
+// Validar todo el formulario de tesis
+export const validateLibroForm = (form: {
+    titulo: string;
+    autor: string;
+    editorial: string;
+    id_materia: string;
+    id_year: string;
+    tieneDocumento: boolean;  
+}): {
+    isValid: boolean; errors: {
+        titulo?: string; id_materia?: string; autor?: string;editorial?: string; id_year?: string;
+        documento?: string
+    }
+} => {
+    const errors: any = {};
+
+    const tituloError = validateRequired(form.titulo, 'El título');
+    if (tituloError) errors.titulo = tituloError;
+
+    const autorError = validateRequired(form.autor, 'El autor');
+    if (autorError) errors.autor = autorError;
+
+    const editorialError = validateRequired(form.editorial, 'La editorial');
+    if (editorialError) errors.editorial = editorialError;
+
+    const id_materiaError = validateRequired(form.id_materia, 'La materia');
+    if (id_materiaError) errors.id_materia = id_materiaError;
+
+    const yearError = validateYear(form.id_year);
+    if (yearError) errors.id_year = yearError;
+
+    if (!form.tieneDocumento) {
+        errors.documento = 'Debes tener un archivo PDF de la tesis';
+    }
+
+    return {
+        isValid: Object.keys(errors).length === 0,
         errors
     };
 };

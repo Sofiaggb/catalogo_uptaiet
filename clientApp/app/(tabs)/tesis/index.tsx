@@ -91,7 +91,7 @@ export default function TesisListScreen() {
         }
 
         const result = await tesisApi.listar(params);
-        console.log('resultado tesis >>>> ',result)
+        // console.log('resultado tesis >>>> ',result)
         if (result.success) {
             if (page === 1) {
                 setTesis(result.data);
