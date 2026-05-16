@@ -17,10 +17,8 @@ export const librosApi = {
     },
 
     // Obtener documento por ID
-    getById: async (id: number): Promise<Libros | null> => {
-        const response = await apiClient.get<{ success: boolean; data: Libros }>
-        (`/libros/${id}`);
-        return response.success ? response.data : null;
+    getById: async (id: number): Promise<Libros | any> => {
+        return await apiClient.get(`/libros/byId/${id}`);
     },
 
     // Crear documento

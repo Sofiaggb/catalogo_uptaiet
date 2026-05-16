@@ -1,12 +1,11 @@
-// app/(tabs)/recursos/index.tsx
+// app/(tabs)/libros/index.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
-    Linking,
     Modal,
     Pressable,
     RefreshControl,
@@ -20,168 +19,35 @@ import { librosApi } from '@/services/api/endpoints/libros';
 import { materiasApi } from '@/services/api/endpoints/materias';
 import type { Libros, Materia } from '@/services/api/types';
 
-// ============================================
-// COMPONENTE TARJETA DE DOCUMENTO
-// ============================================
-const DocumentoCard = ({ documento, onRefresh }: { documento: Libros; onRefresh: () => void }) => {
-
-    const handleOpen = async () => {
-        if (documento.url_documento) {
-            const url = documento.url_documento.startsWith('http')
-                ? documento.url_documento
-                : `https://${documento.url_documento}`;
-            await Linking.openURL(url);
-        } else { 
-            Alert.alert('Información', 'Este documento no tiene URL disponible');
-        }
-    };
-
-    const handleEdit = () => {
-        router.push(`/libros/edit/${documento.id_libro}`);
-    };
-
-    const handleDelete = () => {
-        Alert.alert(
-            'Eliminar Documento',
-            `¿Estás seguro de eliminar "${documento.titulo}"?`,
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Eliminar',
-                    style: 'destructive',
-                    onPress: async () => {
-                        const success = await librosApi.delete(documento.id_libro);
-                        if (success) {
-                            Alert.alert('Éxito', 'Documento eliminado correctamente');
-                            onRefresh();
-                        } else {
-                            Alert.alert('Error', 'No se pudo eliminar el documento');
-                        }
-                    }
-                }
-            ]
-        );
-    };
-
-    return (
-        <TouchableOpacity
-            className="bg-white rounded-xl p-4 mx-5 my-2 border border-gray-200 shadow-sm"
-            onPress={handleOpen}
-            activeOpacity={0.7}
-        >
-            <View className="flex-row justify-between items-start">
-                <View className="flex-1">
-                    <View className="flex-row items-center">
-                        <Ionicons name="document-text-outline" size={22} color="#3B82F6" />
-                        <Text className="text-black font-bold text-lg ml-2 flex-1">{documento.titulo}</Text>
-                    </View>
-
-                    {documento.autor && (
-                        <Text className="text-gray-500 text-sm mt-1 ml-7">
-                            {documento.autor}
-                        </Text>
-                    )}
-
-                    {documento.materia && (
-                        <Text className="text-gray-400 text-xs mt-1 ml-7">
-                            {documento.materia}
-                        </Text>
-                    )}
-
-                    {documento.descripcion && (
-                        <Text className="text-gray-500 text-sm mt-2 ml-7" numberOfLines={2}>
-                            {documento.descripcion}
-                        </Text>
-                    )}
-                </View>
-
-                {/* Botones de acción */}
-                <View className="flex-row items-center gap-2 ml-2">
-                    <TouchableOpacity
-                        onPress={handleEdit}
-                        className="bg-yellow-100 rounded-full p-2"
-                    >
-                        <Ionicons name="create-outline" size={18} color="#D97706" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={handleDelete}
-                        className="bg-red-100 rounded-full p-2"
-                    >
-                        <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                    </TouchableOpacity>
-
-                    <Ionicons name="open-outline" size={20} color="#3B82F6" />
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
-};
-
-// ============================================
-// PANTALLA PRINCIPAL
-// ============================================
-export default function RecursosScreen() {
-    const [documentos, setDocumentos] = useState<Libros[]>([]);
+export default function LibrosListScreen() {
+    const [libros, setLibros] = useState<Libros[]>([]);
     const [materias, setMaterias] = useState<Materia[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchText, setSearchText] = useState('');
-    const [filtroMateria, setFiltroMateria] = useState<number | null>(null);
+
+    // Filtros (usar solo materiasSeleccionadas, no filtroMateria separado)
+    const [materiasSeleccionadas, setMateriasSeleccionadas] = useState<number[]>([]);
+    const [modalMateriasVisible, setModalMateriasVisible] = useState(false);
+
+    // Paginación
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loadingMore, setLoadingMore] = useState(false);
 
-    // app/(tabs)/docs/index.tsx
-
-    // ============================================
-    // ESTADOS PARA FILTROS
-    // ============================================
-    const [materiasSeleccionadas, setMateriasSeleccionadas] = useState<number[]>([]);
-    const [modalMateriasVisible, setModalMateriasVisible] = useState(false);
-
-
-
-
-
-    useEffect(() => {
-        cargarMaterias();
-        cargarDocumentos();
-    }, []);
-
-
-
-
-    // ============================================
-    // CONTAR FILTROS ACTIVOS
-    // ============================================
+    // Contar filtros activos
     const totalFiltrosActivos = materiasSeleccionadas.length + (searchText ? 1 : 0);
 
     // ============================================
     // FUNCIONES
     // ============================================
-    const toggleMateria = (id: number) => {
-        if (materiasSeleccionadas.includes(id)) {
-            setMateriasSeleccionadas(materiasSeleccionadas.filter(m => m !== id));
-        } else {
-            setMateriasSeleccionadas([...materiasSeleccionadas, id]);
-        }
-        setPage(1);
+
+    const cargarMaterias = async () => {
+        const data = await materiasApi.getAll();
+        setMaterias(data);
     };
 
-    const limpiarFiltros = () => {
-        setMateriasSeleccionadas([]);
-        setSearchText('');
-        setPage(1);
-    };
-
-
-
-
-
-
-
-    const cargarDocumentos = async (isLoadMore = false) => {
+    const cargarLibros = async (isLoadMore = false) => {
         if (isLoadMore) {
             setLoadingMore(true);
         } else {
@@ -191,92 +57,130 @@ export default function RecursosScreen() {
         try {
             const data = await librosApi.getAll({
                 buscar: searchText || undefined,
-                id_materia: filtroMateria || undefined,
-                page,
+                id_materia: materiasSeleccionadas.length > 0 ? materiasSeleccionadas.join(',') : undefined,
+                page: isLoadMore ? page : 1,
                 limit: 10
             });
 
-            // console.log('datita docs>>>>>', data);
-
-            // Asegurar que siempre sea un array
-            const documentosData = Array.isArray(data?.data) ? data.data : [];
+            const librosData = Array.isArray(data?.data) ? data.data : [];
 
             if (data?.pagination) {
                 setTotalPages(data.pagination.pages);
             }
 
             if (isLoadMore) {
-                setDocumentos(prev => [...prev, ...documentosData]);
+                setLibros(prev => [...prev, ...librosData]);
                 setLoadingMore(false);
             } else {
-                setDocumentos(documentosData);
+                setLibros(librosData);
                 setLoading(false);
             }
-
         } catch (error) {
-            console.error('Error cargando documentos:', error);
+            console.error('Error cargando libros:', error);
             if (isLoadMore) {
                 setLoadingMore(false);
             } else {
                 setLoading(false);
             }
-            setDocumentos([]);
+            setLibros([]);
         }
     };
 
     const loadMore = () => {
         if (page < totalPages && !loadingMore) {
             setPage(prev => prev + 1);
+            cargarLibros(true);
         }
-    };
-    // useFocusEffect(
-    //     useCallback(() => {
-    //         cargarDatos();
-    //     }, []) 
-    // );
-
-    // const cargarDatos = async () => {
-    //     setLoading(true);
-    //     await Promise.all([
-    //         cargarDocumentos(),
-    //         cargarMaterias()
-    //     ]);
-    //     setLoading(false);
-    // };
-
-
-    const cargarMaterias = async () => {
-        const data = await materiasApi.getAll();
-        setMaterias(data);
     };
 
     const onRefresh = () => {
         setRefreshing(true);
-        cargarDocumentos();
+        setPage(1);
+        cargarLibros(false);
+        setRefreshing(false);
     };
 
-    // Filtrar documentos
-    // app/(tabs)/docs/index.tsx
+    const limpiarFiltros = () => {
+        setMateriasSeleccionadas([]);
+        setSearchText('');
+        setPage(1);
+        cargarLibros(false);
+    };
 
-    // Filtrar documentos
-    const documentosFiltrados = documentos && documentos.length > 0
-        ? documentos.filter(doc => {
-            if (searchText && !doc.titulo.toLowerCase().includes(searchText.toLowerCase()) &&
-                !doc.autor?.toLowerCase().includes(searchText.toLowerCase())) {
-                return false;
-            }
-            if (filtroMateria && doc.id_materia !== filtroMateria) {
-                return false;
-            }
-            return true;
-        })
-        : [];
+    const toggleMateria = (id: number) => {
+        if (materiasSeleccionadas.includes(id)) {
+            setMateriasSeleccionadas(materiasSeleccionadas.filter(m => m !== id));
+        } else {
+            setMateriasSeleccionadas([...materiasSeleccionadas, id]);
+        }
+        setPage(1);
+    };
 
-    if (loading && documentos.length === 0) {
+    const aplicarFiltros = () => {
+        setModalMateriasVisible(false);
+        setPage(1);
+        cargarLibros(false);
+    };
+
+    // Cargar datos iniciales
+    useFocusEffect(
+        useCallback(() => {
+            cargarMaterias();
+            cargarLibros(false);
+        }, [])
+    );
+
+    // Renderizar item de libro
+    const renderLibroItem = ({ item }: { item: Libros }) => (
+        <TouchableOpacity
+            className="bg-white rounded-xl p-4 mx-5 my-2 border border-gray-200 shadow-sm"
+            onPress={() => router.push(`/libros/${item.id_libro}`)}
+            activeOpacity={0.7}
+        >
+            <View className="flex-row justify-between items-start">
+                <View className="flex-1">
+                    <Text className="text-black font-bold text-lg">{item.titulo}</Text>
+
+                    <View className="flex-row flex-wrap mt-2">
+                        {item.autor && (
+                            <View className="flex-row items-center bg-blue-100 rounded-full px-3 py-1 mr-2 mb-1">
+                                <Ionicons name="person-outline" size={10} color="#2563EB" />
+                                <Text className="text-blue-700 text-xs ml-1">{item.autor}</Text>
+                            </View>
+                        )}
+
+                        {item.materia && (
+                            <View className="flex-row items-center bg-green-100 rounded-full px-3 py-1 mr-2 mb-1">
+                                <Ionicons name="book-outline" size={10} color="#059669" />
+                                <Text className="text-green-700 text-xs ml-1">{item.materia}</Text>
+                            </View>
+                        )}
+
+                        {item.editorial && (
+                            <View className="flex-row items-center bg-purple-100 rounded-full px-3 py-1 mr-2 mb-1">
+                                <Ionicons name="business-outline" size={10} color="#9333EA" />
+                                <Text className="text-purple-700 text-xs ml-1">{item.editorial}</Text>
+                            </View>
+                        )}
+
+                        {item.year && (
+                            <View className="flex-row items-center bg-yellow-100 rounded-full px-3 py-1 mb-1">
+                                <Ionicons name="calendar-outline" size={10} color="#D97706" />
+                                <Text className="text-yellow-700 text-xs ml-1">{item.year}</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </View>
+        </TouchableOpacity>
+    );
+
+    if (loading && libros.length === 0) {
         return (
             <View className="flex-1 bg-white justify-center items-center">
                 <ActivityIndicator size="large" color="#3B82F6" />
-                <Text className="text-gray-500 mt-4">Cargando recursos...</Text>
+                <Text className="text-gray-500 mt-4">Cargando libros...</Text>
             </View>
         );
     }
@@ -284,8 +188,13 @@ export default function RecursosScreen() {
     return (
         <View className="flex-1 bg-white">
             {/* Header */}
-            <View className="bg-cyan-100  pt-2 pb-4 px-5">
-                <Text className="text-sm">Documentos, libros y materiales de apoyo</Text>
+            <View className="bg-cyan-100 pt-2 pb-4 px-5">
+                <Text className="text-sm">Libros y materiales de apoyo</Text>
+                {!loading && libros.length > 0 && (
+                    <Text className="text-xs mt-1 text-gray-600">
+                        {libros.length} libro{libros.length !== 1 ? 's' : ''}
+                    </Text>
+                )}
             </View>
 
             {/* Buscador */}
@@ -296,11 +205,19 @@ export default function RecursosScreen() {
                         className="flex-1 p-3 text-base"
                         placeholder="Buscar por título o autor..."
                         value={searchText}
-                        onChangeText={setSearchText}
+                        onChangeText={(text) => {
+                            setSearchText(text);
+                            setPage(1);
+                            cargarLibros(false);
+                        }}
                         placeholderTextColor="#999"
                     />
                     {searchText !== '' && (
-                        <TouchableOpacity onPress={() => setSearchText('')} className="pr-3">
+                        <TouchableOpacity onPress={() => {
+                            setSearchText('');
+                            setPage(1);
+                            cargarLibros(false);
+                        }} className="pr-3">
                             <Ionicons name="close-circle" size={18} color="#9CA3AF" />
                         </TouchableOpacity>
                     )}
@@ -310,12 +227,7 @@ export default function RecursosScreen() {
             {/* Badges de filtros activos */}
             {totalFiltrosActivos > 0 && (
                 <View className="px-5 pb-3 mt-2">
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        className="flex-row flex-wrap"
-                        contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', width: '100%' }}
-                    >
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                         {/* Badges de materias */}
                         {materiasSeleccionadas.map(id => {
                             const materia = materias.find(m => m.id_materia === id);
@@ -323,24 +235,16 @@ export default function RecursosScreen() {
                                 <TouchableOpacity
                                     key={`m-${id}`}
                                     className="flex-row items-center bg-yellow-100 rounded-full px-3 py-1.5 mr-2 mb-2"
-                                    onPress={() => toggleMateria(id)}
+                                    onPress={() => {
+                                        toggleMateria(id);
+                                        cargarLibros(false);
+                                    }}
                                 >
                                     <Text className="text-black text-sm">{materia?.nombre}</Text>
                                     <Ionicons name="close-circle" size={16} color="#000000" className="ml-1" />
                                 </TouchableOpacity>
                             );
                         })}
-
-                        {/* Badge de búsqueda */}
-                        {searchText !== '' && (
-                            <TouchableOpacity
-                                className="flex-row items-center bg-yellow-100 rounded-full px-3 py-1.5 mr-2 mb-2"
-                                onPress={() => setSearchText('')}
-                            >
-                                <Text className="text-black text-sm">🔍 {searchText}</Text>
-                                <Ionicons name="close-circle" size={16} color="#000000" className="ml-1" />
-                            </TouchableOpacity>
-                        )}
 
                         {/* Botón limpiar todo */}
                         <TouchableOpacity
@@ -354,10 +258,9 @@ export default function RecursosScreen() {
                 </View>
             )}
 
-            {/* ==================== FILTROS ==================== */}
+            {/* Barra de filtros */}
             <View className="px-5 pb-3">
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {/* Botón filtro materias */}
                     <TouchableOpacity
                         className={`flex-row items-center rounded-full px-4 py-2 mr-2 ${materiasSeleccionadas.length > 0 ? 'bg-yellow-500' : 'bg-gray-200'
                             }`}
@@ -371,14 +274,9 @@ export default function RecursosScreen() {
                         <Text className={`ml-1 ${materiasSeleccionadas.length > 0 ? 'text-black font-bold' : 'text-gray-700'}`}>
                             Materias {materiasSeleccionadas.length > 0 && `(${materiasSeleccionadas.length})`}
                         </Text>
-                        <Ionicons
-                            name="chevron-down"
-                            size={14}
-                            color={materiasSeleccionadas.length > 0 ? '#000000' : '#6B7280'}
-                        />
+                        <Ionicons name="chevron-down" size={14} color={materiasSeleccionadas.length > 0 ? '#000000' : '#6B7280'} />
                     </TouchableOpacity>
 
-                    {/* Botón limpiar filtros (si hay filtros activos) */}
                     {totalFiltrosActivos > 0 && (
                         <TouchableOpacity
                             className="flex-row items-center rounded-full px-4 py-2 bg-red-100"
@@ -391,50 +289,42 @@ export default function RecursosScreen() {
                 </ScrollView>
             </View>
 
-
-
-
-            {/* Contador */}
-            <View className="px-5 pb-2">
-                <Text className="text-gray-500 text-sm">
-                    {documentosFiltrados.length} recurso{documentosFiltrados.length !== 1 ? 's' : ''} encontrado{documentosFiltrados.length !== 1 ? 's' : ''}
-                </Text>
-            </View>
-
             {/* Lista */}
             <FlatList
-                data={documentosFiltrados}
+                data={libros}
                 keyExtractor={(item) => item.id_libro.toString()}
-                renderItem={({ item }) => (
-                    <DocumentoCard documento={item} onRefresh={cargarDocumentos} />
-                )}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3B82F6']} />
-                }
+                renderItem={renderLibroItem}
+                onRefresh={onRefresh}
+                refreshing={refreshing}
+                onEndReached={loadMore}
+                onEndReachedThreshold={0.3}
                 ListEmptyComponent={() => (
                     <View className="flex-1 items-center justify-center py-20">
-                        <Ionicons name="document-text-outline" size={64} color="#D1D5DB" />
+                        <Ionicons name="book-outline" size={64} color="#D1D5DB" />
                         <Text className="text-gray-500 text-center mt-4">
-                            {searchText ? 'No se encontraron recursos' : 'No hay recursos disponibles'}
-                        </Text>
-                        <Text className="text-gray-400 text-center text-sm mt-2">
-                            Agrega documentos, enlaces y materiales de apoyo
+                            {searchText || materiasSeleccionadas.length > 0
+                                ? 'No se encontraron libros con esos filtros'
+                                : 'No hay libros disponibles'}
                         </Text>
                     </View>
                 )}
+                ListFooterComponent={() =>
+                    loadingMore && (
+                        <ActivityIndicator size="small" color="#3B82F6" className="py-4" />
+                    )
+                }
                 contentContainerStyle={{ paddingBottom: 80 }}
             />
 
             {/* Botón flotante */}
             <Pressable
-                className="absolute bottom-6 right-6  bg-sky-400 rounded-full p-4 shadow-lg"
+                className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
                 onPress={() => router.push('/libros/create')}
             >
-                <Ionicons name="add" size={28} color="#00000" />
+                <Ionicons name="add" size={28} color="#000000" />
             </Pressable>
 
-
-            {/* ==================== MODAL SELECCIÓN DE MATERIAS ==================== */}
+            {/* Modal de selección de materias */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -469,13 +359,18 @@ export default function RecursosScreen() {
                         <View className="flex-row gap-4 p-4 border-t border-gray-200">
                             <TouchableOpacity
                                 className="flex-1 bg-gray-200 py-3 rounded-xl"
-                                onPress={() => setMateriasSeleccionadas([])}
+                                onPress={() => {
+                                    setMateriasSeleccionadas([]);
+                                    setModalMateriasVisible(false);
+                                    setPage(1);
+                                    cargarLibros(false);
+                                }}
                             >
                                 <Text className="text-center text-gray-700">Limpiar todo</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 className="flex-1 bg-yellow-500 py-3 rounded-xl"
-                                onPress={() => setModalMateriasVisible(false)}
+                                onPress={aplicarFiltros}
                             >
                                 <Text className="text-center text-black font-bold">
                                     Aplicar ({materiasSeleccionadas.length})
@@ -485,8 +380,6 @@ export default function RecursosScreen() {
                     </View>
                 </View>
             </Modal>
-
-
         </View>
     );
 }

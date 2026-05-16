@@ -66,28 +66,28 @@ export const libroController = {
     try {
       // Llamar a la función PostgreSQL (SOLO UNA CONSULTA)
       const result = await pool.query(
-        'SELECT tesis.obtener_tesis_completa($1) AS resultado',
+        'SELECT recursos.libro_obtener($1) AS resultado',
         [id]
       );
 
       // La función devuelve JSONB, PostgreSQL lo parsea automáticamente
-      const tesisCompleta = result.rows[0].resultado;
+      const libro = result.rows[0].resultado;
 
-      res.json(tesisCompleta);
+      res.json(libro);
 
     } catch (error) {
-      console.error('Error en getTesisCompleta:', error);
+      console.error('Error en get libro by id:', error);
 
-      // Manejar error específico de "tesis no encontrada"
-      if (error.message.includes('Tesis no encontrada')) {
+      // Manejar error específico de "libro no encontrada"
+      if (error.message.includes('libro no encontrada')) {
         return res.status(404).json({
-          error: 'Tesis no encontrada',
+          error: 'libro no encontrada',
           message: error.message
         });
       }
 
       res.status(500).json({
-        error: 'Error al obtener la tesis',
+        error: 'Error al obtener la libro',
         detalle: error.message
       });
     }
@@ -124,14 +124,13 @@ export const libroController = {
   // Editar tesis existente
   updateLibro: async (req, res) => {
     const { id } = req.params;
-    const { titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones} = req.body;
+    const { id_materia, titulo, autor, editorial, year} = req.body;
     let url_documento = null;
     let oldFilePath = null;
-    // console.log(titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones)
     
     // Procesar nuevo archivo si existe
     if (req.file) {
-      url_documento = `/uploads/tesis/${req.file.filename}`;
+      url_documento = `/uploads/libros/${req.file.filename}`;
       console.log('Nuevo archivo recibido:', req.file.filename);
     }
     
@@ -139,7 +138,7 @@ export const libroController = {
       // Obtener la URL anterior para posible limpieza después
       if (url_documento) {
         const oldResult = await pool.query(
-          'SELECT url_documento FROM tesis.tesis WHERE id_tesis = $1',
+          'SELECT url_documento FROM recursos.libro WHERE id_libro = $1',
           [id]
         );
         if (oldResult.rows.length > 0) {
@@ -149,18 +148,16 @@ export const libroController = {
             
       // Llamar a la función de PostgreSQL
       const result = await pool.query(
-        `SELECT tesis.editar_tesis($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9 ) AS resultado`,
-        [
-          id,                                 
-          titulo || null,           
-          resumen || null,            
-          id_carrera || null,   
-          anio_elaboracion || null,           
-          url_documento,                       
-          estudiantes ? JSON.stringify(JSON.parse(estudiantes) || []): null,  
-          evaluaciones ? JSON.stringify(JSON.parse(evaluaciones) || []) : null, 
-          req.usuario?.id_usuario || null       
-        ]
+               `SELECT recursos.libro_edit($1, $2, $3, $4, $5, $6, $7, $8) AS resultado`,
+        [ id,
+          id_materia,
+          titulo,
+          autor ,
+          editorial,
+          year,
+          url_documento || null,
+          req.usuario?.id_usuario || null
+        ]    
       );
       
       const resultado = result.rows[0].resultado;
@@ -187,7 +184,7 @@ export const libroController = {
       res.status(resultado.status || 200).json(resultado);
       
     } catch (error) {
-      console.error('Error en updateTesis:', error);
+      console.error('Error en updatelibro:', error);
       
       // Limpiar archivo nuevo si hay error
       if (req.file && fs.existsSync(req.file.path)) {
@@ -204,61 +201,5 @@ export const libroController = {
     }
   },
 
-
-
-  deleteLibro: async (req, res) => {
-    const { id } = req.params;
-    const { forzar_fisico = false } = req.query;
-
-    try {
-      const result = await pool.query(
-        `SELECT tesis.eliminar_tesis($1, $2, $3) AS resultado`,
-        [id, req.usuario?.email || 'sistema', forzar_fisico === 'true']
-      );
-
-      const resultado = result.rows[0].resultado;
-
-      if (!resultado.success) {
-        return res.status(resultado.status || 400).json(resultado);
-      }
-
-      res.json(resultado);
-
-    } catch (error) {
-      console.error('Error en eliminarTesis:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error al eliminar la tesis'
-      });
-    }
-  },
-
-  // src/controllers/tesisController.js
- testUpload :async (req, res) => {
-    console.log('=== TEST UPLOAD ===');
-    console.log('req.file:', req.file);
-    console.log('req.body:', req.body);
-    console.log('req.headers.content-type:', req.headers['content-type']);
-    
-    if (!req.file) {
-        return res.status(400).json({ 
-            error: 'No se recibió archivo',
-            body: req.body,
-            contentType: req.headers['content-type']
-        });
-    }
-    
-    res.json({
-        success: true,
-        file: {
-            fieldname: req.file.fieldname,
-            originalname: req.file.originalname,
-            filename: req.file.filename,
-            size: req.file.size,
-            path: req.file.path
-        },
-        body: req.body
-    });
-},
 
 }

@@ -8,7 +8,6 @@ const router = express.Router();
 // Rutas 
 router.post('/save',  upload.libros.single('archivo_pdf'),  libroController.createLibro);
 router.put('/update/:id',  upload.libros.single('archivo_pdf'), libroController.updateLibro);
-router.delete('/delete/:id', libroController.deleteLibro);
 router.get('/byId/:id', libroController.getLibroById);
 router.get('/', libroController.getLibros);
 

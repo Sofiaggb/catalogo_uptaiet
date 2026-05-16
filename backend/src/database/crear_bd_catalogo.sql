@@ -165,6 +165,8 @@ CREATE TABLE tesis.tesis (
     id_estado int REFERENCES control.estado(id_estado),
 	fecha_creacion timestamp DEFAULT NOW(),
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
+		fecha_modificacion TIMESTAMP,
+	id_usuario_modificacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 	fecha_eliminacion timestamp,	
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
@@ -185,43 +187,7 @@ ADD COLUMN IF NOT EXISTS id_usuario_modificacion INTEGER,
 ADD COLUMN IF NOT EXISTS fecha_modificacion TIMESTAMP DEFAULT NOW();
 
 
-/*
 
-alter table tesis.tesis 
-add column id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-
-alter table catalogo.carrera 
-add column id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-
-alter table catalogo.materia 
-add column id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-
-alter table personas.estudiante 
-add column id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-
-alter table  personas.jurado  
-add column id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-
-alter table  tesis.tesis_estudiante 
-add column id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-
-alter table  tesis.evaluacion_tesis  
-add column id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-
-alter table recursos.documento_soporte 
-add column id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-
-alter table seguridad.usuario  
-ADD COLUMN id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario);
-*/
 
 CREATE TABLE tesis.tesis_estudiante (
 	id_tesis_estudiante SERIAL PRIMARY KEY,
@@ -243,6 +209,8 @@ CREATE TABLE tesis.evaluacion_tesis (
     comentarios TEXT,
 	fecha_creacion timestamp DEFAULT NOW(),
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
+		fecha_modificacion TIMESTAMP,
+	id_usuario_modificacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 	fecha_eliminacion timestamp,	
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario),
     UNIQUE(id_tesis, id_jurado)  -- un jurado solo evalúa una vez la misma tesis
@@ -258,22 +226,31 @@ CREATE SCHEMA recursos;
 /*
 drop table if exists recursos.libros;
 drop table if exists recursos.documento_soporte;
+
+
+ALTER TABLE recursos.libro 
+RENAME COLUMN url_recurso TO url_documento;
 */
 
 CREATE TABLE recursos.libro (
     id_libro SERIAL PRIMARY KEY,
+ 	id_materia INT NOT NULL REFERENCES catalogo.materia(id_materia) ON DELETE CASCADE,
     titulo VARCHAR(300) NOT NULL,
     autor VARCHAR,
     editorial VARCHAR,
     year integer,
-    url_recurso VARCHAR(500),
-    descripcion TEXT,
-    id_materia INT NOT NULL REFERENCES catalogo.materia(id_materia) ON DELETE CASCADE,
+    url_documento VARCHAR(500),   
 	fecha_creacion timestamp DEFAULT NOW(),
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
+	fecha_modificacion TIMESTAMP,
+	id_usuario_modificacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 	fecha_eliminacion timestamp,	
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
+
+ALTER TABLE recursos.libro 
+ADD COLUMN IF NOT EXISTS id_usuario_modificacion INTEGER,
+ADD COLUMN IF NOT EXISTS fecha_modificacion TIMESTAMP ;
 
 -- 4. Esquema para usuario
 CREATE SCHEMA seguridad;

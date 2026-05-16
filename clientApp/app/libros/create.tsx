@@ -1,6 +1,6 @@
-// app/tesis/create.tsx
+// app/libro/create.tsx
 import LibroForm from './form';
 
 export default function CreateLibroScreen() {
-    return <LibroForm />;
+    return <LibroForm mode="create"  />;
 }

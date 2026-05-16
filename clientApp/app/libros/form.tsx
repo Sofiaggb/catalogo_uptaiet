@@ -13,18 +13,16 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 // Interfaces locales para el estado del formulario
 // recibe las props directamente
-interface TesisFormProps {
-    mode?: 'create' | 'edit';
-    tesisId?: string;
+interface LibroFormProps {
+    mode: 'create' | 'edit'
 }
 
-export default function LibroForm({ mode: propMode, tesisId: propTesisId }: TesisFormProps = {}) {
+export default function LibroForm({ mode }: LibroFormProps ) {
     const router = useRouter();
-    const params = useLocalSearchParams();
+    const { id } = useLocalSearchParams<{ id?: string }>();
+    const isEditing = mode === 'edit';
 
     // Determinar modo: primero de props, luego de params, luego por defecto 'create'
-    const isEditing = propMode === 'edit' || params.mode === 'edit';
-    const tesisId = propTesisId || (params.id as string);
     //  console.log(tesisId)
     const [loading, setLoading] = useState(false);
     const [loadingData, setLoadingData] = useState(isEditing);
@@ -81,11 +79,11 @@ export default function LibroForm({ mode: propMode, tesisId: propTesisId }: Tesi
 
     // Cargar datos si es edición
     useEffect(() => {
-        if (isEditing && tesisId) {
+        if (isEditing && id) {
             // console.log('si paso a editdm')
-            cargarDatosTesis();
+            cargarDatosLibro();
         }
-    }, [isEditing, tesisId]);
+    }, [isEditing, id]);
 
     const cargarMaterias = async () => {
         const lista = await materiasApi.getAll();
@@ -93,30 +91,27 @@ export default function LibroForm({ mode: propMode, tesisId: propTesisId }: Tesi
         setMaterias(lista);
     };
 
-    const cargarDatosTesis = async () => {
+    const cargarDatosLibro = async () => {
         setLoadingData(true);
         try {
-            const response = await tesisApi.getById(Number(tesisId));
+            const response = await librosApi.getById(Number(id));
             if (response.success && response.data) {
-                const tesis = response.data;
-                // console.log(tesis)
+                const data = response.data;
                 // Cargar datos principales
                 setForm({
-                    titulo: tesis.titulo || '',
-                    autor: tesis.resumen || '',
-                    editorial: tesis.editorial || '',
+                    titulo: data.titulo || '',
+                    autor: data.autor || '',
+                    editorial: data.editorial || '',
 
-                    id_materia: tesis.id_materia ? tesis.id_materia.toString() : '',
-                    id_year: tesis.id_year ? tesis.id_year.toString() : '',
-                    url_documento: tesis.url_documento || ''
+                    id_materia: data.id_materia ? data.id_materia.toString() : '',
+                    id_year: data.year ? data.year.toString() : '',
+                    url_documento: data.url_documento || ''
                 });
-                setSelectedMateria(tesis.id_materia.toString());
-                console.log(tesis.id_materia)
+                setSelectedMateria(data.id_materia.toString());
+                console.log(data.id_materia)
 
-                setAnioElaboracion(tesis.anio_elaboracion);
-                setDocumentoOriginal(tesis.url_documento);
-
-
+                setAnioElaboracion(data.year);
+                setDocumentoOriginal(data.url_documento);
             }
         } catch (error) {
             console.error('Error cargando tesis:', error);
@@ -262,7 +257,7 @@ export default function LibroForm({ mode: propMode, tesisId: propTesisId }: Tesi
 
         let resultado;
         if (isEditing) {
-            resultado = await librosApi.update(Number(tesisId), formData);
+            resultado = await librosApi.update(Number(id), formData);
             console.log('actualizar', resultado)
 
         } else {

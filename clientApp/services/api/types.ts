@@ -141,7 +141,7 @@ export interface Libros {
     titulo: string;
     autor?: string;
     editorial?:string;
-    id_year:string;
+    year:string;
     url_documento?: string;
     descripcion?: string;
     id_materia: number;
@@ -158,7 +158,7 @@ export interface CrearDocumentoInput {
 }
 
 export interface ListarDocumentosParams {
-    id_materia?: number;
+    id_materia?: string;
     buscar?: string;
     limit?: number;
     page?: number;
