@@ -1,8 +1,20 @@
 // app/(tabs)/_layout.tsx
+import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 
 export default function TabLayout() {
+  const { user, isAuthenticated } = useAuth();
+    const router = useRouter();
+
+    const handlePerfilPress = () => {
+        if (isAuthenticated) {
+            router.push('/perfil');
+        } else {
+            router.push('/(auth)/login');
+        }
+    };
+
   return (
     <Tabs
       screenOptions={{
@@ -45,15 +57,35 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="auth/perfil"
+      {/* <Tabs.Screen
+        name="perfil/index"
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
-      />
+      /> */}
+
+       <Tabs.Screen
+                name="perfil/index"
+                options={{
+                    title: isAuthenticated ? 'Perfil' : 'Ingresar',
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons 
+                            name={isAuthenticated ? "person-circle-outline" : "log-in-outline"} 
+                            size={size} 
+                            color={color} 
+                        />
+                    ),
+                }}
+                listeners={{
+                    tabPress: (e) => {
+                        e.preventDefault();
+                        handlePerfilPress();
+                    },
+                }}
+            />
     </Tabs>
   );
 }

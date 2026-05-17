@@ -1,9 +1,11 @@
 // app/index.tsx
+import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { Href, Link } from 'expo-router';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
+     const { isAuthenticated, hasRole } = useAuth();
     return (
         <ScrollView className="flex-1 bg-white">
             {/* Header */}
@@ -44,7 +46,8 @@ export default function HomeScreen() {
                     <QuickCard title="Libros" iconName="library-outline"
                         href="/libros"
                         colorVariant="blue" />
-
+ {isAuthenticated && (
+    <>
                     <QuickCard title="Carreras" iconName="school-outline"
                         href="/carreras"
                         colorVariant="blue" />
@@ -52,9 +55,10 @@ export default function HomeScreen() {
                     <QuickCard title="Materias" iconName="book-outline"
                         href="/materias"
                         colorVariant="blue" />
-
+                        </>
+ )}
                     <QuickCard title="Mi Perfil" iconName="person-circle-outline"
-                        href="/auth/perfil"
+                        href="/perfil"
                         colorVariant="blue" />
 
                 </View>

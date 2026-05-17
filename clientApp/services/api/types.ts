@@ -163,3 +163,18 @@ export interface ListarDocumentosParams {
     limit?: number;
     page?: number;
 }
+
+
+// usuario
+
+
+export interface LoginData {
+    email: string;
+    password: string;
+}
+
+export interface RegisterData {
+    email: string;
+    password: string;
+    nombre: string;
+}

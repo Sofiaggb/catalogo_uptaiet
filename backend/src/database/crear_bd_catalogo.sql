@@ -2,7 +2,8 @@
 
 
 
-
+-- Verificar si está instalada
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 
 -- 1. Esquema para catálogo académico (carreras, materias)
@@ -277,6 +278,47 @@ CREATE TABLE seguridad.usuario (
     nombre VARCHAR(100) UNIQUE NOT NULL,
 	id_rol INT NOT NULL REFERENCES seguridad.rol(id_rol) ON DELETE CASCADE,
     fecha_creacion TIMESTAMP DEFAULT NOW(),
+	fecha_modificacion timestamp,
 	fecha_eliminacion timestamp,	
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
+
+------------ nuevo
+
+-- Solo necesitamos una tabla para códigos, sin datos de usuario
+CREATE TABLE seguridad.codigo_verificacion (
+    id_codigo SERIAL PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    codigo VARCHAR(6) NOT NULL,
+    intentos INT DEFAULT 0,
+    creado_en TIMESTAMP DEFAULT NOW(),
+    expira_en TIMESTAMP DEFAULT NOW() + INTERVAL '15 minutes',
+    usado BOOLEAN DEFAULT FALSE
+);
+
+-- Índices
+CREATE INDEX idx_codigo_email ON seguridad.codigo_verificacion(email);
+CREATE INDEX idx_codigo_expiracion ON seguridad.codigo_verificacion(expira_en);
+
+
+
+-- Tabla para códigos de recuperación de contraseña
+CREATE TABLE IF NOT EXISTS seguridad.codigo_recuperacion (
+    id_recuperacion SERIAL PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    codigo VARCHAR(6) NOT NULL,
+    id_usuario INTEGER NOT NULL REFERENCES seguridad.usuario(id_usuario),
+    intentos INT DEFAULT 0,
+    verificado BOOLEAN DEFAULT FALSE,
+    usado BOOLEAN DEFAULT FALSE,
+    creado_en TIMESTAMP DEFAULT NOW(),
+    expira_en TIMESTAMP DEFAULT NOW() + INTERVAL '15 minutes'
+);
+
+-- Índices
+CREATE INDEX idx_recuperacion_email ON seguridad.codigo_recuperacion(email);
+CREATE INDEX idx_recuperacion_codigo ON seguridad.codigo_recuperacion(codigo);
+CREATE INDEX idx_recuperacion_expiracion ON seguridad.codigo_recuperacion(expira_en);
+
+
+

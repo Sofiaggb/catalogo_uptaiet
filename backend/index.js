@@ -1,3 +1,4 @@
+import 'dotenv/config'; 
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -25,6 +26,7 @@ import carreraRoutes from './src/routes/carreraRoutes.js';
 import tesisRoutes from './src/routes/tesisRoutes.js';
 import materiaRoutes from './src/routes/materiaRoutes.js';
 import docsRoutes from './src/routes/libroRoutes.js';
+import authRoutes from './src/routes/authRoutes.js';
 
 // Middlewares
 // Configuración de cors
@@ -43,6 +45,7 @@ app.use('/api/carreras', carreraRoutes);
 app.use('/api/tesis', tesisRoutes);
 app.use('/api/materias', materiaRoutes);
 app.use('/api/libros', docsRoutes);
+app.use('/api/auth', authRoutes);
 
 
 // Ruta de prueba
