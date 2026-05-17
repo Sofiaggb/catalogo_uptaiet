@@ -57,15 +57,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* <Tabs.Screen
-        name="perfil/index"
-        options={{
-          title: 'Perfil',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
-      /> */}
 
        <Tabs.Screen
                 name="perfil/index"
@@ -89,3 +80,5 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+

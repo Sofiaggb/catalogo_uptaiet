@@ -1,4 +1,5 @@
 // app/(tabs)/tesis/index.tsx
+import { useAuth } from '@/hooks/useAuth';
 import { carrerasApi } from '@/services/api/endpoints/carreras';
 import { tesisApi } from '@/services/api/endpoints/tesis';
 import { Carrera, Tesis } from '@/services/api/types';
@@ -18,6 +19,7 @@ import {
 } from 'react-native';
 
 export default function TesisListScreen() {
+    const { isAuthenticated, hasRole } = useAuth();
     const router = useRouter();
     const [tesis, setTesis] = useState<Tesis[]>([]);
     const [loading, setLoading] = useState(true);
@@ -64,7 +66,7 @@ export default function TesisListScreen() {
 
     const cargarAniosDisponibles = async () => {
         const years = await tesisApi.getAniosDisponibles();
-      //  console.log('reas>>>>>> ', years)
+        //  console.log('reas>>>>>> ', years)
         setAniosDisponibles(years);
     };
 
@@ -153,7 +155,7 @@ export default function TesisListScreen() {
         >
             <Text className="text-black font-bold text-lg">{item.titulo}</Text>
             <Text className="text-gray-600 text-sm mt-1" numberOfLines={2}>
-                { item.resumen_corto}
+                {item.resumen_corto}
             </Text>
             <View className="flex-row flex-wrap mt-2">
                 <View className="bg-gray-200 rounded-full px-3 py-1 mr-2 mb-1">
@@ -456,12 +458,14 @@ export default function TesisListScreen() {
             </Modal>
 
             {/* Botón Flotante para crear*/}
-            <Pressable
-                className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
-                onPress={() => router.push('/tesis/create')}
-            >
-                <Ionicons name="add" size={28} color="#000000" />
-            </Pressable>
+            {isAuthenticated && (
+                <Pressable
+                    className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
+                    onPress={() => router.push('/tesis/create')}
+                >
+                    <Ionicons name="add" size={28} color="#000000" />
+                </Pressable>
+            )}
         </View>
     );
 }

@@ -18,8 +18,10 @@ import {
 import { librosApi } from '@/services/api/endpoints/libros';
 import { materiasApi } from '@/services/api/endpoints/materias';
 import type { Libros, Materia } from '@/services/api/types';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LibrosListScreen() {
+    const { isAuthenticated, hasRole } = useAuth();
     const [libros, setLibros] = useState<Libros[]>([]);
     const [materias, setMaterias] = useState<Materia[]>([]);
     const [loading, setLoading] = useState(true);
@@ -316,13 +318,7 @@ export default function LibrosListScreen() {
                 contentContainerStyle={{ paddingBottom: 80 }}
             />
 
-            {/* Botón flotante */}
-            <Pressable
-                className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
-                onPress={() => router.push('/libros/create')}
-            >
-                <Ionicons name="add" size={28} color="#000000" />
-            </Pressable>
+
 
             {/* Modal de selección de materias */}
             <Modal
@@ -380,6 +376,16 @@ export default function LibrosListScreen() {
                     </View>
                 </View>
             </Modal>
+
+            {/* Botón flotante */}
+            {isAuthenticated && (
+                <Pressable
+                    className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
+                    onPress={() => router.push('/libros/create')}
+                >
+                    <Ionicons name="add" size={28} color="#000000" />
+                </Pressable>
+            )}
         </View>
     );
 }

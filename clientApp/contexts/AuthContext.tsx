@@ -168,21 +168,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // ============================================
     // LOGIN (con email o nombre de usuario)
     // ============================================
-    const login = async (email: string, password: string) => {
-        try {
-            const response = await authApi.login({ email, password });
+    // const login = async (email: string, password: string) => {
+    //     try {
+    //         const response = await authApi.login({ email, password });
             
-            if (response.success && response.data) {
-                setUser(response.data);
-                await AsyncStorage.setItem('@user', JSON.stringify(response.data));
-                return { success: true };
+    //         if (response.success && response.data) {
+    //             setUser(response.data);
+    //             await AsyncStorage.setItem('@user', JSON.stringify(response.data));
+    //             return { success: true };
+    //         }
+    //         return { success: false, message: response.message };
+    //     } catch (error) {
+    //         console.error('Error en login:', error);
+    //         return { success: false, message: 'Error de conexión' };
+    //     }
+    // };
+
+
+const login = async (email: string, password: string) => {
+    try {
+        const response = await authApi.login({ email, password });
+        
+        if (response.success && response.data) {
+            // Guardar usuario y token
+            setUser(response.data);
+            await AsyncStorage.setItem('@user', JSON.stringify(response.data));
+            
+            //  Guardar el token por separado
+            if (response.data.token) {
+                await AsyncStorage.setItem('@auth_token', response.data.token);
             }
-            return { success: false, message: response.message };
-        } catch (error) {
-            console.error('Error en login:', error);
-            return { success: false, message: 'Error de conexión' };
+            
+            return { success: true };
         }
-    };
+        return { success: false, message: response.message };
+    } catch (error) {
+        console.error('Error en login:', error);
+        return { success: false, message: 'Error de conexión' };
+    }
+};
 
     // ============================================
     // ENVIAR CÓDIGO DE VERIFICACIÓN (primer paso del registro)
@@ -235,6 +259,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const logout = async () => {
         setUser(null);
         await AsyncStorage.removeItem('@user');
+        await AsyncStorage.removeItem('@auth_token'); 
     };
 
     // ============================================

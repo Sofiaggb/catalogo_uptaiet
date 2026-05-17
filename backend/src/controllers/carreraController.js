@@ -102,7 +102,8 @@ export const carreraController = {
     try {
       const result = await pool.query(
         `SELECT catalogo.carrera_crear($1, $2, $3, $4, $5) AS resultado`,
-        [nombre, descripcion, id_tipo_carrera, id_tipo_trabajo, req.usuario?.id_usuario || null]
+        [nombre, descripcion, id_tipo_carrera, id_tipo_trabajo, 
+          req.usuario?.id_usuario || null]
       );
 
       const resultado = result.rows[0].resultado;

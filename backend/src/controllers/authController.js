@@ -1,6 +1,9 @@
 // backend/src/controllers/authController.js
 import {pool} from '../config/db.js';
 import { enviarCodigoRecuperacion, enviarCodigoVerificacion } from '../config/email.js';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'mi-secreto-super-seguro';
 
 export const authController = {
     //  Enviar código de verificación
@@ -83,33 +86,40 @@ export const authController = {
         }
     },
 
-      login: async (req, res) => {
-        const { email, password } = req.body;
+    login: async (req, res) => {
+    const { email, password } = req.body;
+    
+    try {
+        const result = await pool.query(
+            `SELECT seguridad.usuario_login($1, $2) AS resultado`,
+            [email, password]
+        );
         
-        console.log(' Intento de login:', email);
+        const resultado = result.rows[0].resultado;
         
-        try {
-            const result = await pool.query(
-                `SELECT seguridad.usuario_login($1, $2) AS resultado`,
-                [email, password]
+        if (resultado.success && resultado.data) {
+            // Generar token JWT
+            const token = jwt.sign(
+                { 
+                    id_usuario: resultado.data.id_usuario,
+                    email: resultado.data.email,
+                    rol: resultado.data.rol
+                },
+                JWT_SECRET,
+                { expiresIn: '7d' }
             );
             
-            const resultado = result.rows[0].resultado;
-            console.log(' Resultado login:', resultado );
+            resultado.data.token = token;
             
-            res.status(resultado.status || 200).json(resultado);
-            
-        } catch (error) {
-            console.error(' Error en login:', error);
-            res.status(500).json({
-                success: false,
-                status: 500,
-                message: 'Error interno del servidor',
-                error: error.message
-            });
         }
-    },
-
+        
+        res.json(resultado);
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+},
     enviarCodigoRecuperacion: async (req, res) => {
         const { email } = req.body;
         

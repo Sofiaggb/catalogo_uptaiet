@@ -90,10 +90,10 @@ export const useEvaluaciones = () => {
         
         setBuscando(true);
         setIndiceEditando(evalIndex);
-        
+         
         try {
             const resultado = await busquedaApi.buscarPorCedula('jurado', cedula);
-            
+         console.log('resultado cedula busque da <>>>', resultado)
             if (resultado.success && resultado.data && resultado.data.length > 0) {
                 if (resultado.multiple || resultado.data.length > 1) {
                     setResultadosMultiples(resultado.data);

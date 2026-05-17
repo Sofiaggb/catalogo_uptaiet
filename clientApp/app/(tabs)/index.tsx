@@ -1,4 +1,4 @@
-// app/index.tsx
+// app/(tabs)/index.tsx
 import { useAuth } from '@/hooks/useAuth';
 import { Ionicons } from '@expo/vector-icons';
 import { Href, Link } from 'expo-router';
@@ -55,12 +55,13 @@ export default function HomeScreen() {
                     <QuickCard title="Materias" iconName="book-outline"
                         href="/materias"
                         colorVariant="blue" />
-                        </>
- )}
+                        
+
                     <QuickCard title="Mi Perfil" iconName="person-circle-outline"
                         href="/perfil"
                         colorVariant="blue" />
-
+                    </>
+ )}
                 </View>
             </View>
 

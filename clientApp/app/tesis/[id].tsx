@@ -1,5 +1,6 @@
 // app/(tabs)/tesis/[id].tsx
 import { STATIC_URL } from '@/config/env';
+import { useAuth } from '@/hooks/useAuth';
 import { tesisApi } from '@/services/api/endpoints/tesis';
 import { Tesis } from '@/services/api/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TesisDetailScreen() {
+    const { isAuthenticated, hasRole } = useAuth();
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [tesis, setTesis] = useState<Tesis | null>(null);
@@ -198,8 +200,11 @@ export default function TesisDetailScreen() {
                 </TouchableOpacity>
 
                 {/* Botones secundarios - en fila */}
+                
                 <View className="flex-row gap-3">
                     {/* Botón principal - Editar */}
+
+                     {isAuthenticated && (
                     <TouchableOpacity
                         onPress={() => router.push(`/tesis/edit/${tesis.id_tesis}`)}
                         className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"
@@ -208,7 +213,7 @@ export default function TesisDetailScreen() {
                         <Ionicons name="create-outline" size={24} color="#000000" />
                         <Text className="text-black  ml-2">Editar</Text>
                     </TouchableOpacity>
-
+                     )}
                     {/* Compartir (opcional) */}
                     <TouchableOpacity
                         className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"

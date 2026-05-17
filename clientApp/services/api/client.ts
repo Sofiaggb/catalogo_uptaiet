@@ -1,4 +1,5 @@
 // services/api/client.ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../config/env';
 
 // Definir tipos para las respuestas
@@ -17,26 +18,61 @@ class ApiClient {
         this.baseUrl = baseUrl;
     }
 
+    private async getHeaders(): Promise<HeadersInit> {
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+        };
+        
+        // Obtener token del AsyncStorage
+        const token = await AsyncStorage.getItem('@auth_token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        return headers;
+    }
+
+    // private async request<T>(
+    //     endpoint: string,
+    //     options: RequestInit = {}
+    // ): Promise<T> {
+    //     const url = `${this.baseUrl}${endpoint}`;
+    //     const response = await fetch(url, {
+    //         ...options,
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             ...options.headers,
+    //         },
+    //     });
+
+    //     return response.json();
+    // }
     private async request<T>(
         endpoint: string,
         options: RequestInit = {}
     ): Promise<T> {
         const url = `${this.baseUrl}${endpoint}`;
+        const headers = await this.getHeaders();
+        
         const response = await fetch(url, {
             ...options,
             headers: {
-                'Content-Type': 'application/json',
+                ...headers,
                 ...options.headers,
             },
         });
 
-        // if (!response.ok) {
-        //     throw new Error(`HTTP error! status: ${response.status}`);
-        // }
+        const data = await response.json();
+        
+        //  Si es 401 (no autorizado), limpiar sesión
+        if (response.status === 401) {
+            await AsyncStorage.removeItem('@user');
+            await AsyncStorage.removeItem('@auth_token');
+        }
 
-        return response.json();
+        return data as T;
     }
-
+    
     async get<T = any>(endpoint: string): Promise<T> {
         return this.request<T>(endpoint);
     }

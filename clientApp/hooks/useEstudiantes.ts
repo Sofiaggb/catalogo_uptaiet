@@ -53,7 +53,7 @@ export const useEstudiantes = () => {
         
         try {
             const resultado = await busquedaApi.buscarPorCedula('estudiante', cedula);
-                    // console.log('res estudiantes', resultado)
+                    console.log('res estudiantes', resultado)
             
             if (resultado.success && resultado.data && resultado.data.length > 0) {
                 if (resultado.multiple || resultado.data.length > 1) {

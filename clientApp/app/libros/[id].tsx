@@ -1,5 +1,6 @@
 // app/(tabs)/libros/[id].tsx
 import { STATIC_URL } from '@/config/env';
+import { useAuth } from '@/hooks/useAuth';
 import { librosApi } from '@/services/api/endpoints/libros';
 import { Libros } from '@/services/api/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +9,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function LibroDetailScreen() {
+    const { isAuthenticated, hasRole } = useAuth();
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [libro, setLibro] = useState<Libros | null>(null);
@@ -184,6 +186,7 @@ export default function LibroDetailScreen() {
                 {/* Botones secundarios - en fila */}
                 <View className="flex-row gap-3">
                     {/* Botón Editar */}
+                     {isAuthenticated && (
                     <TouchableOpacity
                         onPress={() => router.push(`/libros/edit/${libro.id_libro}`)}
                         className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"
@@ -192,7 +195,7 @@ export default function LibroDetailScreen() {
                         <Ionicons name="create-outline" size={24} color="#000000" />
                         <Text className="text-black ml-2">Editar</Text>
                     </TouchableOpacity>
-
+                     )}
                     {/* Botón Compartir */}
                     <TouchableOpacity
                         className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"
