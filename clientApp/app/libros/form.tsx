@@ -115,7 +115,7 @@ export default function LibroForm({ mode }: LibroFormProps ) {
             }
         } catch (error) {
             console.error('Error cargando tesis:', error);
-            Alert.alert('Error', 'No se pudo cargar la tesis para editar');
+            Alert.alert('Error', 'No se pudo cargar el libro para editar');
         } finally {
             setLoadingData(false);
         }
@@ -271,7 +271,7 @@ export default function LibroForm({ mode }: LibroFormProps ) {
             ]);
         } else {
             console.log('resultado libro >>> ', resultado)
-            Alert.alert('Error', resultado.message || 'No se pudo crear la tesis');
+            Alert.alert('Error', resultado.message || 'No se pudo crear el libro');
         }
     };
 

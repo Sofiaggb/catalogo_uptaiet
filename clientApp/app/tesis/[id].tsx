@@ -120,6 +120,9 @@ export default function TesisDetailScreen() {
                     <View className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2">
                         <Text className="text-gray-600 text-sm">{tesis.nombre_carrera}</Text>
                     </View>
+                    <View className="bg-blue-100 rounded-full px-3 py-1 mr-2 mb-2">
+                        <Text className="text-blue-600 text-sm">{tesis.tipo_trabajo}</Text>
+                    </View>
                     <View className="bg-cyan-100 rounded-full px-3 py-1 mr-2 mb-2">
                         <Text className="text-cyan-800 text-sm">{tesis.anio_elaboracion}</Text>
                     </View>

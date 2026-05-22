@@ -1,5 +1,6 @@
 
 
+
 alter table personas.estudiante 
 drop column id_carrera
 
@@ -246,6 +247,8 @@ BEGIN
          c.nombre as nombre_carrera,
          e.id_estado,
          e.nombre_estado,
+         tt.id_tipo_trabajo,
+         tt.nombre as tipo_trabajo,
 
         -- Estudiantes
         COALESCE((
@@ -296,6 +299,8 @@ BEGIN
         ) as promedio_nota    
     FROM tesis.tesis t
     JOIN catalogo.carrera c ON t.id_carrera = c.id_carrera
+	JOIN catalogo.tipo_carrera tc ON tc.id_tipo_carrera = c.id_tipo_carrera
+	left JOIN catalogo.tipo_trabajo tt ON tt.id_tipo_trabajo = c.id_tipo_trabajo
     LEFT JOIN control.estado e ON t.id_estado = e.id_estado
     WHERE t.id_tesis = p_id_tesis
    -- AND t.fecha_eliminacion IS NULL
@@ -323,14 +328,12 @@ $$ LANGUAGE plpgsql;
 
 
 
-select tesis.listar_tesis()
-
 ---------- devolver todas las tesis 
 CREATE OR REPLACE FUNCTION tesis.listar_tesis(
-    p_id_carrera INT DEFAULT NULL,
-    p_id_estado INT DEFAULT NULL,
-    p_anio INT DEFAULT NULL,
-    p_buscar VARCHAR(200) DEFAULT NULL,
+    p_id_carrera character varying DEFAULT NULL,
+    p_id_estado character varying DEFAULT NULL,
+    p_anio character varying DEFAULT NULL,
+    p_buscar character varying DEFAULT NULL,
     p_limit INT DEFAULT 50,
     p_offset INT DEFAULT 0
 )
@@ -344,9 +347,9 @@ BEGIN
         SELECT t.*
         FROM tesis.tesis t
         WHERE t.fecha_eliminacion IS NULL
-        AND (p_id_carrera IS NULL OR t.id_carrera = p_id_carrera)
-        AND (p_id_estado IS NULL OR t.id_estado = p_id_estado)
-        AND (p_anio IS NULL OR t.anio_elaboracion = p_anio)
+        AND (p_id_carrera IS NULL OR p_id_carrera = '' OR t.id_carrera = ANY(string_to_array(p_id_carrera, ',')::int[]))
+        AND (p_id_estado IS NULL OR p_id_estado = '' OR  t.id_estado = ANY(string_to_array(p_id_estado, ',')::int[]))
+        AND (p_anio IS NULL OR  p_anio= '' OR t.anio_elaboracion = ANY(string_to_array(p_anio, ',')::int[]))
         AND (p_buscar IS NULL OR 
              t.titulo ILIKE '%' || p_buscar || '%' OR 
              t.resumen ILIKE '%' || p_buscar || '%')
@@ -399,12 +402,15 @@ BEGIN
 	
     RETURN jsonb_build_object(
         'success', TRUE,
-        'data', v_resultado,
+        'data', COALESCE(v_resultado, '[]'::jsonb),
         'pagination', jsonb_build_object(
-            'total', v_total,
+            'total', COALESCE(v_total, 0),
             'limit', p_limit,
             'offset', p_offset,
-            'pages', CEIL(v_total::DECIMAL / p_limit)
+            'pages',  CASE 
+			            WHEN COALESCE(v_total, 0) = 0 THEN 0
+			            ELSE CEIL(v_total::DECIMAL / p_limit)
+			        END
         )
     );
 

@@ -58,7 +58,7 @@ BEGIN
     RETURN jsonb_build_object(
         'success', TRUE,
         'status', 201,
-        'message', 'Liobro creado exitosamente'
+        'message', 'Libro creado exitosamente'
     );
     
 EXCEPTION

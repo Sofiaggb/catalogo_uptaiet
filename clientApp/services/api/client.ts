@@ -32,21 +32,17 @@ class ApiClient {
         return headers;
     }
 
-    // private async request<T>(
-    //     endpoint: string,
-    //     options: RequestInit = {}
-    // ): Promise<T> {
-    //     const url = `${this.baseUrl}${endpoint}`;
-    //     const response = await fetch(url, {
-    //         ...options,
-    //         headers: {
-    //             'Content-Type': 'application/json',
-    //             ...options.headers,
-    //         },
-    //     });
+    private async getUploadHeaders(): Promise<HeadersInit> {
+        const headers: HeadersInit = {};
+        
+        const token = await AsyncStorage.getItem('@auth_token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        return headers;
+    }
 
-    //     return response.json();
-    // }
     private async request<T>(
         endpoint: string,
         options: RequestInit = {}
@@ -102,22 +98,63 @@ class ApiClient {
         return this.request<T>(endpoint, { method: 'DELETE' });
     }
 
+    // async upload<T = any>(endpoint: string, formData: FormData): Promise<T> {
+    //     const url = `${this.baseUrl}${endpoint}`;
+    //     const response = await fetch(url, {
+    //         method: 'POST',
+    //         body: formData,
+    //     });
+    //     return response.json();
+    // }
+
+    // async uploadPut<T = any>(endpoint: string, formData: FormData): Promise<T> {
+    //     const url = `${this.baseUrl}${endpoint}`;
+    //     const response = await fetch(url, {
+    //         method: 'PUT',
+    //         body: formData,
+    //     });
+    //     return response.json();
+    // }
+    
     async upload<T = any>(endpoint: string, formData: FormData): Promise<T> {
         const url = `${this.baseUrl}${endpoint}`;
+        const headers = await this.getUploadHeaders();
+        
         const response = await fetch(url, {
             method: 'POST',
             body: formData,
+            headers,
         });
-        return response.json();
+        
+        const data = await response.json();
+        
+        if (response.status === 401) {
+            await AsyncStorage.removeItem('@user');
+            await AsyncStorage.removeItem('@auth_token');
+        }
+        
+        return data as T;
     }
 
+    
     async uploadPut<T = any>(endpoint: string, formData: FormData): Promise<T> {
         const url = `${this.baseUrl}${endpoint}`;
+        const headers = await this.getUploadHeaders();
+        
         const response = await fetch(url, {
             method: 'PUT',
             body: formData,
+            headers,
         });
-        return response.json();
+        
+        const data = await response.json();
+        
+        if (response.status === 401) {
+            await AsyncStorage.removeItem('@user');
+            await AsyncStorage.removeItem('@auth_token');
+        }
+        
+        return data as T;
     }
 }
 
