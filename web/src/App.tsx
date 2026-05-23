@@ -15,6 +15,14 @@ import { CarrerasEdit } from './pages/Carreras/Carreraedit';
 import { MateriasCreate } from './pages/Materias/MateriaCreate';
 import { MateriasList } from './pages/Materias/MateriaList';
 import { MateriasEdit } from './pages/Materias/MateriaEdit';
+import { LibrosList } from './pages/Libros/LibroList';
+import { LibroDetail } from './pages/Libros/Librodetail';
+import { LibrosCreate } from './pages/Libros/LibroCreate';
+import { LibrosEdit } from './pages/Libros/LibroEdit';
+import { Register } from './pages/Auth/Register';
+import { Verify } from './pages/Auth/Verify';
+import { ForgotPassword } from './pages/Auth/ForgotPassword';
+import { PerfilDetail } from './pages/Perfil/PerfilDetail';
 
 function App() {
   return (
@@ -27,13 +35,16 @@ function App() {
               {/* Rutas públicas */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/verify" element={<Verify />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
 
               {/* Rutas protegidas (requieren autenticación) */}
               <Route
                 path="/perfil"
                 element={
                   <ProtectedRoute>
-                    <div>Mi Perfil</div>
+                    <PerfilDetail />
                   </ProtectedRoute>
                 }
               />
@@ -85,6 +96,20 @@ function App() {
               <Route path="/materias/edit/:id" element={
                 <ProtectedRoute>
                   <MateriasEdit />
+                </ProtectedRoute>
+              } />
+
+              {/* Libros  */}
+              <Route path="/libros" element={<LibrosList />} />
+              <Route path="/libros/:id" element={<LibroDetail />} />
+              <Route path="/libros/create" element={
+                <ProtectedRoute>
+                  <LibrosCreate />
+                </ProtectedRoute>
+              } />
+              <Route path="/libros/edit/:id" element={
+                <ProtectedRoute>
+                  <LibrosEdit />
                 </ProtectedRoute>
               } />
 

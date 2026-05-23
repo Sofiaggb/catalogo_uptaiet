@@ -129,14 +129,6 @@ export interface Libros {
     fecha_creacion?: string;
 }
 
-export interface CrearDocumentoInput {
-    titulo: string;
-    autor?: string;
-    url_recurso?: string;
-    descripcion?: string;
-    id_materia: number;
-}
-
 export interface ListarDocumentosParams {
     id_materia?: string;
     buscar?: string;
@@ -158,3 +150,4 @@ export interface RegisterData {
     password: string;
     nombre: string;
 }
+

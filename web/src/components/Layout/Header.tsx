@@ -1,6 +1,6 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { LogOut, User, BookOpen, Library, Home } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import logo from '../../assets/logo_uptaiet.png';
 export const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();

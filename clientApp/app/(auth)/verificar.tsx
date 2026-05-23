@@ -31,22 +31,27 @@ export default function VerificarScreen() {
         setLoading(true);
         
         // Paso 2: Verificar y crear usuario
-        const result = await authApi.verificarYRegistrar({
-            email: email as string,
-            codigo,
-            password: password as string,
-            nombre: nombre as string
-        });
-        
-        if (result.success && result.data) {
-            // Iniciar sesión automáticamente
-            await login(email as string, password as string);
-            Alert.alert('Éxito', 'Cuenta creada correctamente', [
-                { text: 'OK', onPress: () => router.replace('/(tabs)') }
-            ]);
-        } else {
-            Alert.alert('Error', result.message || 'Código incorrecto');
+        try {
+            const result = await authApi.verificarYRegistrar({
+                email: email as string,
+                codigo,
+                password: password as string,
+                nombre: nombre as string
+            });
+            
+            if (result.success && result.data) {
+                // Iniciar sesión automáticamente
+                await login(email as string, password as string);
+                Alert.alert('Éxito', 'Cuenta creada correctamente', [
+                    { text: 'OK', onPress: () => router.replace('/(tabs)') }
+                ]);
+            } else {
+                Alert.alert('Error', result.message || 'Código incorrecto');
+            }
+        } catch (error) {
+             Alert.alert('Error',  'Código incorrecto');
         }
+        
         setLoading(false);
     };
 

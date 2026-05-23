@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, LogIn, ArrowLeft, BookOpen } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import logo from '../../assets/logo_uptaiet.png';
+import { showErrorAlert } from '../../helpers/alerts';
 
 export function Login() {
   const navigate = useNavigate();
@@ -48,27 +50,20 @@ export function Login() {
     if (result.success) {
       navigate('/');
     } else {
-      alert(result.message || 'Email o contraseña incorrectos');
+      showErrorAlert(result.message || 'Email o contraseña incorrectos');
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Header con botón volver */}
-      <div className="pt-8 pb-4 px-5">
-        <Link to="/" className="inline-flex items-center text-cyan-500 hover:text-cyan-600">
-          <ArrowLeft className="h-5 w-5 mr-1" />
-          Volver
-        </Link>
-      </div>
+    <div className=" bg-white flex flex-col">
 
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex items-center justify-center p-1">
         <div className="max-w-md w-full">
           {/* Logo */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-cyan-500 rounded-full">
-              <BookOpen className="h-10 w-10 text-white" />
+              <img src={logo} alt="Logo de UPTAIET" className="w-16 h-16 object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-black mt-4">UPTAIET</h1>
             <p className="text-gray-500 text-sm">Catálogo Digital</p>
