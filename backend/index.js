@@ -27,6 +27,9 @@ import tesisRoutes from './src/routes/tesisRoutes.js';
 import materiaRoutes from './src/routes/materiaRoutes.js';
 import docsRoutes from './src/routes/libroRoutes.js';
 import authRoutes from './src/routes/authRoutes.js';
+import perfilRoutes from './src/routes/perfilRoutes.js';
+import adminRoutes from './src/routes/adminRoutes.js';
+
 
 // Middlewares
 // Configuración de cors
@@ -46,6 +49,8 @@ app.use('/api/tesis', tesisRoutes);
 app.use('/api/materias', materiaRoutes);
 app.use('/api/libros', docsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/perfil', perfilRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 // Ruta de prueba

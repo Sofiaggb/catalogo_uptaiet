@@ -124,7 +124,11 @@ CREATE TABLE control.estado (
 );
 
 
-INSERT INTO control.estado ( nombre_estado) VALUES ('Publicada');
+INSERT INTO control.estado ( nombre_estado) 
+VALUES ('Publicada'),
+('Pendiente'),
+('Aprobada'),
+('Rechazada');
 
 -- 3. Esquema para personas (estudiantes, jurados)
 CREATE SCHEMA personas;
@@ -266,9 +270,8 @@ CREATE TABLE seguridad.rol (
 
 -- Insertar roles básicos
 INSERT INTO seguridad.rol (nombre, descripcion) VALUES
-('estudiante', 'Usuario normal que solo puede ver y consultar'),
+('invitado', 'Usuario normal que solo puede ver y consultar'),
 ('docente', 'Puede subir documentos y evaluar tesis'),
-('bibliotecario', 'Administra documentos y catálogo'),
 ('administrador', 'Control total del sistema');
 
 CREATE TABLE seguridad.usuario (
@@ -277,11 +280,14 @@ CREATE TABLE seguridad.usuario (
     password VARCHAR(255) NOT NULL,  -- Guardar hash, NO contraseña plana
     nombre VARCHAR(100) UNIQUE NOT NULL,
 	id_rol INT NOT NULL REFERENCES seguridad.rol(id_rol) ON DELETE CASCADE,
+	cedula character varying,
+	nombre_completo character varying, 
     fecha_creacion TIMESTAMP DEFAULT NOW(),
 	fecha_modificacion timestamp,
 	fecha_eliminacion timestamp,	
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
+
 
 ------------ nuevo
 
@@ -319,6 +325,28 @@ CREATE TABLE IF NOT EXISTS seguridad.codigo_recuperacion (
 CREATE INDEX idx_recuperacion_email ON seguridad.codigo_recuperacion(email);
 CREATE INDEX idx_recuperacion_codigo ON seguridad.codigo_recuperacion(codigo);
 CREATE INDEX idx_recuperacion_expiracion ON seguridad.codigo_recuperacion(expira_en);
+
+
+
+-- Tabla para solicitudes de cambio de rol
+CREATE TABLE seguridad.solicitud_rol (
+    id_solicitud SERIAL PRIMARY KEY,
+    id_usuario INT NOT NULL REFERENCES seguridad.usuario(id_usuario),
+    rol_solicitado INT NOT NULL REFERENCES seguridad.rol(id_rol),
+    id_estado VARCHAR(20) REFERENCES control.estado(id_estado),
+    justificacion TEXT,
+    cedula character varying,
+	nombre_completo character varying, 
+    id_administrador INT REFERENCES seguridad.usuario(id_usuario),
+    fecha_solicitud TIMESTAMP DEFAULT NOW(),
+    fecha_respuesta TIMESTAMP,
+    comentario_admin TEXT,
+    fecha_eliminacion TIMESTAMP
+);
+
+-- Índices
+CREATE INDEX idx_solicitud_usuario ON seguridad.solicitud_rol(id_usuario);
+CREATE INDEX idx_solicitud_estado ON seguridad.solicitud_rol(estado);
 
 
 

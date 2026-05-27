@@ -3,6 +3,8 @@ import { authController } from '../controllers/authController.js';
 const router = express.Router();
 
 // Definir las rutas
+router.get('/roles', authController.getRolesDisponibles);
+
 router.post('/send-code', authController.enviarCodigo);
 router.post('/resend-code', authController.reenviarCodigo);
 router.post('/verify-and-register', authController.verificarYRegistrar);

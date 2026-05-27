@@ -151,3 +151,28 @@ export interface RegisterData {
     nombre: string;
 }
 
+
+
+export interface Rol {
+  id_rol: number;
+  nombre: string;
+  descripcion: string;
+}
+
+export interface SolicitudEstado {
+  estado: string;
+  justificacion?: string;
+  comentario_admin?: string;
+  fecha_solicitud: string;
+  fecha_respuesta?: string;
+  rol_solicitado_nombre: string;
+  cedula?: string;
+  nombre_completo?: string;
+}
+
+export interface EnviarSolicitudData {
+  id_rol: number;
+  justificacion: string;
+  cedula: string;
+  nombre_completo: string;
+}

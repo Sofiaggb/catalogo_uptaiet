@@ -187,4 +187,27 @@ export const authController = {
         }
     },
 
+    getRolesDisponibles: async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT id_rol, nombre, descripcion 
+         FROM seguridad.rol 
+         WHERE id_rol != 1
+         AND fecha_eliminacion IS NULL
+         ORDER BY id_rol`
+      );
+      
+      res.json({
+        success: true,
+        data: result.rows
+      });
+    } catch (error) {
+      console.error('Error en getRolesDisponibles:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error al obtener los roles' 
+      });
+    }
+  }
+
 };

@@ -109,7 +109,7 @@ BEGIN
             d.url_documento,
             m.id_materia,
             m.nombre AS materia,
-			d.fecha_registro
+			d.fecha_creacion
         FROM recursos.libro d
         JOIN catalogo.materia m ON m.id_materia = d.id_materia
 		WHERE d.id_libro = p_id_libro
