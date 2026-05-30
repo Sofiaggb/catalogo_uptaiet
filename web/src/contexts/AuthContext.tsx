@@ -5,6 +5,7 @@ interface User {
   id_usuario: number;
   email: string;
   nombre: string;
+  id_rol: number;
   rol: string;
 }
 

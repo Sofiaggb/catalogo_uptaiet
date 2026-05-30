@@ -7,10 +7,13 @@ const router = express.Router();
 
 // Todas las rutas requieren autenticación y rol de administrador
 router.use(authMiddleware);
-router.use(requireRole(['administrador']));
+router.use(requireRole([3]));
 
 // Obtener todas las solicitudes de cambio de rol
 router.get('/solicitudes-rol', adminController.obtenerSolicitudesRol);
+
+// Obtener estadísticas de solicitudes
+router.get('/solicitudes-rol/estadisticas', adminController.obtenerEstadisticas);
 
 // Obtener una solicitud específica
 router.get('/solicitudes-rol/:id', adminController.obtenerSolicitudById);
@@ -21,7 +24,5 @@ router.put('/solicitudes-rol/:id/aprobar', adminController.aprobarSolicitud);
 // Rechazar solicitud de cambio de rol
 router.put('/solicitudes-rol/:id/rechazar', adminController.rechazarSolicitud);
 
-// Obtener estadísticas de solicitudes
-router.get('/solicitudes-rol/estadisticas', adminController.obtenerEstadisticas);
 
 export default router;

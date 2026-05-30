@@ -235,6 +235,8 @@ drop table if exists recursos.documento_soporte;
 
 ALTER TABLE recursos.libro 
 RENAME COLUMN url_recurso TO url_documento;
+
+
 */
 
 CREATE TABLE recursos.libro (
@@ -272,7 +274,8 @@ CREATE TABLE seguridad.rol (
 INSERT INTO seguridad.rol (nombre, descripcion) VALUES
 ('invitado', 'Usuario normal que solo puede ver y consultar'),
 ('docente', 'Puede subir documentos y evaluar tesis'),
-('administrador', 'Control total del sistema');
+('administrador', 'Control total del sistema'),
+('bibliotecario', 'Administra documentos y catálogo');
 
 CREATE TABLE seguridad.usuario (
     id_usuario SERIAL PRIMARY KEY,
@@ -329,15 +332,20 @@ CREATE INDEX idx_recuperacion_expiracion ON seguridad.codigo_recuperacion(expira
 
 
 -- Tabla para solicitudes de cambio de rol
+/*
+ALTER TABLE seguridad.solicitud_rol 
+RENAME COLUMN rol_solicitado TO id_rol_solicitado;
+*/
+
 CREATE TABLE seguridad.solicitud_rol (
     id_solicitud SERIAL PRIMARY KEY,
-    id_usuario INT NOT NULL REFERENCES seguridad.usuario(id_usuario),
-    rol_solicitado INT NOT NULL REFERENCES seguridad.rol(id_rol),
-    id_estado VARCHAR(20) REFERENCES control.estado(id_estado),
+    id_usuario INTEGER NOT NULL REFERENCES seguridad.usuario(id_usuario),
+    id_rol_solicitado INTEGER NOT NULL REFERENCES seguridad.rol(id_rol),
+    id_estado INTEGER REFERENCES control.estado(id_estado),
     justificacion TEXT,
     cedula character varying,
 	nombre_completo character varying, 
-    id_administrador INT REFERENCES seguridad.usuario(id_usuario),
+    id_administrador INTEGER REFERENCES seguridad.usuario(id_usuario),
     fecha_solicitud TIMESTAMP DEFAULT NOW(),
     fecha_respuesta TIMESTAMP,
     comentario_admin TEXT,
@@ -346,7 +354,7 @@ CREATE TABLE seguridad.solicitud_rol (
 
 -- Índices
 CREATE INDEX idx_solicitud_usuario ON seguridad.solicitud_rol(id_usuario);
-CREATE INDEX idx_solicitud_estado ON seguridad.solicitud_rol(estado);
+CREATE INDEX idx_solicitud_estado ON seguridad.solicitud_rol(id_estado);
 
 
 

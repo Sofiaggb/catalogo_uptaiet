@@ -161,6 +161,7 @@ export interface Rol {
 
 export interface SolicitudEstado {
   estado: string;
+  id_estado: number;
   justificacion?: string;
   comentario_admin?: string;
   fecha_solicitud: string;

@@ -23,6 +23,10 @@ import { Register } from './pages/Auth/Register';
 import { Verify } from './pages/Auth/Verify';
 import { ForgotPassword } from './pages/Auth/ForgotPassword';
 import { PerfilDetail } from './pages/Perfil/PerfilDetail';
+import { SolicitudesRol } from './pages/Admin/SolicitudesRol';
+import { AdminDashboard } from './pages/Admin/AdminDashboard';
+import { Auditoria } from './pages/Admin/Auditoria';
+import { Estadisticas } from './pages/Admin/Estadisticas';
 
 function App() {
   return (
@@ -30,6 +34,23 @@ function App() {
       <Router>
         <div className="min-h-screen bg-white">
           <Header />
+              
+          <Routes>
+             <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute roles={[3]}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="solicitudes" element={<SolicitudesRol />} />
+                <Route path="auditoria" element={<Auditoria />} />
+                <Route path="usuarios" element={<div>Gestión de usuarios</div>} />
+                <Route path="estadisticas" element={<Estadisticas />} />
+              </Route>
+
+          </Routes>
           <main className="container mx-auto px-4 py-8">
             <Routes>
               {/* Rutas públicas */}
@@ -49,15 +70,16 @@ function App() {
                 }
               />
               {/* Rutas solo para administradores */}
-              <Route
+              {/* <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute roles={['administrador']}>
-                    <div>Panel de Administración</div>
+                  <ProtectedRoute roles={[3]}>
+                    <SolicitudesRol />
                   </ProtectedRoute>
                 }
-              />
-
+                  
+              /> */}
+             
               {/* proyecots  */}
               <Route path="/proyecto" element={<TesisList />} />
               <Route path="/proyecto/:id" element={<TesisDetail />} />
@@ -115,6 +137,7 @@ function App() {
 
             </Routes>
           </main>
+      
         </div>
       </Router>
     </AuthProvider>

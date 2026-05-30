@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  roles?: string[]; // Opcional: roles permitidos
+  roles?: number[]; //  roles permitidos
 }
 
 export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
@@ -22,7 +22,7 @@ export function ProtectedRoute({ children, roles }: ProtectedRouteProps) {
   }
 
   // Verificar roles si se especificaron
-  if (roles && user && !roles.includes(user.rol)) {
+  if (roles && user && !roles.includes(user.id_rol)) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center">
         <h2 className="text-2xl font-bold text-red-500 mb-2">Acceso denegado</h2>

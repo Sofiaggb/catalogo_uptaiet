@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Calendar, LogOut, LogIn, UserPlus, Shield, BookOpen, Settings, Lock, CheckCircle, Send, XCircle, Clock, IdCard, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { showConfirmAlert, showSuccessAlert } from '../../helpers/alerts';
+import { showConfirmAlert, showErrorAlert, showSuccessAlert } from '../../helpers/alerts';
 import { profileApi } from '../../api/endpoints/perfil';
 import { useEffect, useState } from 'react';
 import type { Rol, SolicitudEstado } from '../../api/types';
@@ -9,6 +9,21 @@ import type { Rol, SolicitudEstado } from '../../api/types';
 export function PerfilDetail() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  const [showSolicitudModal, setShowSolicitudModal] = useState(false);
+  const [rolSolicitado, setRolSolicitado] = useState('');
+  const [justificacion, setJustificacion] = useState('');
+  const [solicitudEstado, setSolicitudEstado] = useState<SolicitudEstado | null>(null);
+  const [cargandoSolicitud, setCargandoSolicitud] = useState(false);
+  const [rolesDisponibles, setRolesDisponibles] = useState<Rol[]>([]);
+  const [cargandoRoles, setCargandoRoles] = useState(false);
+  const [cedula, setCedula] = useState('');
+  const [nombreCompleto, setNombreCompleto] = useState('');
+  const [erroresForm, setErroresForm] = useState({
+    cedula: '',
+    nombreCompleto: '',
+    rol: '',
+    justificacion: ''
+  });
 
   const handleLogin = () => {
     navigate('/login');
@@ -23,130 +38,114 @@ export function PerfilDetail() {
       'Cerrar Sesión',
       '¿Estás seguro de que deseas cerrar sesión?'
     );
-    
+
     if (confirmed) {
       await logout();
       showSuccessAlert('Sesión cerrada correctamente', () => navigate('/'));
     }
   };
 
-  // En el componente Profile, agregar:
-const [showSolicitudModal, setShowSolicitudModal] = useState(false);
-const [rolSolicitado, setRolSolicitado] = useState('');
-const [justificacion, setJustificacion] = useState('');
-const [solicitudEstado, setSolicitudEstado] = useState<SolicitudEstado | null>(null);
-const [cargandoSolicitud, setCargandoSolicitud] = useState(false);
 
-// Verificar estado de solicitud existente
-useEffect(() => {
-  if (isAuthenticated) {
-    verificarEstadoSolicitud();
-  }
-}, [isAuthenticated]);
-
-const verificarEstadoSolicitud = async () => {
-  const result = await profileApi.obtenerEstadoSolicitud();
-  if (result.success && result.data) {
-    setSolicitudEstado(result.data);
-  }
-};
-
-// En el componente Profile, agregar estos estados:
-const [rolesDisponibles, setRolesDisponibles] = useState<Rol[]>([]);
-const [cargandoRoles, setCargandoRoles] = useState(false);
-const [cedula, setCedula] = useState('');
-const [nombreCompleto, setNombreCompleto] = useState('');
-const [erroresForm, setErroresForm] = useState({
-  cedula: '',
-  nombreCompleto: '',
-  rol: '',
-  justificacion: ''
-});
-
-// Cargar roles disponibles al abrir el modal
-const handleAbrirModal = async () => {
-  setShowSolicitudModal(true);
-  setCargandoRoles(true);
-  try {
-    const result = await profileApi.obtenerRolesDisponibles();
-    if (result.success) {
-      setRolesDisponibles(result.data);
+  // Verificar estado de solicitud existente
+  useEffect(() => {
+    if (isAuthenticated) {
+      verificarEstadoSolicitud();
     }
-  } catch (error) {
-    console.error('Error cargando roles:', error);
-  } finally {
-    setCargandoRoles(false);
-  }
-};
+  }, [isAuthenticated]);
 
-// Validar formulario
-const validarFormulario = () => {
-  let isValid = true;
-  const nuevosErrores = {
-    cedula: '',
-    nombreCompleto: '',
-    rol: '',
-    justificacion: ''
+  const verificarEstadoSolicitud = async () => {
+    const result = await profileApi.obtenerEstadoSolicitud();
+    console.log('res estado ', result)
+    if (result.success && result.data) {
+      setSolicitudEstado(result.data);
+    }
   };
-  
-  if (!cedula.trim()) {
-    nuevosErrores.cedula = 'La cédula es obligatoria';
-    isValid = false;
-  } else if (!/^[VEJPG]\d{6,8}$/i.test(cedula.trim())) {
-    nuevosErrores.cedula = 'Formato de cédula inválido (Ej: V12345678)';
-    isValid = false;
-  }
-  
-  if (!nombreCompleto.trim()) {
-    nuevosErrores.nombreCompleto = 'El nombre completo es obligatorio';
-    isValid = false;
-  } else if (nombreCompleto.trim().length < 5) {
-    nuevosErrores.nombreCompleto = 'Ingresa el nombre completo';
-    isValid = false;
-  }
-  
-  if (!rolSolicitado) {
-    nuevosErrores.rol = 'Selecciona un rol';
-    isValid = false;
-  }
-  
-  if (!justificacion.trim()) {
-    nuevosErrores.justificacion = 'La justificación es obligatoria';
-    isValid = false;
-  } else if (justificacion.trim().length < 20) {
-    nuevosErrores.justificacion = 'La justificación debe tener al menos 20 caracteres';
-    isValid = false;
-  }
-  
-  setErroresForm(nuevosErrores);
-  return isValid;
-};
 
-const handleEnviarSolicitud = async () => {
-  if (!validarFormulario()) return;
-  
-  setCargandoSolicitud(true);
-  const result = await profileApi.enviarSolicitudCambioRol({
-    id_rol: parseInt(rolSolicitado),
-    justificacion,
-    cedula,
-    nombre_completo: nombreCompleto
-  });
-  
-  if (result.success) {
-    alert('Solicitud enviada correctamente');
-    setShowSolicitudModal(false);
-    verificarEstadoSolicitud();
-    // Limpiar formulario
-    setRolSolicitado('');
-    setJustificacion('');
-    setCedula('');
-    setNombreCompleto('');
-  } else {
-    alert(result.message || 'Error al enviar solicitud');
-  }
-  setCargandoSolicitud(false);
-};
+
+  // Cargar roles disponibles al abrir el modal
+  const handleAbrirModal = async () => {
+    setShowSolicitudModal(true);
+    setCargandoRoles(true);
+    try {
+      const result = await profileApi.obtenerRolesDisponibles();
+      if (result.success) {
+        setRolesDisponibles(result.data);
+      }
+    } catch (error) {
+      console.error('Error cargando roles:', error);
+    } finally {
+      setCargandoRoles(false);
+    }
+  };
+
+  // Validar formulario
+  const validarFormulario = () => {
+    let isValid = true;
+    const nuevosErrores = {
+      cedula: '',
+      nombreCompleto: '',
+      rol: '',
+      justificacion: ''
+    };
+
+    if (!cedula.trim()) {
+      nuevosErrores.cedula = 'La cédula es obligatoria';
+      isValid = false;
+    } else if (!/^[VEJPG]\d{6,8}$/i.test(cedula.trim())) {
+      nuevosErrores.cedula = 'Formato de cédula inválido (Ej: V12345678)';
+      isValid = false;
+    }
+
+    if (!nombreCompleto.trim()) {
+      nuevosErrores.nombreCompleto = 'El nombre completo es obligatorio';
+      isValid = false;
+    } else if (nombreCompleto.trim().length < 5) {
+      nuevosErrores.nombreCompleto = 'Ingresa el nombre completo';
+      isValid = false;
+    }
+
+    if (!rolSolicitado) {
+      nuevosErrores.rol = 'Selecciona un rol';
+      isValid = false;
+    }
+
+    if (!justificacion.trim()) {
+      nuevosErrores.justificacion = 'La justificación es obligatoria';
+      isValid = false;
+    } else if (justificacion.trim().length < 20) {
+      nuevosErrores.justificacion = 'La justificación debe tener al menos 20 caracteres';
+      isValid = false;
+    }
+
+    setErroresForm(nuevosErrores);
+    return isValid;
+  };
+
+  const handleEnviarSolicitud = async () => {
+    if (!validarFormulario()) return;
+
+    setCargandoSolicitud(true);
+    const result = await profileApi.enviarSolicitudCambioRol({
+      id_rol: parseInt(rolSolicitado),
+      justificacion,
+      cedula,
+      nombre_completo: nombreCompleto
+    });
+
+    if (result.success) {
+      showSuccessAlert('Solicitud enviada correctamente');
+      setShowSolicitudModal(false);
+      verificarEstadoSolicitud();
+      // Limpiar formulario
+      setRolSolicitado('');
+      setJustificacion('');
+      setCedula('');
+      setNombreCompleto('');
+    } else {
+      showErrorAlert(result.message || 'Error al enviar solicitud');
+    }
+    setCargandoSolicitud(false);
+  };
 
   // Si NO está autenticado, mostrar pantalla de invitado
   if (!isAuthenticated) {
@@ -165,7 +164,7 @@ const handleEnviarSolicitud = async () => {
           <div className="inline-flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full mb-6">
             <User className="h-12 w-12 text-gray-400" />
           </div>
-          
+
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Invitado</h2>
           <p className="text-gray-500 mb-8">
             Inicia sesión para acceder a más funciones
@@ -242,7 +241,7 @@ const handleEnviarSolicitud = async () => {
                 <User className="h-16 w-16 text-white" />
               </div>
             </div>
-            
+
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-2xl font-bold text-gray-800">{user?.nombre}</h2>
               <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
@@ -251,7 +250,7 @@ const handleEnviarSolicitud = async () => {
                   {user?.rol || 'Usuario'}
                 </span>
               </div>
-              
+
               <div className="mt-4 space-y-2">
                 <div className="flex items-center justify-center md:justify-start gap-2 text-gray-600">
                   <Mail className="h-4 w-4" />
@@ -273,7 +272,137 @@ const handleEnviarSolicitud = async () => {
             Configuración
           </h3>
           <div className="space-y-2">
-            <button className="w-full text-left flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition group">
+            <div className="border-t border-gray-200 pt-4 mt-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-cyan-600" />
+                Cambio de Rol
+              </h3>
+
+              {/*  Solicitud pendiente - no mostrar botón */}
+              {solicitudEstado?.id_estado == 2 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 text-yellow-700 mb-2">
+                    <Clock className="h-5 w-5" />
+                    <span className="font-semibold">Solicitud pendiente</span>
+                  </div>
+                  <p className="text-sm text-yellow-600">
+                    Ya tienes una solicitud pendiente. Espera a que sea revisada.
+                  </p>
+                  {solicitudEstado.justificacion && (
+                    <div className="mt-2 pt-2 border-t border-yellow-200">
+                      <p className="text-xs text-yellow-500">
+                        <strong>Tu solicitud:</strong> {solicitudEstado.rol_solicitado_nombre}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/*  Solicitud aprobada - mostrar botón para nueva solicitud */}
+              {solicitudEstado?.id_estado == 3 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 text-green-700 mb-2">
+                    <CheckCircle className="h-5 w-5" />
+                    <span className="font-semibold">¡Solicitud aprobada!</span>
+                  </div>
+                  <p className="text-sm text-green-600">
+                    Tu rol ha sido actualizado a <strong>{solicitudEstado.rol_solicitado_nombre}</strong>.
+                  </p>
+                  {solicitudEstado.comentario_admin && (
+                    <div className="mt-2 pt-2 border-t border-green-200">
+                      <p className="text-xs text-green-600">
+                        <strong>Comentario:</strong> {solicitudEstado.comentario_admin}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Botón para nueva solicitud (si el nuevo rol permite seguir solicitando) */}
+                  {user?.id_rol !== 3 && (
+                    <button
+                      onClick={handleAbrirModal}
+                      className="mt-3 text-sm text-green-600 hover:text-green-700 underline flex items-center gap-1"
+                    >
+                      <Send className="h-3 w-3" />
+                      Solicitar otro cambio de rol
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/*  Solicitud rechazada - mostrar botón para nueva solicitud */}
+              {solicitudEstado?.id_estado == 4 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center gap-2 text-red-700 mb-2">
+                    <XCircle className="h-5 w-5" />
+                    <span className="font-semibold">Solicitud rechazada</span>
+                  </div>
+                  <p className="text-sm text-red-600">
+                    Tu solicitud fue rechazada.
+                  </p>
+                  {solicitudEstado.comentario_admin && (
+                    <div className="mt-2 pt-2 border-t border-red-200">
+                      <p className="text-xs text-red-600">
+                        <strong>Motivo:</strong> {solicitudEstado.comentario_admin}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Botón para nueva solicitud */}
+                  <button
+                    onClick={handleAbrirModal}
+                    className="mt-3 text-sm text-red-600 hover:text-red-700 underline flex items-center gap-1"
+                  >
+                    <Send className="h-3 w-3" />
+                    Intentar nuevamente
+                  </button>
+                </div>
+              )}
+
+              {/* Sin solicitud previa y rol es estudiante o puede solicitar otro cambio */}
+              {!solicitudEstado && user?.id_rol == 1 && (
+                <button
+                  onClick={handleAbrirModal}
+                  className="w-full flex items-center justify-center gap-2 bg-cyan-500 text-white py-3 rounded-lg font-semibold hover:bg-cyan-600 transition"
+                >
+                  <Send className="h-4 w-4" />
+                  Solicitar cambio de rol
+                </button>
+              )}
+
+              {/*  Usuario con rol especial que puede solicitar otro cambio (ej: docente quiere ser bibliotecario) */}
+              {user?.id_rol !== 1/*'estudiante'*/ && user?.id_rol !== 3 && solicitudEstado?.id_estado !== 2 && (
+                <button
+                  onClick={handleAbrirModal}
+                  className="w-full flex items-center justify-center gap-2 bg-cyan-500 text-white py-3 rounded-lg font-semibold hover:bg-cyan-600 transition"
+                >
+                  <Send className="h-4 w-4" />
+                  Solicitar cambio a otro rol
+                </button>
+              )}
+
+              {/* Usuario administrador - no puede solicitar cambios */}
+              {user?.id_rol == 3 && (
+                <div className="bg-purple-50 rounded-lg p-4 text-center border border-purple-200">
+                  <Shield className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                  <p className="text-purple-700 font-medium">Eres administrador</p>
+                  <p className="text-sm text-purple-600">
+                    Tienes acceso completo al sistema.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {user?.id_rol == 3 /* 'administrador'*/ && (
+              <Link
+                to="/admin"
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition group"
+              >
+                <Shield className="h-5 w-5 text-purple-500" />
+                <span className="text-gray-700">Panel de Administración</span>
+                <span className="ml-auto text-gray-400">→</span>
+              </Link>
+            )}
+            {/* <button className="w-full text-left flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition group">
               <User className="h-5 w-5 text-gray-400 group-hover:text-cyan-500" />
               <span className="text-gray-700">Editar perfil</span>
               <span className="ml-auto text-gray-400">→</span>
@@ -287,7 +416,7 @@ const handleEnviarSolicitud = async () => {
               <Lock className="h-5 w-5 text-gray-400 group-hover:text-cyan-500" />
               <span className="text-gray-700">Cambiar contraseña</span>
               <span className="ml-auto text-gray-400">→</span>
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -313,227 +442,162 @@ const handleEnviarSolicitud = async () => {
           </div>
         </div>
 
-        {/* // Agregar en la sección de configuración: */}
-<div className="border-t border-gray-200 pt-4 mt-4">
-  <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-    <Shield className="h-5 w-5 text-cyan-600" />
-    Cambio de Rol
-  </h3>
-  
-  {solicitudEstado?.estado === 'pendiente' && (
-    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-      <div className="flex items-center gap-2 text-yellow-700 mb-2">
-        <Clock className="h-5 w-5" />
-        <span className="font-semibold">Solicitud pendiente</span>
-      </div>
-      <p className="text-sm text-yellow-600">
-        Tu solicitud está siendo revisada por el administrador.
-      </p>
-    </div>
-  )}
-  
-  {solicitudEstado?.estado === 'aprobada' && (
-    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-      <div className="flex items-center gap-2 text-green-700 mb-2">
-        <CheckCircle className="h-5 w-5" />
-        <span className="font-semibold">Solicitud aprobada</span>
-      </div>
-      <p className="text-sm text-green-600">
-        ¡Felicidades! Tu rol ha sido actualizado a {solicitudEstado.rol_solicitado_nombre}.
-      </p>
-    </div>
-  )}
-  
-  {solicitudEstado?.estado === 'rechazada' && (
-    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-      <div className="flex items-center gap-2 text-red-700 mb-2">
-        <XCircle className="h-5 w-5" />
-        <span className="font-semibold">Solicitud rechazada</span>
-      </div>
-      <p className="text-sm text-red-600">
-        {solicitudEstado.comentario_admin || 'Tu solicitud fue rechazada. Puedes intentar nuevamente.'}
-      </p>
-    </div>
-  )}
-  
-  {/* Botón para abrir el modal */}
-{!solicitudEstado && user?.rol === 'estudiante' && (
-  <button
-    onClick={handleAbrirModal}
-    className="w-full flex items-center justify-center gap-2 bg-cyan-500 text-white py-3 rounded-lg font-semibold hover:bg-cyan-600 transition"
-  >
-    <Send className="h-4 w-4" />
-    Solicitar cambio de rol
-  </button>
-)}
-  
-  {user?.rol !== 'estudiante' && (
-    <div className="bg-gray-50 rounded-lg p-4 text-center">
-      <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-      <p className="text-gray-600">Ya tienes un rol especial: {user?.rol}</p>
-      <p className="text-sm text-gray-400">No puedes solicitar otro cambio de rol.</p>
-    </div>
-  )}
-</div>
 
-{/* Modal de solicitud mejorado */}
-{showSolicitudModal && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 border-b border-gray-200 sticky top-0 bg-white">
-        <h3 className="text-xl font-bold text-gray-800">Solicitar cambio de rol</h3>
-        <button
-          onClick={() => setShowSolicitudModal(false)}
-          className="p-1 hover:bg-gray-100 rounded-full transition"
-        >
-          <X className="h-5 w-5 text-gray-500" />
-        </button>
-      </div>
-      
-      <div className="p-6 space-y-5">
-        {/* Cédula */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Cédula <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                erroresForm.cedula ? 'border-red-500' : 'border-gray-300'
-              }`}
-              value={cedula}
-              onChange={(e) => {
-                setCedula(e.target.value);
-                setErroresForm({ ...erroresForm, cedula: '' });
-              }}
-              placeholder="V12345678"
-            />
+
+        {/* Modal de solicitud  */}
+        {showSolicitudModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 sticky top-0 bg-white">
+                <h3 className="text-xl font-bold text-gray-800">Solicitar cambio de rol</h3>
+                <button
+                  onClick={() => setShowSolicitudModal(false)}
+                  className="p-1 hover:bg-gray-100 rounded-full transition"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-5">
+                {/* Cédula */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Cédula <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${erroresForm.cedula ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      value={cedula}
+                      onChange={(e) => {
+                        setCedula(e.target.value);
+                        setErroresForm({ ...erroresForm, cedula: '' });
+                      }}
+                      placeholder="V12345678"
+                    />
+                  </div>
+                  {erroresForm.cedula && (
+                    <p className="text-red-500 text-xs mt-1">{erroresForm.cedula}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    Formato: Letra (V/E/J/P/G) + 6-8 dígitos
+                  </p>
+                </div>
+
+                {/* Nombre completo */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Nombre completo <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${erroresForm.nombreCompleto ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      value={nombreCompleto}
+                      onChange={(e) => {
+                        setNombreCompleto(e.target.value);
+                        setErroresForm({ ...erroresForm, nombreCompleto: '' });
+                      }}
+                      placeholder="Juan Pérez García"
+                    />
+                  </div>
+                  {erroresForm.nombreCompleto && (
+                    <p className="text-red-500 text-xs mt-1">{erroresForm.nombreCompleto}</p>
+                  )}
+                </div>
+
+                {/* Rol deseado */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Rol deseado <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <select
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${erroresForm.rol ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      value={rolSolicitado}
+                      onChange={(e) => {
+                        setRolSolicitado(e.target.value);
+                        setErroresForm({ ...erroresForm, rol: '' });
+                      }}
+                    >
+                      <option value="">Selecciona un rol</option>
+                      {cargandoRoles ? (
+                        <option disabled>Cargando...</option>
+                      ) : (
+                        rolesDisponibles.map((rol) => (
+                          <option key={rol.id_rol} value={rol.id_rol}>
+                            {rol.nombre.charAt(0).toUpperCase() + rol.nombre.slice(1)}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                  {erroresForm.rol && (
+                    <p className="text-red-500 text-xs mt-1">{erroresForm.rol}</p>
+                  )}
+                </div>
+
+                {/* Justificación */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Justificación <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    rows={4}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${erroresForm.justificacion ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    value={justificacion}
+                    onChange={(e) => {
+                      setJustificacion(e.target.value);
+                      setErroresForm({ ...erroresForm, justificacion: '' });
+                    }}
+                    placeholder="Explica por qué necesitas este cambio de rol. (Mínimo 20 caracteres)"
+                  />
+                  {erroresForm.justificacion && (
+                    <p className="text-red-500 text-xs mt-1">{erroresForm.justificacion}</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    {justificacion.length}/20 caracteres mínimos
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer con botones */}
+              <div className="flex gap-3 p-4 border-t border-gray-200 bg-gray-50">
+                <button
+                  onClick={() => setShowSolicitudModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEnviarSolicitud}
+                  disabled={cargandoSolicitud}
+                  className="flex-1 bg-cyan-500 text-white py-2 rounded-lg hover:bg-cyan-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {cargandoSolicitud ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      Enviar solicitud
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
-          {erroresForm.cedula && (
-            <p className="text-red-500 text-xs mt-1">{erroresForm.cedula}</p>
-          )}
-          <p className="text-xs text-gray-400 mt-1">
-            Formato: Letra (V/E/J/P/G) + 6-8 dígitos
-          </p>
-        </div>
-        
-        {/* Nombre completo */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Nombre completo <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                erroresForm.nombreCompleto ? 'border-red-500' : 'border-gray-300'
-              }`}
-              value={nombreCompleto}
-              onChange={(e) => {
-                setNombreCompleto(e.target.value);
-                setErroresForm({ ...erroresForm, nombreCompleto: '' });
-              }}
-              placeholder="Juan Pérez García"
-            />
-          </div>
-          {erroresForm.nombreCompleto && (
-            <p className="text-red-500 text-xs mt-1">{erroresForm.nombreCompleto}</p>
-          )}
-        </div>
-        
-        {/* Rol deseado */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Rol deseado <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <select
-              className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-                erroresForm.rol ? 'border-red-500' : 'border-gray-300'
-              }`}
-              value={rolSolicitado}
-              onChange={(e) => {
-                setRolSolicitado(e.target.value);
-                setErroresForm({ ...erroresForm, rol: '' });
-              }}
-            >
-              <option value="">Selecciona un rol</option>
-              {cargandoRoles ? (
-                <option disabled>Cargando...</option>
-              ) : (
-                rolesDisponibles.map((rol) => (
-                  <option key={rol.id_rol} value={rol.id_rol}>
-                    {rol.nombre.charAt(0).toUpperCase() + rol.nombre.slice(1)}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-          {erroresForm.rol && (
-            <p className="text-red-500 text-xs mt-1">{erroresForm.rol}</p>
-          )}
-        </div>
-        
-        {/* Justificación */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            Justificación <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            rows={4}
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${
-              erroresForm.justificacion ? 'border-red-500' : 'border-gray-300'
-            }`}
-            value={justificacion}
-            onChange={(e) => {
-              setJustificacion(e.target.value);
-              setErroresForm({ ...erroresForm, justificacion: '' });
-            }}
-            placeholder="Explica por qué necesitas este cambio de rol. (Mínimo 20 caracteres)"
-          />
-          {erroresForm.justificacion && (
-            <p className="text-red-500 text-xs mt-1">{erroresForm.justificacion}</p>
-          )}
-          <p className="text-xs text-gray-400 mt-1">
-            {justificacion.length}/20 caracteres mínimos
-          </p>
-        </div>
-      </div>
-      
-      {/* Footer con botones */}
-      <div className="flex gap-3 p-4 border-t border-gray-200 bg-gray-50">
-        <button
-          onClick={() => setShowSolicitudModal(false)}
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleEnviarSolicitud}
-          disabled={cargandoSolicitud}
-          className="flex-1 bg-cyan-500 text-white py-2 rounded-lg hover:bg-cyan-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {cargandoSolicitud ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              Enviando...
-            </>
-          ) : (
-            <>
-              <Send className="h-4 w-4" />
-              Enviar solicitud
-            </>
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        )}
 
         {/* Botón Cerrar Sesión */}
         <div className="p-8">

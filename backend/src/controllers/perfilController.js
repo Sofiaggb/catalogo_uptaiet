@@ -9,14 +9,16 @@ export const profileController = {
     try {
       const result = await pool.query(
         `SELECT 
-          s.estado,
+          s.id_estado,
+          e.nombre_estado as estado,
           s.justificacion,
           s.comentario_admin,
           s.fecha_solicitud,
           s.fecha_respuesta,
           r.nombre as rol_solicitado_nombre
          FROM seguridad.solicitud_rol s
-         JOIN seguridad.rol r ON s.rol_solicitado = r.id_rol
+         JOIN control.estado e ON e.id_estado = s.id_estado
+         JOIN seguridad.rol r ON s.id_rol_solicitado = r.id_rol
          WHERE s.id_usuario = $1 
          AND s.fecha_eliminacion IS NULL
          ORDER BY s.fecha_solicitud DESC
@@ -49,14 +51,14 @@ export const profileController = {
   enviarSolicitudCambioRol: async (req, res) => {
     const usuarioId = req.usuario.id_usuario;
     const { id_rol, cedula, nombre_completo,justificacion } = req.body;
-    console.log('id_rol, cedula, nombre_completo,justificacion  >>>>', id_rol, cedula, nombre_completo,justificacion )
+    // console.log('id_rol, cedula, nombre_completo,justificacion  >>>>', id_rol, cedula, nombre_completo,justificacion )
 
     try {
       const result = await pool.query(
         `SELECT seguridad.crear_solicitud_rol($1, $2, $3, $4, $5) AS resultado`,
         [usuarioId, id_rol, cedula, nombre_completo, justificacion ]
       );
-    console.log('result >>>>', result)
+    // console.log('result >>>>', result)
       
       const resultado = result.rows[0].resultado;
       res.json(resultado);

@@ -1,6 +1,6 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, Shield, User } from 'lucide-react';
 import logo from '../../assets/logo_uptaiet.png';
 export const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -21,6 +21,15 @@ export const Header = () => {
             </Link>
             <Link to="/proyecto" className="hover:text-yellow-500 transition">Proyectos</Link>
             <Link to="/libros" className="hover:text-yellow-500 transition">Libros</Link>
+             {user?.id_rol == 3 /* administrador */ && (
+              <Link 
+                to="/admin" 
+                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded-lg transition"
+              >
+                <Shield className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
             
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">

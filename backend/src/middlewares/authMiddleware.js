@@ -19,7 +19,8 @@ export const authMiddleware = async (req, res, next) => {
         req.usuario = { 
             id_usuario: decoded.id_usuario,
             email: decoded.email,
-            rol: decoded.rol
+            rol: decoded.rol,
+            id_rol: decoded.id_rol
         };
         next();
     } catch (error) {
@@ -49,8 +50,10 @@ export const requireRole = (roles) => {
                 message: 'Debes iniciar sesión'
             });
         }
-        
-        if (!roles.includes(req.usuario.rol)) {
+        console.log('rol>>>>>',req.usuario.id_rol)
+        console.log('roles>>>>>',roles)
+
+        if (!roles.includes(req.usuario.id_rol)) {
             return res.status(403).json({
                 success: false,
                 message: 'No tienes permisos para realizar esta acción'

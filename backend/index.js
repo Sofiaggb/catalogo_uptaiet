@@ -29,6 +29,9 @@ import docsRoutes from './src/routes/libroRoutes.js';
 import authRoutes from './src/routes/authRoutes.js';
 import perfilRoutes from './src/routes/perfilRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js';
+import auditRoutes from './src/routes/auditRoutes.js';
+import { authMiddleware } from './src/middlewares/authMiddleware.js';
+import { auditMiddleware } from './src/middlewares/auditMiddleware.js';
 
 
 // Middlewares
@@ -42,6 +45,8 @@ app.use(cors({
 app.use(express.json());
 // Logging de todas las peticiones (muestra método, ruta, status, tiempo)
 app.use(morgan('dev'));  // 'dev' muestra: POST /api/tesis 200 15ms - 200b
+app.use(authMiddleware);   // Esto establece req.usuario
+app.use(auditMiddleware);  // Esto usa req.usuario
 
 // Rutas
 app.use('/api/carreras', carreraRoutes);
@@ -51,6 +56,7 @@ app.use('/api/libros', docsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/auditoria', auditRoutes);
 
 
 // Ruta de prueba
