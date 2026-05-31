@@ -115,7 +115,7 @@ export function MateriasList() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto min-h-screen">
       {/* Header con gradiente */}
       <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
         <div className="max-w-7xl mx-auto">

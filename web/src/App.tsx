@@ -27,6 +27,7 @@ import { SolicitudesRol } from './pages/Admin/SolicitudesRol';
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { Auditoria } from './pages/Admin/Auditoria';
 import { Estadisticas } from './pages/Admin/Estadisticas';
+import { Footer } from './components/Layout/Footer';
 
 function App() {
   return (
@@ -137,7 +138,7 @@ function App() {
 
             </Routes>
           </main>
-      
+          <Footer />
         </div>
       </Router>
     </AuthProvider>

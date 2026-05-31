@@ -65,6 +65,7 @@ export interface Tesis {
   url_documento?: string;
   id_carrera: number;
   nombre_carrera?: string;
+  tipo_trabajo:string;
   id_estado?: number;
   nombre_estado?: string;
   promedio_nota?: number;

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, Download, Edit, Star, Calendar, 
-  User, Users, BookOpen, Award, FileText,  CheckCircle, XCircle, Clock
+import {
+  ArrowLeft, Download, Edit, Star, Calendar,
+  User, Users, BookOpen, Award, FileText, CheckCircle, XCircle, Clock
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { tesisApi } from '../../api/endpoints/tesis';
@@ -11,8 +11,8 @@ import type { Tesis } from '../../api/types';
 export function TesisDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated , user} = useAuth();
-  const [tesis, setTesis] = useState<Tesis| null>(null);
+  const { isAuthenticated, user } = useAuth();
+  const [tesis, setTesis] = useState<Tesis | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'info' | 'evaluaciones' | 'estudiantes'>('info');
 
@@ -24,6 +24,7 @@ export function TesisDetail() {
     setLoading(true);
     try {
       const response = await tesisApi.getById(Number(id));
+      // console.log('data proyecto>>>',response)
       if (response.success && response.data) {
         setTesis(response.data);
       }
@@ -34,16 +35,16 @@ export function TesisDetail() {
     }
   };
 
-    const handleDownload = () => {
+  const handleDownload = () => {
     if (tesis?.url_documento) {
-        //   URL completa del backend
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-        const BASE_URL = API_URL.replace('/api', '');
-        const fileUrl = `${BASE_URL}${tesis.url_documento}`;
-        
-        window.open(fileUrl, '_blank');
+      //   URL completa del backend
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+      const BASE_URL = API_URL.replace('/api', '');
+      const fileUrl = `${BASE_URL}${tesis.url_documento}`;
+
+      window.open(fileUrl, '_blank');
     }
-    };
+  };
 
   const handleEdit = () => {
     navigate(`/proyecto/edit/${id}`);
@@ -100,7 +101,7 @@ export function TesisDetail() {
           <span>/</span>
           <span className="text-gray-700">{tesis.titulo.substring(0, 50)}...</span>
         </div>
-        
+
         <div className="flex justify-between items-start flex-wrap gap-4">
           <button
             onClick={() => navigate('/proyecto')}
@@ -109,9 +110,9 @@ export function TesisDetail() {
             <ArrowLeft className="h-5 w-5" />
             Volver
           </button>
-          
+
           {/* Acciones */}
-          {isAuthenticated  && [3, 4].includes(user?.id_rol) && (
+          {isAuthenticated && [3, 4].includes(user?.id_rol) && (
             <div className="flex gap-2">
               <button
                 onClick={handleEdit}
@@ -119,7 +120,7 @@ export function TesisDetail() {
               >
                 <Edit className="h-4 w-4" />
                 Editar
-              </button>            
+              </button>
             </div>
           )}
         </div>
@@ -141,9 +142,9 @@ export function TesisDetail() {
                 {tesis.nombre_carrera}
               </span>
             </div>
-            
+
             <h1 className="text-3xl md:text-4xl font-bold mb-4">{tesis.titulo}</h1>
-            
+
             <div className="flex items-center gap-4 text-white/80">
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
@@ -157,7 +158,7 @@ export function TesisDetail() {
               )}
             </div>
           </div>
-          
+
           {/* Botón de descarga */}
           {tesis.url_documento && (
             <button
@@ -176,32 +177,29 @@ export function TesisDetail() {
         <nav className="flex gap-6">
           <button
             onClick={() => setActiveTab('info')}
-            className={`pb-3 px-1 font-medium transition ${
-              activeTab === 'info'
+            className={`pb-3 px-1 font-medium transition ${activeTab === 'info'
                 ? 'text-cyan-600 border-b-2 border-cyan-600'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             Información
           </button>
           <button
             onClick={() => setActiveTab('evaluaciones')}
-            className={`pb-3 px-1 font-medium transition flex items-center gap-2 ${
-              activeTab === 'evaluaciones'
+            className={`pb-3 px-1 font-medium transition flex items-center gap-2 ${activeTab === 'evaluaciones'
                 ? 'text-cyan-600 border-b-2 border-cyan-600'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             <Star className="h-4 w-4" />
             Evaluaciones ({tesis.evaluaciones?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab('estudiantes')}
-            className={`pb-3 px-1 font-medium transition flex items-center gap-2 ${
-              activeTab === 'estudiantes'
+            className={`pb-3 px-1 font-medium transition flex items-center gap-2 ${activeTab === 'estudiantes'
                 ? 'text-cyan-600 border-b-2 border-cyan-600'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}
+              }`}
           >
             <Users className="h-4 w-4" />
             Estudiantes ({tesis.estudiantes?.length || 0})
@@ -236,12 +234,12 @@ export function TesisDetail() {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-500">ID del proyecto</span>
-                    <span className="font-mono text-gray-700">{tesis.id_tesis}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-500">Carrera</span>
                     <span className="text-gray-700">{tesis.nombre_carrera}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-gray-500">Tipo de trabajo</span>
+                    <span className=" text-gray-700">{tesis.tipo_trabajo}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-500">Año de elaboración</span>
@@ -290,13 +288,15 @@ export function TesisDetail() {
                             {evaluacion.jurado.titulo_profesional} {evaluacion.jurado.nombre_completo}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-500">Cédula: {evaluacion.jurado.cedula}</p>
+                        {isAuthenticated && [2, 3, 4].includes(user?.id_rol) && (
+                          <p className="text-sm text-gray-500">Cédula: {evaluacion.jurado.cedula}</p>
+                        )}
                       </div>
                       <div className={`px-3 py-1 rounded-full ${getNotaColor(evaluacion.nota)} bg-white font-bold text-lg`}>
                         {evaluacion.nota}/20
                       </div>
                     </div>
-                    
+
                     {evaluacion.comentarios && (
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <p className="text-gray-600 italic">"{evaluacion.comentarios}"</p>
@@ -327,13 +327,15 @@ export function TesisDetail() {
                     <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center shrink-0">
                       <User className="h-5 w-5 text-cyan-600" />
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-800">{estudiante.nombre_completo}</h4>
-                      <p className="text-sm text-gray-500">Cédula: {estudiante.cedula}</p>
-                      {estudiante.email && (
-                        <p className="text-sm text-gray-500">Email: {estudiante.email}</p>
-                      )}
-                    </div>
+                    {isAuthenticated && [2, 3, 4].includes(user?.id_rol) && (
+                      <div>
+                        <h4 className="font-semibold text-gray-800">{estudiante.nombre_completo}</h4>
+                        <p className="text-sm text-gray-500">Cédula: {estudiante.cedula}</p>
+                        {estudiante.email && (
+                          <p className="text-sm text-gray-500">Email: {estudiante.email}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
