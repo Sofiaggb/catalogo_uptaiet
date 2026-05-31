@@ -11,7 +11,7 @@ import type { Tesis } from '../../api/types';
 export function TesisDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated , user} = useAuth();
   const [tesis, setTesis] = useState<Tesis| null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'info' | 'evaluaciones' | 'estudiantes'>('info');
@@ -92,7 +92,7 @@ export function TesisDetail() {
   const EstadoIcon = estadoColor.icon;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto py-4">
       {/* Header con breadcrumb */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
@@ -111,7 +111,7 @@ export function TesisDetail() {
           </button>
           
           {/* Acciones */}
-          {isAuthenticated && (
+          {isAuthenticated  && [3, 4].includes(user?.id_rol) && (
             <div className="flex gap-2">
               <button
                 onClick={handleEdit}
@@ -126,7 +126,7 @@ export function TesisDetail() {
       </div>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl p-8 mb-8 text-white">
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 rounded-2xl p-8 mb-8 text-white">
         <div className="flex flex-wrap justify-between items-start gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3 flex-wrap">
@@ -259,7 +259,7 @@ export function TesisDetail() {
                   <Award className="h-5 w-5 text-cyan-600" />
                   Calificación
                 </h3>
-                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg p-5 text-center">
+                <div className="bg-linear-to-br from-yellow-50 to-orange-50 rounded-lg p-5 text-center">
                   <div className="inline-flex items-center justify-center w-24 h-24 bg-yellow-100 rounded-full mb-3">
                     <span className={`text-3xl font-bold ${getNotaColor(tesis.promedio_nota)}`}>
                       {tesis.promedio_nota || 'N/A'}
@@ -324,7 +324,7 @@ export function TesisDetail() {
               <div className="grid md:grid-cols-2 gap-4">
                 {tesis.estudiantes.map((estudiante) => (
                   <div key={estudiante.id_estudiante} className="bg-gray-50 rounded-lg p-4 flex items-start gap-3">
-                    <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center shrink-0">
                       <User className="h-5 w-5 text-cyan-600" />
                     </div>
                     <div>

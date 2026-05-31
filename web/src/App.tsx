@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Header } from './components/Layout/Header';
 import { Home } from './pages/Home';
@@ -51,7 +51,7 @@ function App() {
               </Route>
 
           </Routes>
-          <main className="container mx-auto px-4 py-8">
+          <main className="container mx-auto ">
             <Routes>
               {/* Rutas públicas */}
               <Route path="/" element={<Home />} />
@@ -84,13 +84,13 @@ function App() {
               <Route path="/proyecto" element={<TesisList />} />
               <Route path="/proyecto/:id" element={<TesisDetail />} />
               <Route path="/proyecto/create" element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={[3,4]}>
                   <TesisCreate />
                 </ProtectedRoute>
               } />
 
               <Route path="/proyecto/edit/:id" element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={[3,4]}>
                   <TesisEdit />
                 </ProtectedRoute>
               } />
@@ -99,24 +99,24 @@ function App() {
               <Route path="/carreras" element={<CarrerasList />} />
               <Route path="/carreras/:id" element={<CarreraDetail />} />
               <Route path="/carreras/create" element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={[3,4]}>
                   <CarrerasCreate />
                 </ProtectedRoute>
               } />
               <Route path="/carreras/edit/:id" element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={[3,4]}>
                   <CarrerasEdit />
                 </ProtectedRoute>
               } />
               {/* materias  */}
               <Route path="/materias" element={<MateriasList />} />
               <Route path="/materias/create" element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={[3,4]}>
                   <MateriasCreate />
                 </ProtectedRoute>
               } />
               <Route path="/materias/edit/:id" element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={[3,4]}> 
                   <MateriasEdit />
                 </ProtectedRoute>
               } />
@@ -125,12 +125,12 @@ function App() {
               <Route path="/libros" element={<LibrosList />} />
               <Route path="/libros/:id" element={<LibroDetail />} />
               <Route path="/libros/create" element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={[2,3,4]}>
                   <LibrosCreate />
                 </ProtectedRoute>
               } />
               <Route path="/libros/edit/:id" element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={[2,3,4]}>
                   <LibrosEdit />
                 </ProtectedRoute>
               } />

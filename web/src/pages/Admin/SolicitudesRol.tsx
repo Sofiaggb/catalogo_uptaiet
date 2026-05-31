@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
-import { 
-  CheckCircle, XCircle, Eye, Clock, UserCheck, 
-  Search, Filter, ChevronLeft, ChevronRight, 
-  RefreshCw, User, Mail, Calendar, FileText, 
-  MessageSquare, Shield, IdCard,
+import {
+  CheckCircle, XCircle, Eye, Clock, Search, ChevronLeft, ChevronRight, RefreshCw, User, Mail, Calendar, FileText, Shield,
   ArrowRight
 } from 'lucide-react';
 import { adminApi } from '../../api/endpoints/admin';
@@ -20,7 +17,7 @@ interface Solicitud {
   justificacion: string;
   comentario_admin?: string;
   estado: string;
-  id_estado : number;
+  id_estado: number;
   fecha_solicitud: string;
   fecha_respuesta?: string;
 }
@@ -66,7 +63,7 @@ export function SolicitudesRol() {
   const cargarEstadisticas = async () => {
     try {
       const result = await adminApi.obtenerEstadisticas();
-      console.log('estadisticas ',result)
+      console.log('estadisticas ', result)
       if (result.success) {
         setEstadisticas(result.data);
       }
@@ -77,7 +74,7 @@ export function SolicitudesRol() {
 
   const handleAprobar = async () => {
     if (!solicitudSeleccionada) return;
-    
+
     const result = await adminApi.aprobarSolicitudRol(solicitudSeleccionada.id_solicitud, comentario);
     if (result.success) {
       showSuccessAlert('Solicitud aprobada correctamente');
@@ -92,7 +89,7 @@ export function SolicitudesRol() {
 
   const handleRechazar = async () => {
     if (!solicitudSeleccionada) return;
-    
+
     const result = await adminApi.rechazarSolicitudRol(solicitudSeleccionada.id_solicitud, comentario);
     if (result.success) {
       showSuccessAlert('Solicitud rechazada');
@@ -141,7 +138,7 @@ export function SolicitudesRol() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-2">Solicitudes de Cambio de Rol</h1>
           <p className="text-white/80">Revisa y gestiona las solicitudes de los usuarios</p>
@@ -161,7 +158,7 @@ export function SolicitudesRol() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -173,7 +170,7 @@ export function SolicitudesRol() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -185,7 +182,7 @@ export function SolicitudesRol() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -205,46 +202,42 @@ export function SolicitudesRol() {
           <div className="flex gap-2">
             <button
               onClick={() => setFiltroEstado('todos')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === 'todos' 
-                  ? 'bg-cyan-500 text-white' 
+              className={`px-4 py-2 rounded-lg transition ${filtroEstado === 'todos'
+                  ? 'bg-cyan-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Todos
             </button>
             <button
               onClick={() => setFiltroEstado('2')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === '2' 
-                  ? 'bg-yellow-500 text-white' 
+              className={`px-4 py-2 rounded-lg transition ${filtroEstado === '2'
+                  ? 'bg-yellow-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Pendientes
             </button>
             <button
               onClick={() => setFiltroEstado('3')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === '3' 
-                  ? 'bg-green-500 text-white' 
+              className={`px-4 py-2 rounded-lg transition ${filtroEstado === '3'
+                  ? 'bg-green-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Aprobadas
             </button>
             <button
               onClick={() => setFiltroEstado('4')}
-              className={`px-4 py-2 rounded-lg transition ${
-                filtroEstado === '4' 
-                  ? 'bg-red-500 text-white' 
+              className={`px-4 py-2 rounded-lg transition ${filtroEstado === '4'
+                  ? 'bg-red-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Rechazadas
             </button>
           </div>
-          
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
@@ -464,19 +457,20 @@ export function SolicitudesRol() {
               </div>
 
               {/* Comentario del administrador */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Comentario (opcional)
-                </label>
-                <textarea
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  value={comentario}
-                  onChange={(e) => setComentario(e.target.value)}
-                  placeholder="Agrega un comentario para el usuario..."
-                />
-              </div>
-
+              {solicitudSeleccionada.id_estado == 2  /*'pendiente'*/ && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Comentario (opcional)
+                  </label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    value={comentario}
+                    onChange={(e) => setComentario(e.target.value)}
+                    placeholder="Agrega un comentario para el usuario..."
+                  />
+                </div>
+              )}
               {/* Fechas */}
               <div className="text-xs text-gray-400 flex justify-between pt-2">
                 <span>Solicitado: {new Date(solicitudSeleccionada.fecha_solicitud).toLocaleString()}</span>

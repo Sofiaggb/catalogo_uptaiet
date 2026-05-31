@@ -40,7 +40,7 @@ export const adminApi = {
 obtenerLogsAuditoria: async (params?: { 
   tabla?: string; 
   accion?: string; 
-  usuario_id?: string;
+  usuario?: string;
   fecha_desde?: string;
   fecha_hasta?: string;
   page?: number; 
@@ -49,7 +49,7 @@ obtenerLogsAuditoria: async (params?: {
   const queryParams = new URLSearchParams();
   if (params?.tabla) queryParams.append('tabla', params.tabla);
   if (params?.accion) queryParams.append('accion', params.accion);
-  if (params?.usuario_id) queryParams.append('usuario_id', params.usuario_id);
+  if (params?.usuario) queryParams.append('usuario', params.usuario);
   if (params?.fecha_desde) queryParams.append('fecha_desde', params.fecha_desde);
   if (params?.fecha_hasta) queryParams.append('fecha_hasta', params.fecha_hasta);
   if (params?.page) queryParams.append('page', params.page.toString());

@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  BookOpen, FileText, Library, GraduationCap, User, LogIn, 
-  TrendingUp, Award, Clock, ChevronRight, Calendar, Eye,
-  Shield
+import {   BookOpen, FileText, Library, GraduationCap, User, LogIn, Award, ChevronRight, Calendar, Shield
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { tesisApi } from '../api/endpoints/tesis';
@@ -12,7 +9,7 @@ import { librosApi } from '../api/endpoints/libros';
 import type { Carrera, Tesis } from '../api/types';
 
 export function Home() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated,user } = useAuth();
   const [stats, setStats] = useState({
     tesis: 0,
     libros: 0,
@@ -82,7 +79,7 @@ export function Home() {
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl overflow-hidden">
+      <div className="relative bg-linear-to-r from-cyan-600 to-blue-600 rounded-2xl mt-2 overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative p-8 md:p-12">
           <div className="max-w-2xl">
@@ -133,7 +130,7 @@ export function Home() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <Link
             to="/proyecto"
-            className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+            className="bg-linear-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
           >
             <FileText className="h-10 w-10 text-white mx-auto mb-3" />
             <p className="text-white font-semibold">Proyectos</p>
@@ -142,7 +139,7 @@ export function Home() {
           
           <Link
             to="/libros"
-            className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+            className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
           >
             <Library className="h-10 w-10 text-white mx-auto mb-3" />
             <p className="text-white font-semibold">Libros</p>
@@ -151,9 +148,11 @@ export function Home() {
 
           {isAuthenticated && (
             <>
+            { [3, 4].includes(user?.id_rol) && (
+              <>
               <Link
                 to="/carreras"
-                className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+                className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
               >
                 <GraduationCap className="h-10 w-10 text-white mx-auto mb-3" />
                 <p className="text-white font-semibold">Carreras</p>
@@ -162,16 +161,17 @@ export function Home() {
               
               <Link
                 to="/materias"
-                className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+                className="bg-linear-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
               >
                 <BookOpen className="h-10 w-10 text-white mx-auto mb-3" />
                 <p className="text-white font-semibold">Materias</p>
                 <p className="text-white/70 text-sm">Plan de estudios</p>
               </Link>
-              
+              </>
+            )}
               <Link
                 to="/perfil"
-                className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+                className="bg-linear-to-br from-teal-500 to-teal-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
               >
                 <User className="h-10 w-10 text-white mx-auto mb-3" />
                 <p className="text-white font-semibold">Mi Perfil</p>
@@ -183,7 +183,7 @@ export function Home() {
           {!isAuthenticated && (
             <Link
               to="/login"
-              className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+              className="bg-linear-to-br from-cyan-500 to-cyan-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
             >
               <LogIn className="h-10 w-10 text-white mx-auto mb-3" />
               <p className="text-white font-semibold">Iniciar Sesión</p>

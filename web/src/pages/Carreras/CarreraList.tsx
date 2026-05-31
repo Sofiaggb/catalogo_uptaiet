@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, GraduationCap, Building, BookOpen, X } from 'lucide-react';
+import { Search, Plus, GraduationCap,  BookOpen, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { carrerasApi } from '../../api/endpoints/carreras';
 import type { Carrera } from '../../api/types';
@@ -42,7 +42,7 @@ const CarreraCard = ({ carrera }: { carrera: Carrera }) => (
 );
 
 export function CarrerasList() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated , user} = useAuth();
   const [carreras, setCarreras] = useState<Carrera[]>([]);
   const [filteredCarreras, setFilteredCarreras] = useState<Carrera[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +88,7 @@ export function CarrerasList() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6
         rounded-2xl">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-2">Carreras</h1>
@@ -142,7 +142,7 @@ export function CarrerasList() {
       )}
 
       {/* Botón flotante para crear */}
-      {isAuthenticated && (
+      {isAuthenticated && [3, 4].includes(user?.id_rol) && (
         <Link
           to="/carreras/create"
           className="fixed bottom-6 right-6 bg-cyan-500 rounded-full p-4 shadow-lg hover:bg-cyan-600 transition-all hover:scale-105 z-10"

@@ -46,10 +46,11 @@ export const authController = {
         try {
             const result = await pool.query(
                 `SELECT seguridad.verificar_y_registrar($1, $2, $3, $4, $5) AS resultado`,
-                [email, codigo, password, nombre, 1]  // 1 = rol estudiante
+                [email, codigo, password, nombre, 1]  // 1 = rol invitado
             );
             
             const resultado = result.rows[0].resultado;
+            console.log('verificaaaa>>>',result)
             res.status(resultado.status || 200).json(resultado);
             
         } catch (error) {

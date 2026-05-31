@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, Calendar, BookOpen, Building, Award, Users, FileText, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2,  BookOpen, Building, Award,  FileText, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { carrerasApi } from '../../api/endpoints/carreras';
 import { showConfirmAlert, showSuccessAlert, showErrorAlert } from '../../helpers/alerts';
@@ -10,7 +10,7 @@ import type { Carrera } from '../../api/types';
 export function CarreraDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [carrera, setCarrera] = useState<Carrera| null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -70,7 +70,7 @@ export function CarreraDetail() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto py-4">
       {/* Header con breadcrumb */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
@@ -88,7 +88,7 @@ export function CarreraDetail() {
             Volver
           </button>
           
-          {isAuthenticated && (
+          {isAuthenticated && [3, 4].includes(user?.id_rol) && (
             <div className="flex gap-2">
               <button
                 onClick={handleEdit}
@@ -97,6 +97,8 @@ export function CarreraDetail() {
                 <Edit className="h-4 w-4" />
                 Editar
               </button>
+              {[3].includes(user?.id_rol) && (
+
               <button
                 onClick={handleDelete}
                 className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
@@ -104,13 +106,14 @@ export function CarreraDetail() {
                 <Trash2 className="h-4 w-4" />
                 Eliminar
               </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl p-8 mb-8 text-white">
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 rounded-2xl p-8 mb-8 text-white">
         <div className="flex items-center gap-3 mb-4">
           <div className="bg-white/20 rounded-full p-3">
             <GraduationCap className="h-8 w-8" />

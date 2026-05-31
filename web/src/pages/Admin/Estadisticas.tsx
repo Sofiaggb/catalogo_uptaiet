@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { 
-  Database, Plus, Edit, Trash2, TrendingUp, 
-  Calendar, Activity, FileText, Users, BookOpen,
-  BarChart3, PieChart, LineChart
+  Database, Plus, Edit, Trash2, TrendingUp,  Calendar, Activity, FileText, Users, BookOpen,  BarChart3
 } from 'lucide-react';
 import { adminApi } from '../../api/endpoints/admin';
 
@@ -77,7 +75,7 @@ export function Estadisticas() {
     <div className="space-y-6">
       {/* Tarjetas de resumen general */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl p-6 text-white">
+        <div className="bg-linear-to-br from-cyan-500 to-cyan-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm">Total eventos</p>
@@ -88,7 +86,7 @@ export function Estadisticas() {
           <p className="text-white/60 text-xs mt-2">Últimos 30 días</p>
         </div>
         
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
+        <div className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm">Creaciones</p>
@@ -99,7 +97,7 @@ export function Estadisticas() {
           <p className="text-white/60 text-xs mt-2">Nuevos registros</p>
         </div>
         
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+        <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm">Modificaciones</p>
@@ -110,7 +108,7 @@ export function Estadisticas() {
           <p className="text-white/60 text-xs mt-2">Actualizaciones</p>
         </div>
         
-        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
+        <div className="bg-linear-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm">Eliminaciones</p>

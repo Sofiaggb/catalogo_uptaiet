@@ -153,7 +153,7 @@ BEGIN
         
         RETURN jsonb_build_object(
             'success', FALSE,
-            'status', 401,
+            'status', 406,
             'message', 'Código incorrecto. Te quedan ' || (5 - (v_verificacion.intentos + 1)) || ' intentos.'
         );
     END IF;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, BookOpen, Edit, Trash2, X, ChevronRight } from 'lucide-react';
+import { Search, Plus, BookOpen, Edit, Trash2, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { materiasApi } from '../../api/endpoints/materias';
 import { showConfirmAlert, showSuccessAlert, showErrorAlert } from '../../helpers/alerts';
@@ -8,6 +8,7 @@ import type { Materia } from '../../api/types';
 
 // Componente de tarjeta de materia
 const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () => void }) => {
+  const { isAuthenticated, user } = useAuth();
   const handleEdit = () => {
     window.location.href = `/materias/edit/${materia.id_materia}`;
   };
@@ -44,6 +45,7 @@ const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () =
         </div>
         
         {/* Botones de acción */}
+        {isAuthenticated  && [3, 4].includes(user?.id_rol) && (
         <div className="flex gap-2 ml-4">
           <button
             onClick={handleEdit}
@@ -52,6 +54,7 @@ const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () =
           >
             <Edit className="h-4 w-4 text-yellow-600" />
           </button>
+          {  [3].includes(user?.id_rol) && (
           <button
             onClick={handleDelete}
             className="p-2 bg-red-100 rounded-lg hover:bg-red-200 transition"
@@ -59,14 +62,16 @@ const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () =
           >
             <Trash2 className="h-4 w-4 text-red-600" />
           </button>
+          )}
         </div>
+        )}
       </div>
     </div>
   );
 };
 
 export function MateriasList() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [filteredMaterias, setFilteredMaterias] = useState<Materia[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,7 +117,7 @@ export function MateriasList() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header con gradiente */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-2">Materias</h1>
         </div>
@@ -164,7 +169,7 @@ export function MateriasList() {
       )}
 
       {/* Botón flotante para crear */}
-      {isAuthenticated && (
+      {isAuthenticated  && [3, 4].includes(user?.id_rol) && (
         <Link
           to="/materias/create"
           className="fixed bottom-6 right-6 bg-cyan-500 rounded-full p-4 shadow-lg hover:bg-cyan-600 transition-all hover:scale-105 z-10"

@@ -279,15 +279,14 @@ CREATE TRIGGER trigger_auditoria_tipo_carrera_delete
 -- DESCRIPCIÓN: Lista los logs de auditoría con filtros y paginación
 -- =====================================================
 
-select auditoria.listar_logs_auditoria()
+select auditoria.listar_logs_auditoria(null, null , 's')
 
 
 				
 CREATE OR REPLACE FUNCTION auditoria.listar_logs_auditoria(
     p_tabla VARCHAR DEFAULT NULL,
-    p_registro_id INT DEFAULT NULL,
     p_accion VARCHAR DEFAULT NULL,
-    p_usuario_id INT DEFAULT NULL,
+    p_usuario character varying DEFAULT NULL,
     p_fecha_desde TIMESTAMP DEFAULT NULL,
     p_fecha_hasta TIMESTAMP DEFAULT NULL,
     p_limit INT DEFAULT 50,
@@ -301,9 +300,10 @@ BEGIN
     -- Contar total de registros
     SELECT COUNT(*) INTO v_total
     FROM auditoria.log_actividad l
+	LEFT JOIN seguridad.usuario u on u.id_usuario = l.id_usuario
     WHERE (p_tabla IS NULL OR l.tabla  = p_tabla)
     AND (p_accion IS NULL OR l.accion = p_accion)
-    AND (p_usuario_id IS NULL OR l.id_usuario = p_usuario_id)
+    AND (p_usuario IS NULL OR u.nombre ILIKE  '%' || p_usuario || '%' )
     AND (p_fecha_desde IS NULL OR l.fecha::date >= p_fecha_desde)
     AND (p_fecha_hasta IS NULL OR l.fecha::date <= p_fecha_hasta);
 
@@ -327,7 +327,7 @@ BEGIN
         LEFT JOIN seguridad.usuario u ON l.id_usuario = u.id_usuario
         WHERE (p_tabla IS NULL OR l.tabla = p_tabla)
         AND (p_accion IS NULL OR l.accion = p_accion)
-        AND (p_usuario_id IS NULL OR l.id_usuario = p_usuario_id)
+        AND (p_usuario IS NULL OR u.nombre ILIKE  '%' || p_usuario || '%' )
         AND (p_fecha_desde IS NULL OR l.fecha::date >= p_fecha_desde)
         AND (p_fecha_hasta IS NULL OR l.fecha::date <= p_fecha_hasta)
         ORDER BY l.fecha DESC
@@ -360,3 +360,4 @@ EXCEPTION
         );
 END;
 $$ LANGUAGE plpgsql;
+

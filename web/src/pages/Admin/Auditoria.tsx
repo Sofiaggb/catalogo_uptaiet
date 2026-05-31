@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { 
-  Eye, Search, Filter, Calendar, User, Database, 
-  Activity, ChevronLeft, ChevronRight, RefreshCw,
-  FileText, Edit, Trash2, Plus, Clock, Wifi, Monitor,
+  Eye,  User, Database, 
+   ChevronLeft, ChevronRight, RefreshCw,
+   Edit, Trash2, Plus, Clock, Wifi,
   XCircle
 } from 'lucide-react';
 import { adminApi } from '../../api/endpoints/admin';
@@ -30,21 +30,18 @@ export function Auditoria() {
   const [filtros, setFiltros] = useState({
     tabla: '',
     accion: '',
-    usuario_id: '',
+    usuario: '',
     fecha_desde: '',
     fecha_hasta: ''
   });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [estadisticas, setEstadisticas] = useState<any[]>([]);
   const [accionesDisponibles, setAccionesDisponibles] = useState<string[]>([]);
   const [tablasDisponibles, setTablasDisponibles] = useState<any[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     cargarLogs();
-    cargarEstadisticas();
     cargarFiltros();
   }, [page, filtros]);
 
@@ -57,7 +54,7 @@ export function Auditoria() {
         limit: 20,
         tabla: filtros.tabla || undefined,
         accion: filtros.accion || undefined,
-        usuario_id: filtros.usuario_id || undefined,
+        usuario: filtros.usuario || undefined,
         fecha_desde: filtros.fecha_desde || undefined,
         fecha_hasta: filtros.fecha_hasta || undefined
       });
@@ -74,16 +71,6 @@ export function Auditoria() {
     }
   };
 
-  const cargarEstadisticas = async () => {
-    try {
-      const result = await adminApi.obtenerEstadisticasAuditoria();
-      if (result.success) {
-        setEstadisticas(result.data);
-      }
-    } catch (error) {
-      console.error('Error cargando estadísticas:', error);
-    }
-  };
 
   const cargarFiltros = async () => {
     try {
@@ -117,7 +104,7 @@ export function Auditoria() {
     setFiltros({
       tabla: '',
       accion: '',
-      usuario_id: '',
+      usuario: '',
       fecha_desde: '',
       fecha_hasta: ''
     });
@@ -181,13 +168,13 @@ export function Auditoria() {
             </div>
             
             <div>
-              <label className="block text-sm font-semibold text-gray-600 mb-1">Usuario ID</label>
+              <label className="block text-sm font-semibold text-gray-600 mb-1">Usuario</label>
               <input
-                type="number"
+                type="text"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                placeholder="ID del usuario"
-                value={filtros.usuario_id}
-                onChange={(e) => setFiltros({ ...filtros, usuario_id: e.target.value })}
+                placeholder="usuario"
+                value={filtros.usuario}
+                onChange={(e) => setFiltros({ ...filtros, usuario: e.target.value })}
               />
             </div>
             
@@ -213,7 +200,7 @@ export function Auditoria() {
           </div>
         
         
-        {(filtros.tabla || filtros.accion || filtros.usuario_id || filtros.fecha_desde || filtros.fecha_hasta) && (
+        {(filtros.tabla || filtros.accion || filtros.usuario || filtros.fecha_desde || filtros.fecha_hasta) && (
           <div className="mt-4 flex justify-end">
             <button
               onClick={limpiarFiltros}

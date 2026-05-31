@@ -6,9 +6,8 @@ export const auditController = {
     obtenerLogs: async (req, res) => {
         const { 
             tabla, 
-            registro_id, 
             accion, 
-            usuario_id,
+            usuario,
             fecha_desde,
             fecha_hasta,
             limit = 50, 
@@ -19,12 +18,11 @@ export const auditController = {
         
         try {
             const result = await pool.query(
-                `SELECT auditoria.listar_logs_auditoria($1, $2, $3, $4, $5, $6, $7, $8) AS resultado`,
+                `SELECT auditoria.listar_logs_auditoria($1, $2, $3, $4, $5, $6, $7) AS resultado`,
                 [
                     tabla || null,
-                    registro_id ? parseInt(registro_id) : null,
                     accion || null,
-                    usuario_id ? parseInt(usuario_id) : null,
+                    usuario || null,
                     fecha_desde || null,
                     fecha_hasta || null,
                     limit,

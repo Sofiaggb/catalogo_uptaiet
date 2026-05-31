@@ -175,6 +175,8 @@ BEGIN
         SELECT 
             s.id_solicitud,
             s.justificacion,
+			s.cedula,
+			s.nombre_completo,
             s.id_estado,
 			e.nombre_estado as estado,
             s.fecha_solicitud,

@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Book, User, Building, Calendar, FileText, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Book, User, Building, Calendar, FileText, Edit,  ExternalLink } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { librosApi } from '../../api/endpoints/libros';
-import { showConfirmAlert, showSuccessAlert, showErrorAlert } from '../../helpers/alerts';
 
 interface LibroDetail {
   id_libro: number;
@@ -21,7 +20,7 @@ interface LibroDetail {
 export function LibroDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [libro, setLibro] = useState<LibroDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -77,7 +76,7 @@ export function LibroDetail() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto py-4">
       {/* Header con breadcrumb */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
@@ -95,7 +94,7 @@ export function LibroDetail() {
             Volver
           </button>
           
-          {isAuthenticated && (
+          {isAuthenticated  && [2, 3, 4].includes(user?.id_rol) && (
             <div className="flex gap-2">
               <button
                 onClick={handleEdit}
@@ -110,7 +109,7 @@ export function LibroDetail() {
       </div>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl p-8 mb-8 text-white">
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 rounded-2xl p-8 mb-8 text-white">
 
         <h1 className="text-3xl md:text-4xl font-bold mb-3">{libro.titulo}</h1>
         
