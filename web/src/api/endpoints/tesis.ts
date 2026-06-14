@@ -22,6 +22,10 @@ export const tesisApi = {
     return apiClient.uploadPut(`/tesis/upload/${id}`, formData);
   },
 
+  // Incrementar vistas de una tesis
+  incrementarVistas: async (id: number): Promise<any> => {
+      return await apiClient.post(`/tesis/vistas/${id}`);
+  },
   
   getAniosDisponibles: async () => {
     const response = await apiClient.get('/tesis/anios');

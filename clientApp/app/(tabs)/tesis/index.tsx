@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 
 export default function TesisListScreen() {
-    const { isAuthenticated, hasRole } = useAuth();
+    const { isAuthenticated, user, hasRole } = useAuth();
     const router = useRouter();
     const [tesis, setTesis] = useState<Tesis[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,6 +42,9 @@ export default function TesisListScreen() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalResultados, setTotalResultados] = useState(0);
 
+    const [sortBy, setSortBy] = useState('reciente');
+    const [showSortModal, setShowSortModal] = useState(false);
+
     // ============================================
     // EFECTOS
     // ============================================
@@ -53,7 +56,7 @@ export default function TesisListScreen() {
 
     useEffect(() => {
         cargarTesis();
-    }, [page, carrerasSeleccionadas, aniosSeleccionados, buscar]);
+    }, [page, carrerasSeleccionadas, aniosSeleccionados, buscar, sortBy]);
 
     // ============================================
     // FUNCIONES
@@ -76,7 +79,8 @@ export default function TesisListScreen() {
         // Construir parámetros
         const params: any = {
             page,
-            limit: 10
+            limit: 20,
+            sort: sortBy  
         };
 
         // Agregar filtros (si hay seleccionados)
@@ -161,6 +165,13 @@ export default function TesisListScreen() {
                 <View className="bg-gray-200 rounded-full px-3 py-1 mr-2 mb-1">
                     <Text className="text-xs text-gray-700">{item.nombre_carrera}</Text>
                 </View>
+                 <View className="bg-gray-200 rounded-full px-3 py-1 mb-1 mr-2">
+                    <View className="flex-row items-center">
+                        <Ionicons name="eye-outline" size={10} color="#6B7280" />
+                        <Text className="text-xs text-gray-500 ml-1">{item.vistas || 0}</Text>
+                    </View>
+                </View>
+                
                 {item.promedio_nota && (
                     <View className="bg-yellow-400 rounded-full px-3 py-1">
                         <Text className="text-xs text-black font-bold">
@@ -169,6 +180,7 @@ export default function TesisListScreen() {
                         </Text>
                     </View>
                 )}
+               
             </View>
         </TouchableOpacity>
     );
@@ -219,6 +231,25 @@ export default function TesisListScreen() {
                         </TouchableOpacity>
                     )}
                 </View>
+            </View>
+
+      {/*  AGREGAR ORDENAMIENTO */}
+             <View className="px-5 py-2">
+                <TouchableOpacity
+                    className="flex-row items-center justify-between bg-gray-100 rounded-xl px-4 py-3"
+                    onPress={() => setShowSortModal(true)}
+                >
+                    <View className="flex-row items-center">
+                        <Ionicons name="options-outline" size={18} color="#6B7280" />
+                        <Text className="text-gray-600 ml-2">
+                            Ordenar por: {
+                                sortBy === 'reciente' ? 'Más reciente' :
+                                sortBy === 'vistas' ? 'Más visto' : 'Mejor calificado'
+                            }
+                        </Text>
+                    </View>
+                    <Ionicons name="chevron-down" size={18} color="#6B7280" />
+                </TouchableOpacity>
             </View>
 
             {/* Badges de filtros activos */}
@@ -457,8 +488,87 @@ export default function TesisListScreen() {
                 </View>
             </Modal>
 
+
+
+
+            {/* ==================== MODAL DE ORDENAMIENTO ==================== */}
+<Modal
+    animationType="slide"
+    transparent={true}
+    visible={showSortModal}
+    onRequestClose={() => setShowSortModal(false)}
+>
+    <View className="flex-1 justify-end bg-black/50">
+        <View className="bg-white rounded-t-3xl">
+            <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
+                <Text className="text-lg font-bold">Ordenar por</Text>
+                <TouchableOpacity onPress={() => setShowSortModal(false)}>
+                    <Ionicons name="close" size={24} color="#000000" />
+                </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity
+                className={`flex-row items-center justify-between p-4 border-b border-gray-100 ${sortBy === 'reciente' ? 'bg-cyan-50' : ''}`}
+                onPress={() => {
+                    setSortBy('reciente');
+                    setPage(1);
+                    setShowSortModal(false);
+                }}
+            >
+                <View>
+                    <Text className={`text-base ${sortBy === 'reciente' ? 'text-cyan-600 font-semibold' : 'text-gray-700'}`}>
+                         Más reciente
+                    </Text>
+                    <Text className="text-xs text-gray-400">Primero los más nuevos</Text>
+                </View>
+                {sortBy === 'reciente' && (
+                    <Ionicons name="checkmark-circle" size={22} color="#06b6d4" />
+                )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+                className={`flex-row items-center justify-between p-4 border-b border-gray-100 ${sortBy === 'vistas' ? 'bg-cyan-50' : ''}`}
+                onPress={() => {
+                    setSortBy('vistas');
+                    setPage(1);
+                    setShowSortModal(false);
+                }}
+            >
+                <View>
+                    <Text className={`text-base ${sortBy === 'vistas' ? 'text-cyan-600 font-semibold' : 'text-gray-700'}`}>
+                         Más visto
+                    </Text>
+                    <Text className="text-xs text-gray-400">Los más populares primero</Text>
+                </View>
+                {sortBy === 'vistas' && (
+                    <Ionicons name="checkmark-circle" size={22} color="#06b6d4" />
+                )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+                className={`flex-row items-center justify-between p-4 ${sortBy === 'calificacion' ? 'bg-cyan-50' : ''}`}
+                onPress={() => {
+                    setSortBy('calificacion');
+                    setPage(1);
+                    setShowSortModal(false);
+                }}
+            >
+                <View>
+                    <Text className={`text-base ${sortBy === 'calificacion' ? 'text-cyan-600 font-semibold' : 'text-gray-700'}`}>
+                         Mejor calificado
+                    </Text>
+                    <Text className="text-xs text-gray-400">Los de mayor nota primero</Text>
+                </View>
+                {sortBy === 'calificacion' && (
+                    <Ionicons name="checkmark-circle" size={22} color="#06b6d4" />
+                )}
+            </TouchableOpacity>
+        </View>
+    </View>
+</Modal>
+
             {/* Botón Flotante para crear*/}
-            {isAuthenticated && (
+            {isAuthenticated && user && [3, 4].includes(user.id_rol) && (
                 <Pressable
                     className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
                     onPress={() => router.push('/tesis/create')}

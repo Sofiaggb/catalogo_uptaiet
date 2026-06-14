@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { librosApi } from '../../api/endpoints/libros';
 import { materiasApi } from '../../api/endpoints/materias';
 import type { Libros, Materia } from '../../api/types';
+import { useDebounce } from '../../hooks/useDebounce';
 
 // Componente de tarjeta de libro
 const LibroCard = ({ libro }: { libro: Libros; onRefresh: () => void }) => {
@@ -65,7 +66,7 @@ export function LibrosList() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-
+  const buscarDebounced = useDebounce(searchText, 500);
   const totalFiltrosActivos = materiasSeleccionadas.length + (searchText ? 1 : 0);
 
   useEffect(() => {
@@ -73,10 +74,21 @@ export function LibrosList() {
     cargarLibros();
   }, []);
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   setPage(1);
+  //   cargarLibros();
+  // }, [searchText, materiasSeleccionadas]);
+
+    useEffect(() => {
+    if (page === 1) {
+      cargarLibros();
+    }
+  }, [buscarDebounced, page, materiasSeleccionadas]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchText(e.target.value);
     setPage(1);
-    cargarLibros();
-  }, [searchText, materiasSeleccionadas]);
+  };
 
   const cargarMaterias = async () => {
     const data = await materiasApi.getAll();
@@ -160,7 +172,7 @@ export function LibrosList() {
               className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500"
               placeholder="Buscar por título, autor o editorial..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={handleSearchChange}
             />
           </div>
           

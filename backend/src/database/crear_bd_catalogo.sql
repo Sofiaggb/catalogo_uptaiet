@@ -160,6 +160,7 @@ CREATE TABLE personas.jurado (
 -- 2. Esquema para tesis y proyectos
 CREATE SCHEMA tesis;
 
+
 CREATE TABLE tesis.tesis (
     id_tesis SERIAL PRIMARY KEY,
     titulo VARCHAR(300) NOT NULL,
@@ -168,6 +169,7 @@ CREATE TABLE tesis.tesis (
     url_documento VARCHAR(500),  -- guardar PDF en un servidor
     id_carrera INT NOT NULL REFERENCES catalogo.carrera(id_carrera),
     id_estado int REFERENCES control.estado(id_estado),
+	vistas INT DEFAULT 0,
 	fecha_creacion timestamp DEFAULT NOW(),
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 		fecha_modificacion TIMESTAMP,
@@ -179,7 +181,8 @@ CREATE TABLE tesis.tesis (
 -- Agregar índice para búsquedas por año 
 CREATE INDEX idx_tesis_anio_elaboracion ON tesis.tesis(anio_elaboracion);
 
-
+-- Crear índice para ordenar por vistas
+CREATE INDEX IF NOT EXISTS idx_tesis_vistas ON tesis.tesis(vistas DESC);
 
 -- Agregar columnas de modificación a la tabla tesis
 ALTER TABLE tesis.tesis 
@@ -277,6 +280,8 @@ INSERT INTO seguridad.rol (nombre, descripcion) VALUES
 ('administrador', 'Control total del sistema'),
 ('bibliotecario', 'Administra documentos y catálogo');
 
+
+
 CREATE TABLE seguridad.usuario (
     id_usuario SERIAL PRIMARY KEY,
     email VARCHAR(150) UNIQUE NOT NULL,
@@ -285,12 +290,16 @@ CREATE TABLE seguridad.usuario (
 	id_rol INT NOT NULL REFERENCES seguridad.rol(id_rol) ON DELETE CASCADE,
 	cedula character varying,
 	nombre_completo character varying, 
+	foto_perfil VARCHAR(500),
     fecha_creacion TIMESTAMP DEFAULT NOW(),
 	fecha_modificacion timestamp,
 	fecha_eliminacion timestamp,	
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
 
+
+-- Índice para búsquedas (opcional)
+CREATE INDEX IF NOT EXISTS idx_usuario_foto ON seguridad.usuario(foto_perfil);
 
 ------------ nuevo
 

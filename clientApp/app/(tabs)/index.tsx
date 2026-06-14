@@ -1,11 +1,14 @@
 // app/(tabs)/index.tsx
 import { useAuth } from '@/hooks/useAuth';
+import { useUltimasTesis } from '@/hooks/useUltimasTesis';
 import { Ionicons } from '@expo/vector-icons';
 import { Href, Link } from 'expo-router';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
-     const { isAuthenticated, hasRole } = useAuth();
+    const { isAuthenticated, user } = useAuth();
+    const { tesis, loading, error } = useUltimasTesis();
+
     return (
         <ScrollView className="flex-1 bg-white">
             {/* Header */}
@@ -46,26 +49,29 @@ export default function HomeScreen() {
                     <QuickCard title="Libros" iconName="library-outline"
                         href="/libros"
                         colorVariant="blue" />
- {isAuthenticated && (
-    <>
-                    <QuickCard title="Carreras" iconName="school-outline"
-                        href="/carreras"
-                        colorVariant="blue" />
-                    
-                    <QuickCard title="Materias" iconName="book-outline"
-                        href="/materias"
-                        colorVariant="blue" />
-                        
+                    {isAuthenticated && (
+                        <>
+                            {user && [3, 4].includes(user?.id_rol) && (
+                                <>
+                                    <QuickCard title="Carreras" iconName="school-outline"
+                                        href="/carreras"
+                                        colorVariant="blue" />
 
-                    <QuickCard title="Mi Perfil" iconName="person-circle-outline"
-                        href="/perfil"
-                        colorVariant="blue" />
-                    </>
- )}
+                                    <QuickCard title="Materias" iconName="book-outline"
+                                        href="/materias"
+                                        colorVariant="blue" />
+                                </>
+                            )}
+
+                            <QuickCard title="Mi Perfil" iconName="person-circle-outline"
+                                href="/perfil"
+                                colorVariant="blue" />
+                        </>
+                    )}
                 </View>
             </View>
 
-            {/* Últimas tesis */}
+            {/* Últimos proyectos */}
             <View className="px-5 mt-6 pb-10">
                 <View className="flex-row justify-between items-center mb-4">
                     <Text className="text-black text-xl font-bold">Últimos proyectos</Text>
@@ -75,17 +81,48 @@ export default function HomeScreen() {
                         </TouchableOpacity>
                     </Link>
                 </View>
-                {/* Lista de tesis */}
-                <TesisCard
-                    titulo="Machine Learning en Educación"
-                    autores="María Rojas, Carlos Méndez"
-                    carrera="Ingeniería Informática"
-                />
-                <TesisCard
-                    titulo="Blockchain para Certificación"
-                    autores="Ana Torres, Javier Paz"
-                    carrera="Ingeniería de Sistemas"
-                />
+
+                {/* Estado de carga */}
+                {loading && (
+                    <View className="py-10 items-center">
+                        <ActivityIndicator size="large" color="#06b6d4" />
+                        <Text className="text-gray-500 mt-2">Cargando proyectos...</Text>
+                    </View>
+                )}
+
+                {/* Estado de error */}
+                {error && !loading && (
+                    <View className="py-10 items-center">
+                        <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
+                        <Text className="text-red-500 text-center mt-2">{error}</Text>
+                        <TouchableOpacity
+                            className="mt-4 bg-cyan-500 px-4 py-2 rounded-lg"
+                            onPress={() => window.location.reload()}
+                        >
+                            <Text className="text-white">Reintentar</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {/* Lista de tesis dinámicas */}
+                {!loading && !error && tesis.length === 0 && (
+                    <View className="py-10 items-center">
+                        <Ionicons name="document-text-outline" size={48} color="#9ca3af" />
+                        <Text className="text-gray-500 text-center mt-2">No hay proyectos disponibles</Text>
+                    </View>
+                )}
+
+                {!loading && !error && tesis.map((item) => (
+                    <TesisCard
+                        key={item.id_tesis}
+                        id={item.id_tesis}
+                        titulo={item.titulo}
+                        autores={item.estudiantes?.map((e: any) => e.nombre_completo).join(', ') || 'Autor desconocido'}
+                        carrera={item.nombre_carrera || 'Sin carrera'}
+                        promedio_nota={item.promedio_nota}
+                        anio={item.anio_elaboracion}
+                    />
+                ))}
             </View>
         </ScrollView>
     );

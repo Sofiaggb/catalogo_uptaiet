@@ -156,6 +156,34 @@ class ApiClient {
         
         return data as T;
     }
+
+     // Método para obtener la URL de un recurso (para PDFs, imágenes, etc.)
+    async getBinary(endpoint: string): Promise<{ success: boolean; url?: string; error?: string }> {
+        try {
+            const url = `${this.baseUrl}${endpoint}`;
+            const headers = await this.getHeaders();
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    ...headers,
+                },
+            });
+            
+            if (response.ok) {
+                // Devolver la URL directamente (el backend ya envía el PDF)
+                // Nota: Como es una respuesta binaria, no podemos usar response.json()
+                return { success: true, url };
+            } else {
+                const error = await response.json();
+                return { success: false, error: error.error || 'Error al descargar' };
+            }
+        } catch (error) {
+            console.error('Error en getBinary:', error);
+            return { success: false, error: 'Error de conexión' };
+        }
+    }
+
 }
 
 export const apiClient = new ApiClient(API_URL);

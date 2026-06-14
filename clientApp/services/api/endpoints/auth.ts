@@ -7,11 +7,6 @@ export const authApi = {
         return await apiClient.post('/auth/login', data);
     },
 
-
-    getMe: async () => {
-        return await apiClient.get('/auth/me');
-    },
-
     // Enviar código de verificación
     enviarCodigo: async (data: { email: string, nombre: string }) => {
         return await apiClient.post('/auth/send-code', data);

@@ -55,12 +55,12 @@ export function CarreraForm({ mode }: { mode: 'create' | 'edit' }) {
         descripcion: data.descripcion || '',
       });
       setSelectedTipo(data.id_tipo_carrera?.toString() || '');
-      setSelectedTipoTrabajo(data.id_tipo_trabajo?.toString() || '');
       
       // Cargar tipos de trabajo según la carrera
       if (data.id_tipo_carrera) {
-        const tiposTrabajoData = await carrerasApi.getTiposTrabajoByCarrera(data.id_carrera);
+        const tiposTrabajoData = await carrerasApi.getTiposTrabajoByCarrera(data.id_tipo_carrera);
         setTiposTrabajo(tiposTrabajoData);
+        setSelectedTipoTrabajo(data.id_tipo_trabajo?.toString() || '');
       }
     }
     setLoadingData(false);

@@ -71,6 +71,7 @@ export interface Tesis {
   promedio_nota?: number;
   estudiantes?: Estudiante[];
   evaluaciones?: Evaluacion[];
+  vistas?:number;
 }
 
 // Parámetros para listar tesis

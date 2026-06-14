@@ -249,7 +249,7 @@ BEGIN
          e.nombre_estado,
          tt.id_tipo_trabajo,
          tt.nombre as tipo_trabajo,
-
+		 t.vistas,
         -- Estudiantes
         COALESCE((
             SELECT jsonb_agg(
@@ -334,14 +334,22 @@ CREATE OR REPLACE FUNCTION tesis.listar_tesis(
     p_id_estado character varying DEFAULT NULL,
     p_anio character varying DEFAULT NULL,
     p_buscar character varying DEFAULT NULL,
+	p_sort VARCHAR DEFAULT 'reciente',
     p_limit INT DEFAULT 50,
     p_offset INT DEFAULT 0
 )
 RETURNS JSONB AS $$
 DECLARE
     v_resultado JSONB;
-    v_total INT;
+    v_total INT;	
+    v_order_by TEXT;
 BEGIN
+	 -- Determinar el orden  según el parámetro
+    /*v_order_by := CASE p_sort
+        WHEN 'vistas' THEN 't.vistas DESC'
+        WHEN 'calificacion' THEN 't.promedio_nota DESC NULLS LAST'
+        ELSE 't.fecha_creacion DESC'  -- 'reciente' por defecto
+    END;*/
 
     WITH filtros AS (
         SELECT t.*
@@ -371,6 +379,7 @@ BEGIN
             c.nombre AS nombre_carrera,
             e.id_estado,
             e.nombre_estado,
+			t.vistas,
             COALESCE(te.total_estudiantes, 0) AS total_estudiantes,
             ev.promedio_nota
         FROM filtros t
@@ -387,7 +396,10 @@ BEGIN
             WHERE fecha_eliminacion IS NULL
             GROUP BY id_tesis
         ) ev ON ev.id_tesis = t.id_tesis
-        ORDER BY t.fecha_creacion DESC
+        ORDER BY 
+            CASE WHEN p_sort = 'vistas' THEN t.vistas END DESC,
+            CASE WHEN p_sort = 'calificacion' THEN ev.promedio_nota END DESC NULLS LAST,
+            CASE WHEN p_sort = 'reciente' OR p_sort IS NULL THEN t.fecha_creacion END DESC
         LIMIT p_limit OFFSET p_offset
     ),
 	final AS (
@@ -699,5 +711,43 @@ EXCEPTION
             'error', SQLERRM,
             'codigo', SQLSTATE
         );
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+-- =====================================================
+-- FUNCIÓN: incrementar_vistas_tesis
+-- DESCRIPCIÓN: Incrementa el contador de vistas de una tesis
+-- =====================================================
+CREATE OR REPLACE FUNCTION tesis.incrementar_vistas_tesis(
+    p_id_tesis INT
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_vistas INT;
+BEGIN
+    -- Verificar que la tesis existe
+    IF NOT EXISTS (SELECT 1 FROM tesis.tesis WHERE id_tesis = p_id_tesis AND fecha_eliminacion IS NULL) THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 404,
+            'message', 'Tesis no encontrada'
+        );
+    END IF;
+    
+    -- Incrementar vistas
+    UPDATE tesis.tesis 
+    SET vistas = COALESCE(vistas, 0) + 1
+    WHERE id_tesis = p_id_tesis
+    RETURNING vistas INTO v_vistas;
+    
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'data', jsonb_build_object(
+            'id_tesis', p_id_tesis,
+            'vistas', v_vistas
+        )
+    );
 END;
 $$ LANGUAGE plpgsql;

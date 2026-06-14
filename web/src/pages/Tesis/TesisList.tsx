@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, BookOpen,  Calendar,  Grid3x3, List, Filter, X,  ChevronRight } from 'lucide-react';
+import { Search, Plus, BookOpen, Calendar, Grid3x3, List, Filter, X, ChevronRight, Eye, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { tesisApi } from '../../api/endpoints/tesis';
 import { carrerasApi } from '../../api/endpoints/carreras';
+import { useDebounce } from '../../hooks/useDebounce';
 
 interface Tesis {
   id_tesis: number;
@@ -24,6 +25,7 @@ export function TesisList() {
   const [aniosDisponibles, setAniosDisponibles] = useState<number[]>([]);
   const [aniosSeleccionados, setAniosSeleccionados] = useState<number[]>([]);
   const [buscar, setBuscar] = useState('');
+  const buscarDebounced = useDebounce(buscar, 500);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResultados, setTotalResultados] = useState(0);
@@ -38,8 +40,15 @@ export function TesisList() {
   }, []);
 
   useEffect(() => {
-    cargarTesis();
-  }, [page, carrerasSeleccionadas, aniosSeleccionados, buscar, sortBy]);
+    if (page === 1) {
+      cargarTesis();
+    }
+  }, [buscarDebounced, page, carrerasSeleccionadas, aniosSeleccionados, sortBy]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setBuscar(e.target.value);
+    setPage(1);
+  };
 
   const cargarCarreras = async () => {
     const data = await carrerasApi.getAll();
@@ -53,15 +62,15 @@ export function TesisList() {
 
   const cargarTesis = async () => {
     setLoading(true);
-    const params: any = { 
-      page, 
+    const params: any = {
+      page,
       limit: 40,
       sort: sortBy
     };
     if (carrerasSeleccionadas.length) params.id_carrera = carrerasSeleccionadas.join(',');
     if (aniosSeleccionados.length) params.anio = aniosSeleccionados.join(',');
     if (buscar) params.buscar = buscar;
-    
+
     const result = await tesisApi.listar(params);
     console.log(result);
     if (result.success) {
@@ -138,6 +147,10 @@ export function TesisList() {
             </span>
           </div>
           <div className="flex items-center gap-1 text-gray-400 text-sm">
+            <Eye className="h-4 w-4" />
+            <span>{item.vistas || 0} vistas</span>
+          </div>
+          <div className="flex items-center gap-1 text-gray-400 text-sm">
             <Calendar className="h-4 w-4" />
             <span>{item.anio_elaboracion || 2024}</span>
           </div>
@@ -173,6 +186,17 @@ export function TesisList() {
           <p className="text-gray-600 text-sm mt-2 line-clamp-2">
             {item.resumen_corto || 'Sin resumen disponible'}
           </p>
+
+          <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center gap-1 text-gray-400 text-xs">
+              <Eye className="h-3 w-3" />
+              <span>{item.vistas || 0} vistas</span>
+            </div>
+            <div className="flex items-center gap-1 text-gray-400 text-xs">
+              <TrendingUp className="h-3 w-3" />
+              <span>15 descargas</span>
+            </div>
+          </div>
         </div>
       </div>
     </Link>
@@ -198,19 +222,15 @@ export function TesisList() {
               className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
               placeholder="Buscar por título, autor o palabras clave..."
               value={buscar}
-              onChange={(e) => {
-                setBuscar(e.target.value);
-                setPage(1);
-              }}
+              onChange={handleSearchChange}
             />
           </div>
-          
+
           <div className="flex gap-2">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-3 rounded-xl flex items-center gap-2 transition ${
-                showFilters ? 'bg-cyan-500 text-white' : 'bg-white border border-gray-200 text-gray-700'
-              }`}
+              className={`px-4 py-3 rounded-xl flex items-center gap-2 transition ${showFilters ? 'bg-cyan-500 text-white' : 'bg-white border border-gray-200 text-gray-700'
+                }`}
             >
               <Filter className="h-5 w-5" />
               Filtros
@@ -220,8 +240,8 @@ export function TesisList() {
                 </span>
               )}
             </button>
-            
-            {/* <select
+
+            <select
               value={sortBy}
               onChange={(e) => {
                 setSortBy(e.target.value);
@@ -232,8 +252,8 @@ export function TesisList() {
               <option value="reciente">Más reciente</option>
               <option value="vistas">Más visto</option>
               <option value="calificacion">Mejor calificado</option>
-            </select> */}
-            
+            </select>
+
             <div className="flex bg-white border border-gray-200 rounded-xl overflow-hidden">
               <button
                 onClick={() => setViewMode('grid')}
@@ -257,39 +277,37 @@ export function TesisList() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">Carreras</label>                 
+                  <label className="block text-sm font-semibold text-gray-700">Carreras</label>
                 </div>
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                   {carreras.map((carrera) => (
                     <button
                       key={carrera.id_carrera}
                       onClick={() => toggleCarrera(carrera.id_carrera)}
-                      className={`px-3 py-1 rounded-full text-sm transition ${
-                        carrerasSeleccionadas.includes(carrera.id_carrera)
+                      className={`px-3 py-1 rounded-full text-sm transition ${carrerasSeleccionadas.includes(carrera.id_carrera)
                           ? 'bg-cyan-500 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                        }`}
                     >
                       {carrera.nombre}
                     </button>
                   ))}
                 </div>
               </div>
-              
+
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">Años</label>               
+                  <label className="block text-sm font-semibold text-gray-700">Años</label>
                 </div>
                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                   {aniosDisponibles.map((anio) => (
                     <button
                       key={anio}
                       onClick={() => toggleAnio(anio)}
-                      className={`px-3 py-1 rounded-full text-sm transition ${
-                        aniosSeleccionados.includes(anio)
+                      className={`px-3 py-1 rounded-full text-sm transition ${aniosSeleccionados.includes(anio)
                           ? 'bg-cyan-500 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                        }`}
                     >
                       {anio}
                     </button>

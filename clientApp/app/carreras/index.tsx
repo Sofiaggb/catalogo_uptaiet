@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { carrerasApi } from '@/services/api/endpoints/carreras';
 import type { Carrera } from '@/services/api/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Componente de tarjeta de carrera
 const CarreraCard = ({ carrera, onPress }: { carrera: Carrera; onPress: () => void }) => (
@@ -44,6 +45,7 @@ const CarreraCard = ({ carrera, onPress }: { carrera: Carrera; onPress: () => vo
 );
 
 export default function CarrerasListScreen() {
+    const { isAuthenticated, user } = useAuth();
     const router = useRouter();
     const [carreras, setCarreras] = useState<Carrera[]>([]);
     const [filteredCarreras, setFilteredCarreras] = useState<Carrera[]>([]);
@@ -173,12 +175,14 @@ export default function CarrerasListScreen() {
             />
 
             {/* Botón flotante para crear */}
+            {isAuthenticated && user && [3, 4].includes(user.id_rol) && (
             <Pressable
                 className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
                 onPress={() => router.push('/carreras/create')}
             >
                 <Ionicons name="add" size={28} color="#00000" />
             </Pressable>
+            )}
         </View>
     );
 }

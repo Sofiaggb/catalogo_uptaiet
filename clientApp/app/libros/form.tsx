@@ -279,7 +279,7 @@ export default function LibroForm({ mode }: LibroFormProps ) {
         return (
             <View className="flex-1 bg-white justify-center items-center">
                 <ActivityIndicator size="large" color="#FFD700" />
-                <Text className="text-gray-500 mt-4">Cargando tesis...</Text>
+                <Text className="text-gray-500 mt-4">Cargando libro...</Text>
             </View>
         );
     }

@@ -1,7 +1,7 @@
 // services/api/endpoints/tesis.ts
 import { apiClient } from '../client';
-import type { 
-    Tesis, 
+import type {
+    Tesis,
     PaginatedResponse,
     ListarTesisParams
 } from '../types';
@@ -14,9 +14,10 @@ export const tesisApi = {
         if (params.id_estado) queryParams.append('id_estado', params.id_estado.toString());
         if (params.anio) queryParams.append('anio', params.anio.toString());
         if (params.buscar) queryParams.append('buscar', params.buscar);
+        if (params.sort) queryParams.append('sort', params.sort);
         if (params.limit) queryParams.append('limit', params.limit.toString());
         if (params.page) queryParams.append('page', params.page.toString());
-        
+
         const url = `/tesis${queryParams.toString() ? `?${queryParams}` : ''}`;
         return apiClient.get<PaginatedResponse<Tesis>>(url);
     },
@@ -42,14 +43,19 @@ export const tesisApi = {
         return apiClient.delete(url);
     },
 
-    // Restaurar tesis
-    // restaurar: async (id: number): Promise<any> => {
-    //     return apiClient.patch(`/tesis/${id}/restaurar`);
-    // },
+    // Incrementar vistas de una tesis
+    incrementarVistas: async (id: number): Promise<any> => {
+        return await apiClient.post(`/tesis/vistas/${id}`);
+    },
 
     // Obtener años disponibles
     getAniosDisponibles: async (): Promise<number[]> => {
         const response = await apiClient.get<{ success: boolean; data: number[] }>('/tesis/anios');
         return response.success ? response.data : [];
+    },
+
+    // escargar PDF protegido
+    descargarPDF: async (id: number): Promise<any> => {
+          return await apiClient.getBinary(`/download/tesis/${id}`);
     },
 };

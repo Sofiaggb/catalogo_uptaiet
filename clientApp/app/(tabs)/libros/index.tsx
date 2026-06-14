@@ -21,7 +21,7 @@ import type { Libros, Materia } from '@/services/api/types';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LibrosListScreen() {
-    const { isAuthenticated, hasRole } = useAuth();
+    const { isAuthenticated,user, hasRole } = useAuth();
     const [libros, setLibros] = useState<Libros[]>([]);
     const [materias, setMaterias] = useState<Materia[]>([]);
     const [loading, setLoading] = useState(true);
@@ -378,7 +378,7 @@ export default function LibrosListScreen() {
             </Modal>
 
             {/* Botón flotante */}
-            {isAuthenticated && (
+            {isAuthenticated && user && [2, 3, 4].includes(user.id_rol) && (
                 <Pressable
                     className="absolute bottom-6 right-6 bg-sky-400 rounded-full p-4 shadow-lg"
                     onPress={() => router.push('/libros/create')}

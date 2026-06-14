@@ -16,6 +16,8 @@ const getApiUrl = (): string => {
         }
         // iOS Emulator
         if (Platform.OS === 'ios') {
+            return 'http://192.168.0.103:3000/api';
+
             return 'http://192.169.2.115:3000/api';
 
             // return 'http://10.8.1.7:3000/api';

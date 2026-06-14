@@ -102,6 +102,7 @@ export const tesisController = {
       id_estado,
       anio,
       buscar,
+      sort,
       limit = 50,
       page = 1
     } = req.query;
@@ -110,8 +111,8 @@ export const tesisController = {
 
     try {
       const result = await pool.query(
-        `SELECT tesis.listar_tesis($1, $2, $3, $4, $5, $6) AS resultado`,
-        [id_carrera || null, id_estado || null, anio || null, buscar || null, limit, offset]
+        `SELECT tesis.listar_tesis($1, $2, $3, $4, $5, $6, $7) AS resultado`,
+        [id_carrera || null, id_estado || null, anio || null, buscar || null, sort || null, limit, offset]
       );
 
       const resultado = result.rows[0].resultado;
@@ -209,63 +210,27 @@ export const tesisController = {
     }
   },
 
-
-
-  deleteTesis: async (req, res) => {
-    const { id } = req.params;
-    const { forzar_fisico = false } = req.query;
-
-    try {
-      const result = await pool.query(
-        `SELECT tesis.eliminar_tesis($1, $2, $3) AS resultado`,
-        [id, req.usuario?.email || 'sistema', forzar_fisico === 'true']
-      );
-
-      const resultado = result.rows[0].resultado;
-
-      if (!resultado.success) {
-        return res.status(resultado.status || 400).json(resultado);
+  // Incrementar vistas de una tesis
+  incrementarVistas: async (req, res) => {
+      const { id } = req.params;
+      
+      try {
+          const result = await pool.query(
+              `SELECT tesis.incrementar_vistas_tesis($1) AS resultado`,
+              [id]
+          );
+          
+          const resultado = result.rows[0].resultado;
+          res.json(resultado);
+          
+      } catch (error) {
+          console.error('Error en incrementarVistas:', error);
+          res.status(500).json({ 
+              success: false, 
+              message: 'Error al incrementar vistas' 
+          });
       }
-
-      res.json(resultado);
-
-    } catch (error) {
-      console.error('Error en eliminarTesis:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Error al eliminar la tesis'
-      });
-    }
   },
-
-  // src/controllers/tesisController.js
- testUpload :async (req, res) => {
-    console.log('=== TEST UPLOAD ===');
-    console.log('req.file:', req.file);
-    console.log('req.body:', req.body);
-    console.log('req.headers.content-type:', req.headers['content-type']);
-    
-    if (!req.file) {
-        return res.status(400).json({ 
-            error: 'No se recibió archivo',
-            body: req.body,
-            contentType: req.headers['content-type']
-        });
-    }
-    
-    res.json({
-        success: true,
-        file: {
-            fieldname: req.file.fieldname,
-            originalname: req.file.originalname,
-            filename: req.file.filename,
-            size: req.file.size,
-            path: req.file.path
-        },
-        body: req.body
-    });
-},
-
 
 // ============================================
 // BÚSQUEDA POR CÉDULA

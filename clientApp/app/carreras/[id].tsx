@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { carrerasApi } from '@/services/api/endpoints/carreras';
 import type { Carrera } from '@/services/api/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CarreraDetailScreen() {
+    const { isAuthenticated, user } = useAuth();
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [carrera, setCarrera] = useState<Carrera | null>(null);
@@ -161,6 +163,7 @@ export default function CarreraDetailScreen() {
 
                 {/* Acciones */}
                 <View className="flex-row gap-4 mt-8 mb-10">
+                    {isAuthenticated && user && [3, 4].includes(user.id_rol) && (
                     <TouchableOpacity
                         className="flex-1 bg-yellow-500 py-4 rounded-xl flex-row items-center justify-center"
                         onPress={() => router.push(`/carreras/edit/${carrera.id_carrera}`)}
@@ -169,7 +172,8 @@ export default function CarreraDetailScreen() {
                         <Ionicons name="create-outline" size={22} color="#000000" />
                         <Text className="text-black font-bold text-base ml-2">Editar Carrera</Text>
                     </TouchableOpacity>
-
+                    )}
+                    {isAuthenticated && user && [3 ].includes(user.id_rol) && (
                     <TouchableOpacity
                         className="flex-1 bg-red-500 py-4 rounded-xl flex-row items-center justify-center"
                         onPress={handleDelete}
@@ -178,6 +182,7 @@ export default function CarreraDetailScreen() {
                         <Ionicons name="trash-outline" size={22} color="#FFFFFF" />
                         <Text className="text-white font-bold text-base ml-2">Eliminar</Text>
                     </TouchableOpacity>
+                    )}
                 </View>
             </View>
         </ScrollView>

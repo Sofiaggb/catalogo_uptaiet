@@ -70,6 +70,7 @@ export interface Tesis {
     promedio_nota?: number;
     estudiantes?: Estudiante[];
     evaluaciones?: Evaluacion[];
+    vistas?:number;
 }
 
 // Tipos para inputs
@@ -103,6 +104,7 @@ export type ListarTesisParams = {
     id_estado?: number;
     anio?: number;
     buscar?: string;
+    sort?: string;
     limit?: number;
     page?: number;
 };

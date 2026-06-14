@@ -1,6 +1,7 @@
 // app/(tabs)/tesis/[id].tsx
 import { STATIC_URL } from '@/config/env';
 import { useAuth } from '@/hooks/useAuth';
+import { useVistas } from '@/hooks/useVistas';
 import { tesisApi } from '@/services/api/endpoints/tesis';
 import { Tesis } from '@/services/api/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,12 +10,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function TesisDetailScreen() {
-    const { isAuthenticated, hasRole } = useAuth();
+    const { isAuthenticated, user, hasRole } = useAuth();
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [tesis, setTesis] = useState<Tesis | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Incrementar vistas automáticamente
+    useVistas(Number(id));
 
     // Recargar cada vez que la pantalla recibe foco
     useFocusEffect(
@@ -44,34 +48,49 @@ export default function TesisDetailScreen() {
             setLoading(false);
         }
     };
+    
+const abrirDocumento = async () => {
+    if (!tesis?.id_tesis) {
+        Alert.alert('Información', 'No hay documento disponible');
+        return;
+    }
+    
+    const result = await tesisApi.descargarPDF(tesis.id_tesis);
+    
+    if (result.success && result.url) {
+        // Abrir el PDF en el visor del navegador
+        await Linking.openURL(result.url);
+    } else {
+        Alert.alert('Error', result.error || 'No se pudo abrir el documento');
+    }
+};
 
-    // app/(tabs)/tesis/[id].tsx
-    const abrirDocumento = async () => {
-        if (tesis?.url_documento) {
-            const url = `${STATIC_URL}${tesis.url_documento}`;
+    // const abrirDocumento = async () => {
+    //     if (tesis?.url_documento) {
+    //         const url = `${STATIC_URL}${tesis.url_documento}`;
 
-            console.log(' STATIC_URL:', STATIC_URL);
-            console.log(' tesis.url_documento:', tesis.url_documento);
-            console.log('URL completa:', url);
+    //         console.log(' STATIC_URL:', STATIC_URL);
+    //         console.log(' tesis.url_documento:', tesis.url_documento);
+    //         console.log('URL completa:', url);
 
-            try {
-                // Primero verifica si el archivo existe (opcional)
-                const checkResponse = await fetch(url, { method: 'HEAD' });
-                console.log(' Estado del archivo:', checkResponse.status);
+    //         try {
+    //             // Primero verifica si el archivo existe (opcional)
+    //             const checkResponse = await fetch(url, { method: 'HEAD' });
+    //             console.log(' Estado del archivo:', checkResponse.status);
 
-                if (checkResponse.ok) {
-                    await Linking.openURL(url);
-                } else {
-                    Alert.alert('Error', `No se pudo encontrar el documento (Status: ${checkResponse.status})`);
-                }
-            } catch (error) {
-                console.error('Error abriendo documento:', error);
-                Alert.alert('Error', 'No se pudo abrir el documento');
-            }
-        } else {
-            Alert.alert('Información', 'No hay documento disponible');
-        }
-    };
+    //             if (checkResponse.ok) {
+    //                 await Linking.openURL(url);
+    //             } else {
+    //                 Alert.alert('Error', `No se pudo encontrar el documento (Status: ${checkResponse.status})`);
+    //             }
+    //         } catch (error) {
+    //             console.error('Error abriendo documento:', error);
+    //             Alert.alert('Error', 'No se pudo abrir el documento');
+    //         }
+    //     } else {
+    //         Alert.alert('Información', 'No hay documento disponible');
+    //     }
+    // };
 
     if (loading) {
         return (
@@ -126,6 +145,11 @@ export default function TesisDetailScreen() {
                     <View className="bg-cyan-100 rounded-full px-3 py-1 mr-2 mb-2">
                         <Text className="text-cyan-800 text-sm">{tesis.anio_elaboracion}</Text>
                     </View>
+                     {/* vistas */}
+                    <View className="bg-gray-100 rounded-full px-3 py-1 flex-row items-center">
+                        <Ionicons name="eye-outline" size={14} color="#6B7280" />
+                        <Text className="text-gray-600 text-sm ml-1">{tesis.vistas || 0} vistas</Text>
+                    </View>
                 </View>
             </View>
 
@@ -157,9 +181,13 @@ export default function TesisDetailScreen() {
                 {tesis.estudiantes?.map((estudiante, index) => (
                     <View key={estudiante.id_estudiante} className="bg-gray-50 rounded-xl p-3 mb-2 border border-gray-200">
                         <Text className="text-black font-semibold">{estudiante.nombre_completo}</Text>
-                        <Text className="text-gray-500 text-sm mt-1">Cédula: {estudiante.cedula}</Text>
-                        {estudiante.email && (
-                            <Text className="text-gray-500 text-sm">Email: {estudiante.email}</Text>
+                        {isAuthenticated && user && [2, 3, 4].includes(user.id_rol) && (
+                            <>
+                                <Text className="text-gray-500 text-sm mt-1">Cédula: {estudiante.cedula}</Text>
+                                {estudiante.email && (
+                                    <Text className="text-gray-500 text-sm">Email: {estudiante.email}</Text>
+                                )}
+                            </>
                         )}
                     </View>
                 ))}
@@ -175,7 +203,9 @@ export default function TesisDetailScreen() {
                         <View className="flex-row justify-between items-start">
                             <View className="flex-1">
                                 <Text className="text-black font-semibold">{evaluacion.jurado.titulo_profesional} {evaluacion.jurado.nombre_completo}</Text>
-                                <Text className="text-gray-500 text-sm mt-1">Cédula: {evaluacion.jurado.cedula}</Text>
+                                {isAuthenticated && user && [2, 3, 4].includes(user.id_rol) && (
+                                    <Text className="text-gray-500 text-sm mt-1">Cédula: {evaluacion.jurado.cedula}</Text>
+                                )}
                             </View>
                             <View className="bg-yellow-100 border border-yellow-200 rounded-full px-3 py-1">
                                 <Text className="text-black font-bold text-lg">{evaluacion.nota}</Text>
@@ -203,20 +233,21 @@ export default function TesisDetailScreen() {
                 </TouchableOpacity>
 
                 {/* Botones secundarios - en fila */}
-                
+
                 <View className="flex-row gap-3">
                     {/* Botón principal - Editar */}
 
-                     {isAuthenticated && (
-                    <TouchableOpacity
-                        onPress={() => router.push(`/tesis/edit/${tesis.id_tesis}`)}
-                        className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="create-outline" size={24} color="#000000" />
-                        <Text className="text-black  ml-2">Editar</Text>
-                    </TouchableOpacity>
-                     )}
+                    {isAuthenticated && user && [3, 4].includes(user.id_rol) && (
+
+                        <TouchableOpacity
+                            onPress={() => router.push(`/tesis/edit/${tesis.id_tesis}`)}
+                            className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"
+                            activeOpacity={0.8}
+                        >
+                            <Ionicons name="create-outline" size={24} color="#000000" />
+                            <Text className="text-black  ml-2">Editar</Text>
+                        </TouchableOpacity>
+                    )}
                     {/* Compartir (opcional) */}
                     <TouchableOpacity
                         className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"

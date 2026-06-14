@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Download, Edit, Star, Calendar,
-  User, Users, BookOpen, Award, FileText, CheckCircle, XCircle, Clock
+  User, Users, BookOpen, Award, FileText, CheckCircle, XCircle, Clock,
+  Eye
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { tesisApi } from '../../api/endpoints/tesis';
 import type { Tesis } from '../../api/types';
+import { useVistas } from '../../hooks/useVistas';
 
 export function TesisDetail() {
   const { id } = useParams();
@@ -16,9 +18,7 @@ export function TesisDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'info' | 'evaluaciones' | 'estudiantes'>('info');
 
-  useEffect(() => {
-    cargarTesis();
-  }, [id]);
+
 
   const cargarTesis = async () => {
     setLoading(true);
@@ -34,6 +34,20 @@ export function TesisDetail() {
       setLoading(false);
     }
   };
+
+  const incrementarVistas = async () => {
+    try {
+      await tesisApi.incrementarVistas(Number(id));
+    } catch (error) {
+      console.error('Error incrementando vistas:', error);
+    }
+  };
+
+  useVistas(Number(id), incrementarVistas);
+
+  useEffect(() => {
+    cargarTesis();
+  }, [id]);
 
   const handleDownload = () => {
     if (tesis?.url_documento) {
@@ -156,6 +170,10 @@ export function TesisDetail() {
                   <span className="text-sm font-semibold">{tesis.promedio_nota}/20</span>
                 </div>
               )}
+              <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
+                <Eye className="h-4 w-4" />
+                <span className="text-sm">{tesis.vistas || 0} vistas</span>
+              </div>
             </div>
           </div>
 
@@ -178,8 +196,8 @@ export function TesisDetail() {
           <button
             onClick={() => setActiveTab('info')}
             className={`pb-3 px-1 font-medium transition ${activeTab === 'info'
-                ? 'text-cyan-600 border-b-2 border-cyan-600'
-                : 'text-gray-500 hover:text-gray-700'
+              ? 'text-cyan-600 border-b-2 border-cyan-600'
+              : 'text-gray-500 hover:text-gray-700'
               }`}
           >
             Información
@@ -187,8 +205,8 @@ export function TesisDetail() {
           <button
             onClick={() => setActiveTab('evaluaciones')}
             className={`pb-3 px-1 font-medium transition flex items-center gap-2 ${activeTab === 'evaluaciones'
-                ? 'text-cyan-600 border-b-2 border-cyan-600'
-                : 'text-gray-500 hover:text-gray-700'
+              ? 'text-cyan-600 border-b-2 border-cyan-600'
+              : 'text-gray-500 hover:text-gray-700'
               }`}
           >
             <Star className="h-4 w-4" />
@@ -197,8 +215,8 @@ export function TesisDetail() {
           <button
             onClick={() => setActiveTab('estudiantes')}
             className={`pb-3 px-1 font-medium transition flex items-center gap-2 ${activeTab === 'estudiantes'
-                ? 'text-cyan-600 border-b-2 border-cyan-600'
-                : 'text-gray-500 hover:text-gray-700'
+              ? 'text-cyan-600 border-b-2 border-cyan-600'
+              : 'text-gray-500 hover:text-gray-700'
               }`}
           >
             <Users className="h-4 w-4" />
@@ -327,15 +345,19 @@ export function TesisDetail() {
                     <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center shrink-0">
                       <User className="h-5 w-5 text-cyan-600" />
                     </div>
-                    {isAuthenticated && [2, 3, 4].includes(user?.id_rol) && (
-                      <div>
-                        <h4 className="font-semibold text-gray-800">{estudiante.nombre_completo}</h4>
-                        <p className="text-sm text-gray-500">Cédula: {estudiante.cedula}</p>
-                        {estudiante.email && (
-                          <p className="text-sm text-gray-500">Email: {estudiante.email}</p>
-                        )}
-                      </div>
-                    )}
+
+                    <div>
+                      <h4 className="font-semibold text-gray-800">{estudiante.nombre_completo}</h4>
+                      {isAuthenticated && [2, 3, 4].includes(user?.id_rol) && (
+                        <>
+                          <p className="text-sm text-gray-500">Cédula: {estudiante.cedula}</p>
+                          {estudiante.email && (
+                            <p className="text-sm text-gray-500">Email: {estudiante.email}</p>
+                          )}
+                        </>
+                      )}
+                    </div>
+
                   </div>
                 ))}
               </div>

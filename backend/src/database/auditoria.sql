@@ -301,8 +301,8 @@ BEGIN
     SELECT COUNT(*) INTO v_total
     FROM auditoria.log_actividad l
 	LEFT JOIN seguridad.usuario u on u.id_usuario = l.id_usuario
-    WHERE (p_tabla IS NULL OR l.tabla  = p_tabla)
-    AND (p_accion IS NULL OR l.accion = p_accion)
+    WHERE (p_tabla IS NULL OR l.tabla = ANY (string_to_array(p_tabla, ',')))
+    AND (p_accion IS NULL OR l.accion = ANY (string_to_array(p_accion, ',')) )
     AND (p_usuario IS NULL OR u.nombre ILIKE  '%' || p_usuario || '%' )
     AND (p_fecha_desde IS NULL OR l.fecha::date >= p_fecha_desde)
     AND (p_fecha_hasta IS NULL OR l.fecha::date <= p_fecha_hasta);
@@ -325,8 +325,8 @@ BEGIN
             l.user_agent
         FROM auditoria.log_actividad l
         LEFT JOIN seguridad.usuario u ON l.id_usuario = u.id_usuario
-        WHERE (p_tabla IS NULL OR l.tabla = p_tabla)
-        AND (p_accion IS NULL OR l.accion = p_accion)
+        WHERE (p_tabla IS NULL OR l.tabla =  ANY (string_to_array(p_tabla, ',')))
+        AND (p_accion IS NULL OR l.accion = ANY (string_to_array(p_accion, ',')))
         AND (p_usuario IS NULL OR u.nombre ILIKE  '%' || p_usuario || '%' )
         AND (p_fecha_desde IS NULL OR l.fecha::date >= p_fecha_desde)
         AND (p_fecha_hasta IS NULL OR l.fecha::date <= p_fecha_hasta)

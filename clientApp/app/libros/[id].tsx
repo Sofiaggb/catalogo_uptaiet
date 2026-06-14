@@ -9,7 +9,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function LibroDetailScreen() {
-    const { isAuthenticated, hasRole } = useAuth();
+    const { isAuthenticated, user, hasRole } = useAuth();
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [libro, setLibro] = useState<Libros | null>(null);
@@ -186,7 +186,8 @@ export default function LibroDetailScreen() {
                 {/* Botones secundarios - en fila */}
                 <View className="flex-row gap-3">
                     {/* Botón Editar */}
-                     {isAuthenticated && (
+                         {isAuthenticated && user && [2, 3, 4].includes(user.id_rol) && (
+
                     <TouchableOpacity
                         onPress={() => router.push(`/libros/edit/${libro.id_libro}`)}
                         className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"

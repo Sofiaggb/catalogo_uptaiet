@@ -16,10 +16,11 @@ import { materiasApi } from '@/services/api/endpoints/materias';
 import type { Materia } from '@/services/api/types';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Componente de tarjeta de materia con acciones
 const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () => void }) => {
-    
+    const { isAuthenticated, user } = useAuth();
     const handleEdit = () => {
         router.push(`/materias/edit/${materia.id_materia}`);
     };
@@ -56,42 +57,48 @@ const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () =
         >
             <View className="flex-row justify-between ">
                 <View className="flex-1 text-center">
-                        <Text className="font-bold text-lg flex-1">{materia.nombre}</Text>                                         
+                    <Text className="font-bold text-lg flex-1">{materia.nombre}</Text>
                 </View>
-                
+
                 {/* Botones de acción */}
                 <View className="flex-row gap-3 ml-2">
                     {/* Botón Editar */}
-                    <TouchableOpacity
-                        className="bg-yellow-100 rounded-full p-3"
-                        onPress={handleEdit}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="create-outline" size={18} color="#D97706" />
-                    </TouchableOpacity>
-                    
+                    {isAuthenticated && user && [3, 4].includes(user.id_rol) && (
+
+                        <TouchableOpacity
+                            className="bg-yellow-100 rounded-full p-3"
+                            onPress={handleEdit}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="create-outline" size={18} color="#D97706" />
+                        </TouchableOpacity>
+                    )}
+
                     {/* Botón Eliminar */}
-                    <TouchableOpacity
-                        className="bg-red-100 rounded-full p-3"
-                        onPress={handleDelete}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons name="trash-outline" size={18} color="#DC2626" />
-                    </TouchableOpacity>
-                    
-                   </View>
+                    {isAuthenticated && user && [3].includes(user.id_rol) && (
+
+                        <TouchableOpacity
+                            className="bg-red-100 rounded-full p-3"
+                            onPress={handleDelete}
+                            activeOpacity={0.7}
+                        >
+                            <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
         </TouchableOpacity>
     );
 };
 
 export default function MateriasListScreen() {
+    const { isAuthenticated, user } = useAuth();
     const router = useRouter();
     const [materias, setMaterias] = useState<Materia[]>([]);
     const [filteredMaterias, setFilteredMaterias] = useState<Materia[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    
+
     // Filtros
     const [searchText, setSearchText] = useState('');
 
@@ -118,13 +125,13 @@ export default function MateriasListScreen() {
 
     const filtrarMaterias = () => {
         let filtered = [...materias];
-        
+
         if (searchText.trim()) {
             filtered = filtered.filter(m =>
-                m.nombre.toLowerCase().includes(searchText.toLowerCase()) 
+                m.nombre.toLowerCase().includes(searchText.toLowerCase())
             );
         }
-      
+
         setFilteredMaterias(filtered);
     };
 
@@ -145,7 +152,7 @@ export default function MateriasListScreen() {
     return (
         <View className="flex-1 bg-white">
             {/* Header */}
-             <View className=" pt-16 pb-4 px-5">
+            <View className=" pt-16 pb-4 px-5">
                 <View className="flex-row items-center">
                     <TouchableOpacity onPress={() => router.back()} className="w-10">
                         <Ionicons name="arrow-back-outline" size={28} color="#06b6d4" />
@@ -179,7 +186,7 @@ export default function MateriasListScreen() {
                 </View>
             </View>
 
-     
+
 
             {/* Contador de resultados */}
             <View className="px-5 pb-2">
@@ -213,12 +220,14 @@ export default function MateriasListScreen() {
             />
 
             {/* Botón flotante para crear */}
-            <Pressable
-                className="absolute bottom-6 right-6 bg-sky-400  rounded-full p-4 shadow-lg"
-                onPress={() => router.push('/materias/create')}
-            >
-                <Ionicons name="add" size={28} color="#000000" />
-            </Pressable>
+            {isAuthenticated && user && [3, 4].includes(user.id_rol) && (
+                <Pressable
+                    className="absolute bottom-6 right-6 bg-sky-400  rounded-full p-4 shadow-lg"
+                    onPress={() => router.push('/materias/create')}
+                >
+                    <Ionicons name="add" size={28} color="#000000" />
+                </Pressable>
+            )}
         </View>
     );
 }
