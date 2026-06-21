@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-     host: 'smtp.gmail.com',  // service: 'gmail',
+     host: 'smtp-relay.gmail.com',  // service: 'gmail',
     port: 587,
     secure: false,
     auth: {
@@ -17,6 +17,9 @@ const transporter = nodemailer.createTransport({
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 10000,
+    tls: {
+        rejectUnauthorized: false
+    }
 });
 
 // Tipos de email disponibles
