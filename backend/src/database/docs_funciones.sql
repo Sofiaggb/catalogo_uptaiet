@@ -76,7 +76,6 @@ $$ LANGUAGE plpgsql;
 
 
 ---------- obtener libro completa
-select recursos.libro_obtener(1)
 CREATE OR REPLACE FUNCTION recursos.libro_obtener(
     p_id_libro INTEGER
 )

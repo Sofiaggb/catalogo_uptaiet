@@ -27,7 +27,7 @@ CREATE TABLE auditoria.log_actividad (
 );
 
 -- Índices para búsquedas rápidas
-CREATE INDEX idx_log_tabla_registro ON auditoria.log_actividad(tabla_nombre);
+CREATE INDEX idx_log_tabla_registro ON auditoria.log_actividad(tabla);
 CREATE INDEX idx_log_fecha ON auditoria.log_actividad(fecha);
 CREATE INDEX idx_log_usuario ON auditoria.log_actividad(id_usuario);
 CREATE INDEX idx_log_accion ON auditoria.log_actividad(accion);
@@ -279,9 +279,7 @@ CREATE TRIGGER trigger_auditoria_tipo_carrera_delete
 -- DESCRIPCIÓN: Lista los logs de auditoría con filtros y paginación
 -- =====================================================
 
-select auditoria.listar_logs_auditoria(null, null , 's')
-
-
+-- select auditoria.listar_logs_auditoria(null, null , 's')
 				
 CREATE OR REPLACE FUNCTION auditoria.listar_logs_auditoria(
     p_tabla VARCHAR DEFAULT NULL,
