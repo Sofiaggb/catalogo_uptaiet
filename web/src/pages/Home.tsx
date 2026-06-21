@@ -78,8 +78,71 @@ export function Home() {
 
   return (
     <div className="space-y-12">
+
+
+{/* Hero Section - Efecto 3D */}
+<div className="relative rounded-2xl mt-2 overflow-hidden group perspective-1000">
+  <div className="relative transition-transform duration-700 ease-out group-hover:rotate-y-3 group-hover:rotate-x-3">
+    {/* Fondo con gradiente y patrón */}
+    <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-900"></div>
+    
+    {/* Patrón de fondo animado */}
+    <div className="absolute inset-0 opacity-30">
+      <div className="absolute inset-0" style={{
+        backgroundImage: `
+          radial-gradient(circle at 30% 40%, rgba(255,255,255,0.2) 0%, transparent 50%),
+          radial-gradient(circle at 70% 60%, rgba(255,255,255,0.15) 0%, transparent 40%),
+          linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%)
+        `,
+        backgroundSize: '100% 100%, 100% 100%, 20px 20px'
+      }}></div>
+    </div>
+
+    {/* Círculos decorativos rotando */}
+    <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute -top-20 -right-20 w-64 h-64 border-4 border-white/10 rounded-full animate-spin-slow"></div>
+      <div className="absolute -bottom-20 -left-20 w-80 h-80 border-4 border-white/10 rounded-full animate-spin-slow-reverse"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 border-4 border-white/5 rounded-full animate-spin-slow"></div>
+    </div>
+
+    <div className="relative p-8 md:p-12">
+      <div className="max-w-2xl">
+
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 animate-slide-up animation-delay-100">
+          Catálogo Digital UPTAIET
+        </h1>
+        
+        <p className="text-white/95 text-lg mb-6 animate-slide-up animation-delay-200">
+          Accede a proyectos, libros y recursos académicos de nuestra comunidad universitaria
+        </p>
+        
+        <div className="flex flex-wrap gap-4 animate-slide-up animation-delay-300">
+          <Link
+            to="/proyecto"
+            className="group relative bg-white text-cyan-700 px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+          >
+            <span className="relative flex items-center gap-2">
+              Explorar Catálogo
+              <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+            </span>
+          </Link>
+          {!isAuthenticated && (
+            <Link
+              to="/login"
+              className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/20 transition-all hover:scale-105 backdrop-blur-sm"
+            >
+              Iniciar Sesión
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
       {/* Hero Section */}
-      <div className="relative bg-linear-to-r from-cyan-600 to-blue-600 rounded-2xl mt-2 overflow-hidden">
+      {/* <div className="relative bg-linear-to-r from-cyan-600 to-blue-600 rounded-2xl mt-2 overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative p-8 md:p-12">
           <div className="max-w-2xl">
@@ -107,7 +170,7 @@ export function Home() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

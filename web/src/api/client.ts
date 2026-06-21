@@ -1,6 +1,6 @@
 // web/src/api/client.ts
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
+export const STATIC_URL = API_URL.replace('/api', '');
 console.log('API URL:', API_URL);
 console.log('App Name:', import.meta.env.VITE_APP_NAME);
 console.log('Mode:', import.meta.env.MODE); // 'development' o 'production'

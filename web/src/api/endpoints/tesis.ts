@@ -1,4 +1,5 @@
 import { apiClient } from '../client';
+const API_URL = import.meta.env.VITE_API_URL 
 
 export const tesisApi = {
   listar: async (params: any) => {
@@ -31,4 +32,11 @@ export const tesisApi = {
     const response = await apiClient.get('/tesis/anios');
     return response.data || [];
   },
+
+   // Abrir visor de PDF protegido
+    abrirVisorPDF: (id: number): void => {
+        const url = `${API_URL}/download/tesis/${id}`;
+        window.open(url, '_blank');
+    },
+
 };

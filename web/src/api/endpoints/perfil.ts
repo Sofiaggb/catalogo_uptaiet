@@ -1,6 +1,10 @@
 import { apiClient } from '../client';
 
-export const profileApi = {
+export const perfilApi = {
+  getMe: async () => {
+    return await apiClient.get('/perfil/me');
+  },
+  
   // Obtener estado de solicitud
   obtenerEstadoSolicitud: async () => {
     return await apiClient.get('/perfil/solicitud-estado');
@@ -26,4 +30,20 @@ export const profileApi = {
   obtenerRolesDisponibles: async () => {
     return await apiClient.get('/auth/roles');
   },
+
+
+    // Subir foto de perfil
+    subirFotoPerfil: async (formData: FormData)  : Promise<any>=> {
+        return apiClient.upload('/perfil/foto', formData);
+    },
+    
+    // Obtener foto de perfil
+    obtenerFotoPerfil: async () => {
+        return await apiClient.get('/perfil/foto');
+    },
+    
+    // Eliminar foto de perfil
+    eliminarFotoPerfil: async () => {
+        return await apiClient.delete('/perfil/foto');
+    },
 };

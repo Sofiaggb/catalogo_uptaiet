@@ -1,6 +1,6 @@
 
 
---------- crear tesis
+--------- crear libro
 
 CREATE OR REPLACE FUNCTION recursos.libro_crear(
 	p_id_materia INTEGER,
@@ -34,7 +34,7 @@ BEGIN
     END IF;
 
     
-    --  CREAR LA TESIS    
+    --  CREAR LA libro    
     INSERT INTO recursos.libro (
 		id_materia ,
 	    titulo,
@@ -85,7 +85,7 @@ DECLARE
     v_resultado JSONB;
 BEGIN
 
- --  Verificar tesis existe 
+ --  Verificar libro existe 
     IF NOT EXISTS (
         SELECT 1 FROM recursos.libro
         WHERE id_libro = p_id_libro 
@@ -201,7 +201,7 @@ $$ LANGUAGE plpgsql;
 
 
 
----------------- editar tesis ----------------------------------------------------------------
+---------------- editar libro ----------------------------------------------------------------
 
 
 CREATE OR REPLACE FUNCTION recursos.libro_edit(
@@ -222,7 +222,7 @@ BEGIN
         RETURN jsonb_build_object(
             'success', false,
             'status', 404,
-            'message', 'La tesis no existe o ya fue eliminada'
+            'message', 'El libro no existe o ya fue eliminado'
         );
     END IF;
             

@@ -1,14 +1,18 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Calendar, LogOut, LogIn, UserPlus, Shield, BookOpen, Settings, Lock, CheckCircle, Send, XCircle, Clock, IdCard, X } from 'lucide-react';
+import { User, Mail, Calendar, LogOut, LogIn, UserPlus, Shield, BookOpen, Settings, CheckCircle, Send, XCircle, Clock, IdCard, X, Camera } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { showConfirmAlert, showErrorAlert, showSuccessAlert } from '../../helpers/alerts';
-import { profileApi } from '../../api/endpoints/perfil';
-import { useEffect, useState } from 'react';
+import { perfilApi } from '../../api/endpoints/perfil';
+import { useEffect, useRef, useState } from 'react';
 import type { Rol, SolicitudEstado } from '../../api/types';
+import { STATIC_URL } from '../../api/client';
 
 export function PerfilDetail() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout, refreshUser } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const fileInputRef = useRef(null);
   const [showSolicitudModal, setShowSolicitudModal] = useState(false);
   const [rolSolicitado, setRolSolicitado] = useState('');
   const [justificacion, setJustificacion] = useState('');
@@ -54,7 +58,7 @@ export function PerfilDetail() {
   }, [isAuthenticated]);
 
   const verificarEstadoSolicitud = async () => {
-    const result = await profileApi.obtenerEstadoSolicitud();
+    const result = await perfilApi.obtenerEstadoSolicitud();
     console.log('res estado ', result)
     if (result.success && result.data) {
       setSolicitudEstado(result.data);
@@ -62,12 +66,66 @@ export function PerfilDetail() {
   };
 
 
+  //////////////////////// foto perfil
+
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      subirFoto(file);
+    }
+  };
+
+  const subirFoto = async (file) => {
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append('foto', file);
+
+    try {
+      const result = await perfilApi.subirFotoPerfil(formData);
+
+      if (result.success) {
+        await refreshUser();
+        showSuccessAlert('Foto de perfil actualizada');
+        setShowModal(false);
+      } else {
+        showErrorAlert(result.message || 'No se pudo actualizar la foto');
+      }
+    } catch (error) {
+      console.error('Error al subir foto:', error);
+      showErrorAlert('Error al subir la foto');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const eliminarFoto = async () => {
+    const confirmed = await showConfirmAlert(
+      'Eliminar Foto',
+      `¿Estás seguro de que deseas eliminar tu foto de perfil?`
+    );
+
+    if (confirmed) {
+      const result = await perfilApi.eliminarFotoPerfil();
+      if (result.success) {
+        await refreshUser();
+        showSuccessAlert('Foto eliminada');
+        setShowModal(false);
+      } else {
+        showErrorAlert('No se pudo eliminar la foto');
+      }
+    }
+  };
+
+  ////////////////////////// solicituda roles 
+
   // Cargar roles disponibles al abrir el modal
   const handleAbrirModal = async () => {
     setShowSolicitudModal(true);
     setCargandoRoles(true);
     try {
-      const result = await profileApi.obtenerRolesDisponibles();
+      const result = await perfilApi.obtenerRolesDisponibles();
       if (result.success) {
         setRolesDisponibles(result.data);
       }
@@ -125,7 +183,7 @@ export function PerfilDetail() {
     if (!validarFormulario()) return;
 
     setCargandoSolicitud(true);
-    const result = await profileApi.enviarSolicitudCambioRol({
+    const result = await perfilApi.enviarSolicitudCambioRol({
       id_rol: parseInt(rolSolicitado),
       justificacion,
       cedula,
@@ -235,12 +293,35 @@ export function PerfilDetail() {
         {/* Información del perfil */}
         <div className="p-8 border-b border-gray-200">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
-            {/* Avatar */}
-            <div className="flex-shrink-0">
-              <div className="w-32 h-32 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
-                <User className="h-16 w-16 text-white" />
+            {/* Avatar con opción de cambiar foto */}
+              <div className="relative inline-block"> 
+                {/* Avatar */}
+                <div
+                  className="cursor-pointer relative group"
+                  onClick={() => setShowModal(true)}
+                >
+                  {uploading ? (
+                    <div className="w-28 h-28 bg-cyan-500 rounded-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    </div>
+                  ) : user?.foto_perfil ? (
+                    <img
+                      src={`${STATIC_URL}${user.foto_perfil}`}
+                      alt="Foto de perfil"
+                      className="w-28 h-28 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-28 h-28 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                      <User className="h-14 w-14 text-white" />
+                    </div>
+                  )}
+
+                  {/* Badge de cámara */}
+                  <div className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md">
+                    <Camera className="h-5 w-5 text-cyan-500" />
+                  </div>
+                </div>
               </div>
-            </div>
 
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-2xl font-bold text-gray-800">{user?.nombre}</h2>
@@ -593,6 +674,64 @@ export function PerfilDetail() {
                       Enviar solicitud
                     </>
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+
+        {/* Modal para cambiar foto */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800">Foto de perfil</h3>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {/* Tomar foto - web simplificado */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full bg-cyan-50 text-cyan-700 py-3 rounded-xl hover:bg-cyan-100 transition-colors flex items-center justify-center"
+                  disabled={uploading}
+                >
+                  <Camera className="h-5 w-5 mr-2" />
+                  Subir foto
+                </button>
+
+                {user?.foto_perfil && (
+                  <button
+                    onClick={eliminarFoto}
+                    className="w-full bg-red-50 text-red-600 py-3 rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center"
+                    disabled={uploading}
+                  >
+                    <X className="h-5 w-5 mr-2" />
+                    Eliminar foto
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
                 </button>
               </div>
             </div>

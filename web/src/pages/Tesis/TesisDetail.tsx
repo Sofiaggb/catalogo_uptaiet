@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { tesisApi } from '../../api/endpoints/tesis';
 import type { Tesis } from '../../api/types';
 import { useVistas } from '../../hooks/useVistas';
+import {  showWarningAlert } from '../../helpers/alerts';
 
 export function TesisDetail() {
   const { id } = useParams();
@@ -49,15 +50,25 @@ export function TesisDetail() {
     cargarTesis();
   }, [id]);
 
-  const handleDownload = () => {
-    if (tesis?.url_documento) {
-      //   URL completa del backend
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-      const BASE_URL = API_URL.replace('/api', '');
-      const fileUrl = `${BASE_URL}${tesis.url_documento}`;
+  // const handleDownload = () => {
+  //   if (tesis?.url_documento) {
+  //     //   URL completa del backend
+  //     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+  //     const BASE_URL = API_URL.replace('/api', '');
+  //     const fileUrl = `${BASE_URL}${tesis.url_documento}`;
 
-      window.open(fileUrl, '_blank');
+  //     window.open(fileUrl, '_blank');
+  //   }
+  // };
+
+  const handleDownload = async () => {
+     if (!tesis?.id_tesis) {
+      showWarningAlert('No hay documento disponible');
+      return;
     }
+    
+    // Abrir en una nueva pestaña/ventana
+    tesisApi.abrirVisorPDF(tesis.id_tesis);
   };
 
   const handleEdit = () => {

@@ -1,9 +1,9 @@
 
 
-
+/*
 alter table personas.estudiante 
 drop column id_carrera
-
+*/
 
 --------- crear tesis
 
@@ -193,7 +193,7 @@ BEGIN
     RETURN jsonb_build_object(
         'success', TRUE,
         'status', 201,
-        'message', 'Tesis creada exitosamente'
+        'message', 'proyecto creado exitosamente'
     );
     
 EXCEPTION
@@ -211,7 +211,7 @@ $$ LANGUAGE plpgsql;
 
 
 ---------- obtener tesis completa
-select tesis.obtener_tesis_completa(19)
+
 
 CREATE OR REPLACE FUNCTION tesis.obtener_tesis_completa(
     p_id_tesis INTEGER
@@ -230,7 +230,7 @@ BEGIN
 	 RETURN  jsonb_build_object(
             'success', FALSE,
             'status', 404,
-           	'message', 'Tesis no encontrada o eliminada '
+           	'message', 'proyecto no encontrado o eliminado '
         );
     END IF;
 
@@ -316,7 +316,7 @@ EXCEPTION
         RETURN jsonb_build_object(
             'success', FALSE,
             'status', 400,
-			'message', 'error al buscar la tesis',
+			'message', 'error al buscar la proyecto',
             'error', SQLERRM,
             'codigo', SQLSTATE
         );
@@ -454,7 +454,7 @@ BEGIN
         RETURN jsonb_build_object(
             'success', FALSE,
             'status', 404,
-            'error', 'Tesis no encontrada o ya eliminada',
+            'error', 'proyecto no encontrado o ya eliminado',
             'codigo', 'NOT_FOUND'
         );
     END IF;
@@ -470,7 +470,7 @@ BEGIN
     RETURN jsonb_build_object(
         'success', TRUE,
         'status', 200,
-        'message', 'Tesis eliminada exitosamente (soft delete)',
+        'message', 'proyecto eliminada exitosamente (soft delete)',
         'data', jsonb_build_object(
             'id_tesis', p_id_tesis,
             'titulo', v_titulo,
@@ -522,7 +522,7 @@ BEGIN
         RETURN jsonb_build_object(
             'success', false,
             'status', 404,
-            'message', 'La tesis no existe o ya fue eliminada'
+            'message', 'La proyecto no existe o ya fue eliminado'
         );
     END IF;
             
@@ -700,7 +700,7 @@ BEGIN
     RETURN jsonb_build_object(
         'success', TRUE,
         'status', 200,
-        'message', 'Tesis actualizada exitosamente'
+        'message', 'proyecto actualizado exitosamente'
     );
     
 EXCEPTION
@@ -732,7 +732,7 @@ BEGIN
         RETURN jsonb_build_object(
             'success', FALSE,
             'status', 404,
-            'message', 'Tesis no encontrada'
+            'message', 'proyecto no encontrado'
         );
     END IF;
     
