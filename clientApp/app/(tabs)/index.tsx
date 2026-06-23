@@ -2,7 +2,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useUltimasTesis } from '@/hooks/useUltimasTesis';
 import { Ionicons } from '@expo/vector-icons';
-import { Href, Link } from 'expo-router';
+import { Href, Link, router } from 'expo-router';
 import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
@@ -117,7 +117,7 @@ export default function HomeScreen() {
                         key={item.id_tesis}
                         id={item.id_tesis}
                         titulo={item.titulo}
-                        autores={item.estudiantes?.map((e: any) => e.nombre_completo).join(', ') || 'Autor desconocido'}
+                        resumen={item.resumen_corto}
                         carrera={item.nombre_carrera || 'Sin carrera'}
                         promedio_nota={item.promedio_nota}
                         anio={item.anio_elaboracion}
@@ -152,13 +152,13 @@ function QuickCard({ title, iconName, href, colorVariant }: QuickCardProps) {
     );
 }
 
-function TesisCard({ titulo, autores, carrera }: any) {
+function TesisCard({ id, titulo, resumen, carrera }: any) {
     return (
         <View className="bg-gray-50 rounded-xl p-4 mb-3 border border-gray-200">
             <Text className="text-black font-bold text-lg">{titulo}</Text>
-            <Text className="text-gray-600 text-sm mt-1">{autores}</Text>
+            <Text className="text-gray-600 text-sm mt-1">{resumen}</Text>
             <Text className="text-gray-500 text-xs mt-1">{carrera}</Text>
-            <TouchableOpacity className="mt-3">
+            <TouchableOpacity className="mt-3" onPress={() => router.push(`/tesis/${id}`)}>
                 <Text className="text-sky-600 font-semibold">Ver detalles →</Text>
             </TouchableOpacity>
         </View>

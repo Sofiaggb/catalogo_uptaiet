@@ -233,7 +233,7 @@ export default function CarreraForm({ mode }: CarreraFormProps) {
                     </TouchableOpacity>
                     <View>
                         <Text className="text-cyan-600 text-2xl font-bold">
-                            {isEditing ? 'Editar Carrera' : 'Crear Carrera'}
+                            {isEditing ? 'Editar Carrera' : 'Registrar Carrera'}
                         </Text>
                         <Text className="text-sky-400 text-sm">
                             {isEditing ? 'Modifica los datos de la carrera' : 'Completa los datos de la nueva carrera'}

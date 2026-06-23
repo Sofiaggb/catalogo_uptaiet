@@ -90,7 +90,7 @@ export function MateriaForm({ mode }: { mode: 'create' | 'edit' }) {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {isEditing ? 'Editar Materia' : 'Nueva Materia'}
+            {isEditing ? 'Editar Materia' : 'Registrar Materia'}
           </h1>
           <p className="text-gray-500 text-sm">
             {isEditing ? 'Modifica los datos de la materia' : 'Completa los datos de la nueva materia'}

@@ -138,7 +138,7 @@ export function CarreraForm({ mode }: { mode: 'create' | 'edit' }) {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {isEditing ? 'Editar Carrera' : 'Crear Carrera'}
+            {isEditing ? 'Editar Carrera' : 'Registrar Carrera'}
           </h1>
           <p className="text-gray-500 text-sm">
             {isEditing ? 'Modifica los datos de la carrera' : 'Completa los datos de la nueva carrera'}

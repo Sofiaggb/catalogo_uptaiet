@@ -60,6 +60,9 @@ export default function RegisterScreen() {
         } else if (form.password.length < 6) {
             newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
             isValid = false;
+        } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/.test(form.password)) {
+            newErrors.password = 'La contraseña debe tener al menos una mayúscula, una minúscula y un número';
+            isValid = false;
         }
 
         if (form.password !== form.confirmPassword) {

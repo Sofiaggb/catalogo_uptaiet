@@ -114,7 +114,7 @@ export default function MateriaForm({ mode }: CarreraFormProps) {
                     </TouchableOpacity>
                     <View>
                         <Text className="text-cyan-600 text-2xl font-bold">
-                            {isEditing ? 'Editar Materia' : 'Crear Materia'}
+                            {isEditing ? 'Editar Materia' : 'Registrar Materia'}
                         </Text>
                         <Text className="text-sky-400 text-sm">
                             {isEditing ? 'Modifica los datos de la materia' : 'Completa los datos de la nueva materia'}

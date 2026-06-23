@@ -249,7 +249,7 @@ const abrirDocumento = async () => {
                         </TouchableOpacity>
                     )}
                     {/* Compartir (opcional) */}
-                    <TouchableOpacity
+                    {/* <TouchableOpacity
                         className="flex-1 bg-gray-100 py-3 rounded-xl flex-row items-center justify-center"
                         onPress={() => {
                             // Función para compartir
@@ -259,7 +259,7 @@ const abrirDocumento = async () => {
                     >
                         <Ionicons name="share-outline" size={20} color="#6B7280" />
                         <Text className="text-gray-600 font-semibold text-sm ml-2">Compartir</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
 
                 </View>
             </View>
