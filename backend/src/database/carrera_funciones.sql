@@ -137,3 +137,146 @@ EXCEPTION
         );
 END;
 $$ LANGUAGE plpgsql;
+
+
+
+-- Función para asociar carrera con tipo de trabajo
+CREATE OR REPLACE FUNCTION catalogo.asociar_carrera_tipo_trabajo(
+    p_id_tipo_carrera INTEGER,
+    p_id_tipo_trabajo INTEGER
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_carrera_existe BOOLEAN;
+    v_trabajo_existe BOOLEAN;
+    v_asociacion_existe BOOLEAN;
+	v_asociacion_eliminada BOOLEAN;
+    v_asociacion_id INTEGER;
+    v_resultado JSONB;
+    v_error_message TEXT;
+BEGIN
+    -- ============================================
+    --  VALIDAR el tipo de carrera
+    -- ============================================
+    SELECT EXISTS (
+        SELECT 1 
+        FROM catalogo.tipo_carrera 
+        WHERE id_tipo_carrera = p_id_tipo_carrera 
+          AND fecha_eliminacion IS NULL
+    ) INTO v_carrera_existe;
+
+    IF NOT v_carrera_existe THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'Tipo de carrera no encontrado o está eliminado',
+            'code', 'CARRERA_NOT_FOUND'
+        );
+    END IF;
+
+    -- ===========================================
+    --  VALIDAR el tipo de trabajo
+    -- ===========================================
+    SELECT EXISTS (
+        SELECT 1 
+        FROM catalogo.tipo_trabajo 
+        WHERE id_tipo_trabajo = p_id_tipo_trabajo 
+          AND fecha_eliminacion IS NULL
+    ) INTO v_trabajo_existe;
+
+    IF NOT v_trabajo_existe THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'Tipo de trabajo no encontrado o está eliminado',
+            'code', 'TRABAJO_NOT_FOUND'
+        );
+    END IF;
+
+    -- ============================================
+    --  VALIDAR  la asociación
+    -- ============================================
+    SELECT EXISTS (
+        SELECT 1 
+        FROM catalogo.carrera_tipo_trabajo 
+        WHERE id_tipo_carrera = p_id_tipo_carrera 
+          AND id_tipo_trabajo = p_id_tipo_trabajo 
+          AND fecha_eliminacion IS NULL
+    ) INTO v_asociacion_existe;
+
+    IF v_asociacion_existe THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'Esta asociación ya existe',
+            'code', 'ASSOCIATION_EXISTS'
+        );
+    END IF;
+
+
+   -- ¿Existe asociación eliminada?
+    SELECT EXISTS (
+        SELECT 1 
+        FROM catalogo.carrera_tipo_trabajo 
+        WHERE id_tipo_carrera = p_id_tipo_carrera 
+          AND id_tipo_trabajo = p_id_tipo_trabajo 
+          AND fecha_eliminacion IS NOT NULL
+    ) INTO v_asociacion_eliminada;
+
+	 -- ============================================
+    --  REACTIVAR ASOCIACIÓN ELIMINADA
+    -- ============================================
+    IF v_asociacion_eliminada THEN
+        -- Actualizar la asociación existente (quitar fecha_eliminacion)
+        UPDATE catalogo.carrera_tipo_trabajo
+        SET fecha_eliminacion = NULL,
+            fecha_creacion = NOW()  -- actualizar fecha de creación
+        WHERE id_tipo_carrera = p_id_tipo_carrera 
+          AND id_tipo_trabajo = p_id_tipo_trabajo
+          AND fecha_eliminacion IS NOT NULL;
+
+	ELSE
+		-- ============================================
+	    --  CREAR LA ASOCIACIÓN
+	    -- ============================================
+	    INSERT INTO catalogo.carrera_tipo_trabajo (
+	        id_tipo_carrera,
+	        id_tipo_trabajo,
+	        fecha_creacion
+	    ) VALUES (
+	        p_id_tipo_carrera,
+	        p_id_tipo_trabajo,
+	        NOW()
+	    );
+    END IF;
+    -- ============================================
+    --  DEVOLVER RESULTADO CON ÉXITO
+    -- ============================================
+    RETURN jsonb_build_object(
+        'success', true,
+        'message', 'Asociación creada correctamente',
+        'code', 'ASSOCIATION_CREATED'
+    );
+
+EXCEPTION
+    -- Capturar errores específicos
+    WHEN unique_violation THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'La asociación ya existe (violación de unicidad)',
+            'code', 'UNIQUE_VIOLATION',
+            'detail', SQLERRM
+        );
+    WHEN foreign_key_violation THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'Error de clave foránea: uno de los registros no existe',
+            'code', 'FK_VIOLATION',
+            'detail', SQLERRM
+        );
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'success', false,
+            'message', 'Error inesperado al crear la asociación',
+            'code', 'UNEXPECTED_ERROR',
+            'detail', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;

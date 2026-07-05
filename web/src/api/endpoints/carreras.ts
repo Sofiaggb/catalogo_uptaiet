@@ -43,4 +43,48 @@ export const carrerasApi = {
         return response.success; 
     },
 
+        
+    
+    // ===== TIPOS DE CARRERA =====
+    listarTiposCarrera: async () => {
+        return await apiClient.get('/carreras/tipos-carrera');
+    },
+    crearTipoCarrera: async (data: { nombre: string; descripcion?: string }) => {
+        return await apiClient.post('/carreras/tipos-carrera', data);
+    },
+    actualizarTipoCarrera: async (id: number, data: { nombre?: string; descripcion?: string }) => {
+        return await apiClient.put(`/carreras/tipos-carrera/${id}`, data);
+    },
+    eliminarTipoCarrera: async (id: number) => {
+        return await apiClient.delete(`/carreras/tipos-carrera/${id}`);
+    },
+
+    // ===== TIPOS DE TRABAJO =====
+    listarTiposTrabajo: async () => {
+        return await apiClient.get('/carreras/tipos-trabajo');
+    },
+    crearTipoTrabajo: async (data: { nombre: string }) => {
+        return await apiClient.post('/carreras/tipos-trabajo', data);
+    },
+    actualizarTipoTrabajo: async (id: number, data: { nombre: string }) => {
+        return await apiClient.put(`/carreras/tipos-trabajo/${id}`, data);
+    },
+    eliminarTipoTrabajo: async (id: number) => {
+        return await apiClient.delete(`/carreras/tipos-trabajo/${id}`);
+    },
+
+    // ===== ASOCIACIONES =====
+    listarAsociaciones: async () => {
+        return await apiClient.get('/carreras/carrera-tipo-trabajo');
+    },
+    crearAsociacion: async (data: { id_tipo_carrera: number; id_tipo_trabajo: number }) => {
+        return await apiClient.post('/carreras/carrera-tipo-trabajo', data);
+    },
+    eliminarAsociacion: async (id: number) => {
+        return await apiClient.delete(`/carreras/carrera-tipo-trabajo/${id}`);
+    },
+    obtenerTiposTrabajoPorCarrera: async (id_tipo_carrera: number) => {
+        return await apiClient.get(`/carreras/carrera-tipo-trabajo/carrera/${id_tipo_carrera}`);
+    }
+
 };

@@ -29,6 +29,7 @@ import { Auditoria } from './pages/Admin/Auditoria';
 import { Estadisticas } from './pages/Admin/Estadisticas';
 // import { Footer } from './components/Layout/Footer';
 import { GestionEncabezado } from './pages/Admin/GestionEncabezado';
+import { GestionTipoCarrera } from './pages/Admin/GestionTipoCarrera';
 
 function App() {
   return (
@@ -51,7 +52,7 @@ function App() {
                 <Route path="usuarios" element={<div>Gestión de usuarios</div>} />
                 <Route path="estadisticas" element={<Estadisticas />} />
                 <Route path="encabezado" element={<GestionEncabezado />} />
-
+                <Route path="configuracionCarreras" element={<GestionTipoCarrera />} />
               </Route>
 
           </Routes>

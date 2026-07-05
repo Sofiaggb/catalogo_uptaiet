@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import {   LayoutDashboard,Menu, X,  Activity, Shield, Clock, ChevronRight,  Database, UserCheck, LogOut, ImageDownIcon
+import {   LayoutDashboard,Menu, X,  Activity, Shield, Clock, ChevronRight,  Database, UserCheck, LogOut, ImageDownIcon, Settings
 } from 'lucide-react';
 import { adminApi } from '../../api/endpoints/admin';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,12 @@ const menuItems = [
     label: 'Encabezado',
     icon: ImageDownIcon,  
     description: 'Personaliza el encabezado del sitio'
+  },
+  {
+    path: '/admin/configuracionCarreras',
+    label: 'Configuración Tipo Carrera',
+    icon: Settings,
+    description: 'Gestionar tipos de carrera y trabajo'
   },
   {
     path: '/admin/solicitudes',
