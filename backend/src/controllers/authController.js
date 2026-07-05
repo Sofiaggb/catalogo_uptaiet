@@ -106,6 +106,7 @@ export const authController = {
                     email: resultado.data.email,
                     rol: resultado.data.rol,
                     id_rol: resultado.data.id_rol,
+                    foto_perfil: resultado.data.foto_perfil
                 },
                 JWT_SECRET,
                 { expiresIn: '7d' }

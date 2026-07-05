@@ -77,6 +77,7 @@ export const auditController = {
                     COUNT(CASE WHEN accion = 'INSERT' THEN 1 END) as inserts,
                     COUNT(CASE WHEN accion = 'UPDATE' THEN 1 END) as updates,
                     COUNT(CASE WHEN accion = 'DELETE' THEN 1 END) as deletes,
+                    COUNT(CASE WHEN accion = 'SOFT_DELETE' THEN 1 END) as soft_deletes,
                     COUNT(DISTINCT id_usuario) as usuarios_distintos
                 FROM auditoria.log_actividad
                 WHERE fecha >= NOW() - INTERVAL '30 days'

@@ -33,6 +33,7 @@ import auditRoutes from './src/routes/auditRoutes.js';
 import { authMiddleware } from './src/middlewares/authMiddleware.js';
 import { auditMiddleware } from './src/middlewares/auditMiddleware.js';
 import downloadRoutes from './src/routes/downloadRoutes.js';
+import headerRoutes from './src/routes/headerRoutes.js';
 
 // Middlewares
 // Configuración de cors
@@ -58,6 +59,7 @@ app.use('/api/perfil', perfilRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/auditoria', auditRoutes);
 app.use('/api/download', downloadRoutes);
+app.use('/api', headerRoutes);
 
 // Ruta de prueba
 app.get('/', (req, res) => {

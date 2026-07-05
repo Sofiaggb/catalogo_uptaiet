@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {   BookOpen, FileText, Library, GraduationCap, User, LogIn, Award, ChevronRight, Calendar, Shield
+import {
+  BookOpen, FileText, Library, GraduationCap, User, LogIn, Award, ChevronRight, Calendar, Shield
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { tesisApi } from '../api/endpoints/tesis';
@@ -9,7 +10,7 @@ import { librosApi } from '../api/endpoints/libros';
 import type { Carrera, Tesis } from '../api/types';
 
 export function Home() {
-  const { isAuthenticated,user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [stats, setStats] = useState({
     tesis: 0,
     libros: 0,
@@ -80,97 +81,66 @@ export function Home() {
     <div className="space-y-12">
 
 
-{/* Hero Section - Efecto 3D */}
-<div className="relative rounded-2xl mt-2 overflow-hidden group perspective-1000">
-  <div className="relative transition-transform duration-700 ease-out group-hover:rotate-y-3 group-hover:rotate-x-3">
-    {/* Fondo con gradiente y patrón */}
-    <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-900"></div>
-    
-    {/* Patrón de fondo animado */}
-    <div className="absolute inset-0 opacity-30">
-      <div className="absolute inset-0" style={{
-        backgroundImage: `
-          radial-gradient(circle at 30% 40%, rgba(255,255,255,0.2) 0%, transparent 50%),
-          radial-gradient(circle at 70% 60%, rgba(255,255,255,0.15) 0%, transparent 40%),
-          linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%)
-        `,
-        backgroundSize: '100% 100%, 100% 100%, 20px 20px'
-      }}></div>
-    </div>
+      {/* Hero Section - Efecto 3D */}
+      <div className="relative rounded-2xl mt-2 overflow-hidden group perspective-1000">
+        <div className="relative transition-transform duration-700 ease-out group-hover:rotate-y-3 group-hover:rotate-x-3">
+          {/* Fondo con gradiente y patrón */}
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-900"></div>
 
-    {/* Círculos decorativos rotando */}
-    <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute -top-20 -right-20 w-64 h-64 border-4 border-white/10 rounded-full animate-spin-slow"></div>
-      <div className="absolute -bottom-20 -left-20 w-80 h-80 border-4 border-white/10 rounded-full animate-spin-slow-reverse"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 border-4 border-white/5 rounded-full animate-spin-slow"></div>
-    </div>
+          {/* Patrón de fondo animado */}
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `
+                radial-gradient(circle at 30% 40%, rgba(255,255,255,0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(255,255,255,0.15) 0%, transparent 40%),
+                linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%)
+              `,
+              backgroundSize: '100% 100%, 100% 100%, 20px 20px'
+            }}></div>
+          </div>
 
-    <div className="relative p-8 md:p-12">
-      <div className="max-w-2xl">
+          {/* Círculos decorativos rotando */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-20 -right-20 w-64 h-64 border-4 border-white/10 rounded-full animate-spin-slow"></div>
+            <div className="absolute -bottom-20 -left-20 w-80 h-80 border-4 border-white/10 rounded-full animate-spin-slow-reverse"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 border-4 border-white/5 rounded-full animate-spin-slow"></div>
+          </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 animate-slide-up animation-delay-100">
-          Catálogo Digital UPTAIET
-        </h1>
-        
-        <p className="text-white/95 text-lg mb-6 animate-slide-up animation-delay-200">
-          Accede a proyectos, libros y recursos académicos de nuestra comunidad universitaria
-        </p>
-        
-        <div className="flex flex-wrap gap-4 animate-slide-up animation-delay-300">
-          <Link
-            to="/proyecto"
-            className="group relative bg-white text-cyan-700 px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
-          >
-            <span className="relative flex items-center gap-2">
-              Explorar Catálogo
-              <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
-            </span>
-          </Link>
-          {!isAuthenticated && (
-            <Link
-              to="/login"
-              className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/20 transition-all hover:scale-105 backdrop-blur-sm"
-            >
-              Iniciar Sesión
-            </Link>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+          <div className="relative p-8 md:p-12">
+            <div className="max-w-2xl">
 
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 animate-slide-up animation-delay-100">
+                Catálogo Digital UPTAIET
+              </h1>
 
-      {/* Hero Section */}
-      {/* <div className="relative bg-linear-to-r from-cyan-600 to-blue-600 rounded-2xl mt-2 overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative p-8 md:p-12">
-          <div className="max-w-2xl">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Catálogo Digital UPTAIET
-            </h1>
-            <p className="text-white/90 text-lg mb-6">
-              Accede a proyectos, libros y recursos académicos de nuestra comunidad universitaria
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                to="/proyecto"
-                className="bg-white text-cyan-700 px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition"
-              >
-                Explorar Catálogo
-              </Link>
-              {!isAuthenticated && (
+              <p className="text-white/95 text-lg mb-6 animate-slide-up animation-delay-200">
+                Accede a proyectos, libros y recursos académicos de nuestra comunidad universitaria
+              </p>
+
+              <div className="flex flex-wrap gap-4 animate-slide-up animation-delay-300">
                 <Link
-                  to="/login"
-                  className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition"
+                  to="/proyecto"
+                  className="group relative bg-white text-cyan-700 px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
                 >
-                  Iniciar Sesión
+                  <span className="relative flex items-center gap-2">
+                    Explorar Catálogo
+                    <span className="inline-block transition-transform group-hover:translate-x-1">→</span>
+                  </span>
                 </Link>
-              )}
+                {!isAuthenticated && (
+                  <Link
+                    to="/login"
+                    className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white/20 transition-all hover:scale-105 backdrop-blur-sm"
+                  >
+                    Iniciar Sesión
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div> */}
+      </div>
+
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -199,7 +169,7 @@ export function Home() {
             <p className="text-white font-semibold">Proyectos</p>
             <p className="text-white/70 text-sm">{stats.tesis} trabajos</p>
           </Link>
-          
+
           <Link
             to="/libros"
             className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
@@ -211,27 +181,27 @@ export function Home() {
 
           {isAuthenticated && (
             <>
-            { [3, 4].includes(user?.id_rol) && (
-              <>
-              <Link
-                to="/carreras"
-                className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
-              >
-                <GraduationCap className="h-10 w-10 text-white mx-auto mb-3" />
-                <p className="text-white font-semibold">Carreras</p>
-                <p className="text-white/70 text-sm">{stats.carreras} programas</p>
-              </Link>
-              
-              <Link
-                to="/materias"
-                className="bg-linear-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
-              >
-                <BookOpen className="h-10 w-10 text-white mx-auto mb-3" />
-                <p className="text-white font-semibold">Materias</p>
-                <p className="text-white/70 text-sm">Plan de estudios</p>
-              </Link>
-              </>
-            )}
+              {[3, 4].includes(user?.id_rol) && (
+                <>
+                  <Link
+                    to="/carreras"
+                    className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+                  >
+                    <GraduationCap className="h-10 w-10 text-white mx-auto mb-3" />
+                    <p className="text-white font-semibold">Carreras</p>
+                    <p className="text-white/70 text-sm">{stats.carreras} programas</p>
+                  </Link>
+
+                  <Link
+                    to="/materias"
+                    className="bg-linear-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+                  >
+                    <BookOpen className="h-10 w-10 text-white mx-auto mb-3" />
+                    <p className="text-white font-semibold">Materias</p>
+                    <p className="text-white/70 text-sm">Plan de estudios</p>
+                  </Link>
+                </>
+              )}
               <Link
                 to="/perfil"
                 className="bg-linear-to-br from-teal-500 to-teal-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
@@ -267,7 +237,7 @@ export function Home() {
             Ver todos <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
-        
+
         {tesisDestacadas.length > 0 ? (
           <div className="grid md:grid-cols-3 gap-6">
             {tesisDestacadas.map((tesis) => (
@@ -284,11 +254,11 @@ export function Home() {
                       </div>
                     )}
                   </div>
-                  
+
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {tesis.resumen_corto || 'Sin resumen disponible'}
                   </p>
-                  
+
                   <div className="flex flex-wrap gap-2 mb-4">
                     {tesis.nombre_carrera && (
                       <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
@@ -301,7 +271,7 @@ export function Home() {
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-1 text-gray-400 text-sm">
                       <Calendar className="h-4 w-4" />

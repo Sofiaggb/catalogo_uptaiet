@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Header } from './components/Layout/Header';
 import { Home } from './pages/Home';
@@ -27,7 +27,8 @@ import { SolicitudesRol } from './pages/Admin/SolicitudesRol';
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { Auditoria } from './pages/Admin/Auditoria';
 import { Estadisticas } from './pages/Admin/Estadisticas';
-import { Footer } from './components/Layout/Footer';
+// import { Footer } from './components/Layout/Footer';
+import { GestionEncabezado } from './pages/Admin/GestionEncabezado';
 
 function App() {
   return (
@@ -49,6 +50,8 @@ function App() {
                 <Route path="auditoria" element={<Auditoria />} />
                 <Route path="usuarios" element={<div>Gestión de usuarios</div>} />
                 <Route path="estadisticas" element={<Estadisticas />} />
+                <Route path="encabezado" element={<GestionEncabezado />} />
+
               </Route>
 
           </Routes>
@@ -70,16 +73,6 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              {/* Rutas solo para administradores */}
-              {/* <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute roles={[3]}>
-                    <SolicitudesRol />
-                  </ProtectedRoute>
-                }
-                  
-              /> */}
              
               {/* proyecots  */}
               <Route path="/proyecto" element={<TesisList />} />

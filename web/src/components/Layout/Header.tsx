@@ -3,11 +3,38 @@ import { Link } from 'react-router-dom';
 import { LogOut, Shield, User, Menu, X, Home, BookOpen, Library, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import logo from '../../assets/logo_uptaiet.png';
+import { headerService } from '../../api/endpoints/header';
+import { STATIC_URL } from '../../api/client';
 
 export const Header = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [headerData, setHeaderData] = useState({
+    imagen: null,
+    texto: { titulo: null, subtitulo: null }
+  });
   const menuRef = useRef<HTMLDivElement>(null);
+  
+ // Obtener datos del encabezado
+  useEffect(() => {
+    const fetchHeader = async () => {
+      try {
+        const response = await headerService.obtenerEncabezado();
+        if (response.success) {
+          setHeaderData(response.data);
+        }
+      } catch (error) {
+        console.error('Error al cargar encabezado:', error);
+        // Usar valores por defecto
+        setHeaderData({
+          imagen: null,
+          texto: { titulo: 'UPTAIET', subtitulo: 'Catálogo Digital' }
+        });
+      }
+    };
+    
+    fetchHeader();
+  }, []);
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -30,6 +57,17 @@ export const Header = () => {
 
   return (
     <header className="bg-cyan-600 text-white shadow-lg sticky top-0 z-100">
+       {/* Sección del encabezado con imagen (opcional) */}
+      {headerData.imagen && (
+        <div className="relative w-full h-16 md:h-20  overflow-hidden">
+          <img 
+            src={`${STATIC_URL}${headerData.imagen} `}
+            alt="Encabezado"
+            className="w-full h-full "
+          />
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-3 md:py-4">
         <div className="flex justify-between items-center">
           {/* Logo */}

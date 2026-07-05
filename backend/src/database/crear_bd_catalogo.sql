@@ -1,7 +1,4 @@
 
-
-
-
 -- Verificar si está instalada
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -366,4 +363,20 @@ CREATE INDEX idx_solicitud_usuario ON seguridad.solicitud_rol(id_usuario);
 CREATE INDEX idx_solicitud_estado ON seguridad.solicitud_rol(id_estado);
 
 
+----------------------- nueva para agregar editar encabezado
+
+CREATE TABLE configuracion (
+    id_configuracion SERIAL PRIMARY KEY,
+    clave VARCHAR(50) UNIQUE NOT NULL,
+    valor TEXT,
+    tipo VARCHAR(20) DEFAULT 'texto', -- 'texto', 'imagen', 'json'
+    fecha_creacion timestamp DEFAULT NOW(),
+	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
+	fecha_modificacion TIMESTAMP,
+	id_usuario_modificacion INTEGER REFERENCES seguridad.usuario(id_usuario)
+);
+
+-- Insertar registro para el encabezado
+INSERT INTO configuracion (clave, valor, tipo) 
+VALUES ('encabezado_imagen', NULL, 'imagen');
 

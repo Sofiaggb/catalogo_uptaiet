@@ -12,7 +12,7 @@ export const TIPO_RECURSO = {
     TESIS: 'tesis',
     LIBRO: 'libros',
     DOCUMENTO: 'documentos',
-    RECURSO: 'recursos',
+    ENCABEZADO: 'encabezados',
     PERFIL: 'perfiles'
 };
 
@@ -21,7 +21,7 @@ const carpetas = {
     [TIPO_RECURSO.TESIS]: path.join(__dirname, '../../uploads/tesis'),
     [TIPO_RECURSO.LIBRO]: path.join(__dirname, '../../uploads/libros'),
     [TIPO_RECURSO.DOCUMENTO]: path.join(__dirname, '../../uploads/documentos'),
-    // [TIPO_RECURSO.RECURSO]: path.join(__dirname, '../../uploads/recursos')
+    [TIPO_RECURSO.ENCABEZADO]: path.join(__dirname, '../../uploads/encabezados'),
     [TIPO_RECURSO.PERFIL]: path.join(__dirname, '../../uploads/perfiles') 
 };
 
@@ -104,11 +104,11 @@ const upload = {
     }),
 
     // Para recursos generales (varios formatos, 10MB)
-    // recursos: multer({
-    //     storage: createStorage(TIPO_RECURSO.RECURSO),
-    //     limits: { fileSize: 10 * 1024 * 1024 },
-    //     fileFilter
-    // })
+    encabezado: multer({
+        storage: createStorage(TIPO_RECURSO.ENCABEZADO),
+        limits: { fileSize: 5 * 1024 * 1024 },
+        fileFilter
+    }),
 
     
     // fotos de perfil

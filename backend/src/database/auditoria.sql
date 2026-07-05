@@ -43,6 +43,7 @@ DECLARE
     v_datos_nuevos JSONB;
     v_id_usuario INTEGER;
     v_ip INET;
+	 v_accion TEXT;
     v_user_agent TEXT;
 BEGIN
     -- Obtener información de sesión
@@ -66,12 +67,22 @@ BEGIN
     
     -- Convertir registros a JSONB
     IF TG_OP = 'DELETE' THEN
+	 	v_accion := 'DELETE'; 
         v_datos_anteriores := to_jsonb(OLD);
         v_datos_nuevos := NULL;
     ELSIF TG_OP = 'UPDATE' THEN
-        v_datos_anteriores := to_jsonb(OLD);
-        v_datos_nuevos := to_jsonb(NEW);
+	   -- Detectar si es un soft delete
+         IF OLD.fecha_eliminacion IS NULL AND NEW.fecha_eliminacion IS NOT NULL THEN
+            v_accion := 'SOFT_DELETE';
+            v_datos_anteriores := to_jsonb(OLD);
+            v_datos_nuevos := NULL; 
+        ELSE
+            v_accion := 'UPDATE';
+            v_datos_anteriores := to_jsonb(OLD);
+            v_datos_nuevos := to_jsonb(NEW);
+        END IF;
     ELSE -- INSERT
+		v_accion := 'INSERT';
         v_datos_anteriores := NULL;
         v_datos_nuevos := to_jsonb(NEW);
     END IF;
@@ -89,7 +100,7 @@ BEGIN
     ) VALUES (
 		TG_TABLE_SCHEMA,
         TG_TABLE_NAME,
-        TG_OP,
+        v_accion,
         v_datos_anteriores,
         v_datos_nuevos,
         v_id_usuario,
@@ -101,6 +112,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+UPDATE catalogo.materia 
+             SET fecha_eliminacion = NOW() ,
+              id_usuario_eliminacion = 4
+          WHERE id_materia = 18
+          AND fecha_eliminacion IS NULL
+          RETURNING id_materia
 
 -- ============================================
 -- TRIGGERS PARA TESIS

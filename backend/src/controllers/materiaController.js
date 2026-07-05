@@ -129,11 +129,12 @@ export const materiaController = {
     try {
       const result = await pool.query(
         `UPDATE catalogo.materia 
-             SET fecha_eliminacion = NOW() 
-             WHERE id_materia = $1 
-             AND fecha_eliminacion IS NULL
-             RETURNING id_materia`,
-        [id],
+             SET fecha_eliminacion = NOW() ,
+              id_usuario_eliminacion = $1
+          WHERE id_materia = $2
+          AND fecha_eliminacion IS NULL
+          RETURNING id_materia`,
+        [ req.usuario?.id_usuario || null, id],
       );
 
       if (result.rows.length === 0) {

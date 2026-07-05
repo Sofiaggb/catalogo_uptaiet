@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import {   LayoutDashboard,Menu, X,  Activity, Shield, Clock, ChevronRight,  Database, UserCheck, LogOut
+import {   LayoutDashboard,Menu, X,  Activity, Shield, Clock, ChevronRight,  Database, UserCheck, LogOut, ImageDownIcon
 } from 'lucide-react';
 import { adminApi } from '../../api/endpoints/admin';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,6 +11,12 @@ const menuItems = [
     label: 'Dashboard',
     icon: LayoutDashboard,
     exact: true
+  },
+  {
+    path: '/admin/encabezado',  
+    label: 'Encabezado',
+    icon: ImageDownIcon,  
+    description: 'Personaliza el encabezado del sitio'
   },
   {
     path: '/admin/solicitudes',
@@ -83,7 +89,7 @@ export function AdminDashboard() {
 
         {/* Sidebar */}
         <aside className={`
-          fixed md:relative z-50 bg-white border-r border-gray-200 flex-shrink-0
+          fixed md:relative z-50 bg-white border-r border-gray-200 shrink-0
           w-72 h-full overflow-y-auto
           transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -138,7 +144,7 @@ export function AdminDashboard() {
           </div>
 
           {/* Footer desktop */}
-          <div className="hidden md:block absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          {/* <div className="hidden md:block absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Clock className="h-4 w-4 text-gray-400" />
@@ -148,7 +154,7 @@ export function AdminDashboard() {
                 {new Date().toLocaleDateString()}
               </p>
             </div>
-          </div>
+          </div> */}
         </aside>
 
         {/* Contenido principal */}
@@ -183,7 +189,7 @@ export function AdminDashboard() {
                   <div className="bg-white rounded-xl border border-gray-200 p-4 md:p-6">
                     <div className="flex items-center justify-between mb-3 md:mb-4">
                       <Clock className="h-6 w-6 md:h-8 md:w-8 text-yellow-500" />
-                      <span className="text-xl md:text-2xl font-bold text-gray-800">{stats.solicitudesPendientes || 0}</span>
+                      {/* <span className="text-xl md:text-2xl font-bold text-gray-800">{stats.solicitudesPendientes || 0}</span> */}
                     </div>
                     <h3 className="text-xs md:text-sm font-semibold text-gray-600">Solicitudes pendientes</h3>
                     <Link to="/admin/solicitudes" className="text-xs text-cyan-600 hover:underline mt-1 inline-block">

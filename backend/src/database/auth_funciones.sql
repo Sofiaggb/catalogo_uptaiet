@@ -264,7 +264,7 @@ BEGIN
     
     -- Buscar usuario por email O por nombre de usuario
     SELECT u.id_usuario, u.email, u.nombre, u.password, 
-           r.id_rol, r.nombre as rol_nombre , u.fecha_creacion::date
+           r.id_rol, r.nombre as rol_nombre , u.fecha_creacion::date, u.foto_perfil
     INTO v_usuario
     FROM seguridad.usuario u
     JOIN seguridad.rol r ON u.id_rol = r.id_rol
@@ -292,7 +292,8 @@ BEGIN
                 'nombre', v_usuario.nombre,
                 'rol', v_usuario.rol_nombre,
                 'id_rol', v_usuario.id_rol,
-                'fecha_creacion', v_usuario.fecha_creacion
+                'fecha_creacion', v_usuario.fecha_creacion,
+                'foto_perfil', v_usuario.foto_perfil
             )
         );
     ELSE

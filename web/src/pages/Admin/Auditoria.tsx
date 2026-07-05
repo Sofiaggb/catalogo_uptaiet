@@ -3,7 +3,8 @@ import {
   Eye,  User, Database, 
    ChevronLeft, ChevronRight, RefreshCw,
    Edit, Trash2, Plus, Clock, Wifi,
-  XCircle
+  XCircle,
+  Archive
 } from 'lucide-react';
 import { adminApi } from '../../api/endpoints/admin';
 
@@ -93,7 +94,10 @@ export function Auditoria() {
         return <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs"><Plus className="h-3 w-3" /> Creación</span>;
       case 'UPDATE':
         return <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs"><Edit className="h-3 w-3" /> Edición</span>;
-      case 'DELETE':
+          case 'SOFT_DELETE':
+      return (<span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs">
+          <Archive className="h-3 w-3" /> Eliminación lógica  </span> );
+        case 'DELETE':
         return <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs"><Trash2 className="h-3 w-3" /> Eliminación</span>;
       default:
         return <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">{accion}</span>;

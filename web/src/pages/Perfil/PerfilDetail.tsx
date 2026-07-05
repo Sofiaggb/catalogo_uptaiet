@@ -210,7 +210,7 @@ export function PerfilDetail() {
     return (
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
+        <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold text-white mb-2">Mi Perfil</h1>
             <p className="text-white/80">Accede a tu cuenta para más funciones</p>
@@ -282,7 +282,7 @@ export function PerfilDetail() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-2">Mi Perfil</h1>
           <p className="text-white/80">Gestiona tu información personal</p>
@@ -311,7 +311,7 @@ export function PerfilDetail() {
                       className="w-28 h-28 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-28 h-28 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                    <div className="w-28 h-28 bg-linear-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
                       <User className="h-14 w-14 text-white" />
                     </div>
                   )}

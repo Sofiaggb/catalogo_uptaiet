@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { 
-  Database, Plus, Edit, Trash2, TrendingUp,  Calendar, Activity, FileText, Users, BookOpen,  BarChart3
+  Database, Plus, Edit, Trash2, TrendingUp,  Calendar, Activity, FileText, Users, BookOpen,  BarChart3,
+  Archive
 } from 'lucide-react';
 import { adminApi } from '../../api/endpoints/admin';
 
@@ -10,6 +11,7 @@ interface EstadisticaTabla {
   inserts: number;
   updates: number;
   deletes: number;
+  soft_deletes: number; 
   usuarios_distintos: number;
 }
 
@@ -19,6 +21,7 @@ export function Estadisticas() {
   const [totalGeneral, setTotalGeneral] = useState(0);
   const [totalInserts, setTotalInserts] = useState(0);
   const [totalUpdates, setTotalUpdates] = useState(0);
+  const [totalSoftDeletes, setTotalSoftDeletes] = useState(0);
   const [totalDeletes, setTotalDeletes] = useState(0);
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export function Estadisticas() {
   setLoading(true);
   try {
     const result = await adminApi.obtenerEstadisticasAuditoria();
+    console.log(result);
     if (result.success) {
       setEstadisticas(result.data);
       
@@ -36,6 +40,7 @@ export function Estadisticas() {
       let totalGral = 0;
       let insertsGral = 0;
       let updatesGral = 0;
+      let softDeletesGral = 0; 
       let deletesGral = 0;
       
       result.data.forEach((stat: EstadisticaTabla) => {
@@ -43,17 +48,20 @@ export function Estadisticas() {
         const total = Number(stat.total) || 0;
         const inserts = Number(stat.inserts) || 0;
         const updates = Number(stat.updates) || 0;
+        const softDeletes = Number(stat.soft_deletes) || 0; 
         const deletes = Number(stat.deletes) || 0;
         
         totalGral += total;
         insertsGral += inserts;
         updatesGral += updates;
+        softDeletesGral += softDeletes;
         deletesGral += deletes;
       });
       
       setTotalGeneral(totalGral);
       setTotalInserts(insertsGral);
       setTotalUpdates(updatesGral);
+      setTotalSoftDeletes(softDeletesGral); 
       setTotalDeletes(deletesGral);
     }
   } catch (error) {
@@ -107,8 +115,18 @@ export function Estadisticas() {
           </div>
           <p className="text-white/60 text-xs mt-2">Actualizaciones</p>
         </div>
+        {/*  Soft Deletes */}
+        <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/80 text-sm">Elim. lógicas</p>
+              <p className="text-3xl font-bold">- {totalSoftDeletes}</p>
+            </div>
+            <Archive className="h-10 w-10 text-white/50" />
+          </div>
+        </div>
         
-        <div className="bg-linear-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
+        {/* <div className="bg-linear-to-br from-red-500 to-red-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm">Eliminaciones</p>
@@ -117,7 +135,7 @@ export function Estadisticas() {
             <Trash2 className="h-10 w-10 text-white/50" />
           </div>
           <p className="text-white/60 text-xs mt-2">Registros eliminados</p>
-        </div>
+        </div> */}
       </div>
 
       {/* Gráfico de actividad por tabla */}
@@ -138,6 +156,7 @@ export function Estadisticas() {
                 <th className="text-center p-4 font-semibold text-gray-600">Total</th>
                 <th className="text-center p-4 font-semibold text-gray-600">Creaciones</th>
                 <th className="text-center p-4 font-semibold text-gray-600">Modificaciones</th>
+                <th className="text-center p-4 font-semibold text-gray-600">Elim. Lógicas</th> 
                 <th className="text-center p-4 font-semibold text-gray-600">Eliminaciones</th>
                 <th className="text-center p-4 font-semibold text-gray-600">Usuarios</th>
               </tr>
@@ -172,6 +191,7 @@ export function Estadisticas() {
                     </td>
                     <td className="p-4 text-center text-green-600 font-medium">+{stat.inserts}</td>
                     <td className="p-4 text-center text-blue-600 font-medium">~{stat.updates}</td>
+                    <td className="p-4 text-center text-orange-600 font-medium">{stat.soft_deletes}</td>  
                     <td className="p-4 text-center text-red-600 font-medium">-{stat.deletes}</td>
                     <td className="p-4 text-center text-gray-600">{stat.usuarios_distintos}</td>
                   </tr>
@@ -214,6 +234,18 @@ export function Estadisticas() {
                 />
               </div>
             </div>
+            <div> 
+              <div className="flex justify-between text-sm mb-1">
+                <span>Eliminaciones lógicas</span>
+                <span className="text-orange-600">{Math.round((totalSoftDeletes / totalGeneral) * 100)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className="bg-orange-500 h-3 rounded-full" 
+                  style={{ width: `${(totalSoftDeletes / totalGeneral) * 100}%` }}
+                />
+              </div>
+            </div>
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Eliminaciones</span>
@@ -238,7 +270,8 @@ export function Estadisticas() {
             <p className="text-sm text-gray-600">
               En los últimos 30 días se han registrado <strong className="text-cyan-600">{totalGeneral}</strong> eventos 
               en el sistema, distribuidos en <strong className="text-green-600">{totalInserts} creaciones</strong>, 
-              <strong className="text-blue-600"> {totalUpdates} modificaciones</strong> y 
+              <strong className="text-blue-600"> {totalUpdates} modificaciones, </strong> 
+              <strong className="text-orange-600">{totalSoftDeletes} eliminaciones lógicas </strong> y 
               <strong className="text-red-600"> {totalDeletes} eliminaciones</strong>.
             </p>
             <div className="bg-gray-50 rounded-lg p-3 mt-3">
