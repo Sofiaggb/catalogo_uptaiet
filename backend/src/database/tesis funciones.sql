@@ -242,7 +242,8 @@ BEGIN
          t.resumen,
          t.anio_elaboracion,
          t.url_documento,
-         t.fecha_creacion,
+		 TO_CHAR(t.fecha_creacion, 'DD/MM/YYYY') as fecha_creacion,
+         -- t.fecha_creacion,
          c.id_carrera,
          c.nombre as nombre_carrera,
          e.id_estado,
@@ -273,7 +274,7 @@ BEGIN
                 jsonb_build_object(
                     'id_evaluacion', ev.id_evaluacion,
                     'nota', ev.nota,
-                    'fecha_evaluacion', ev.fecha_evaluacion,
+                    'fecha_evaluacion', TO_CHAR(ev.fecha_evaluacion, 'DD/MM/YYYY')   ,
                     'comentarios', ev.comentarios,
                     'jurado', jsonb_build_object(
                         'id_jurado', j.id_jurado,

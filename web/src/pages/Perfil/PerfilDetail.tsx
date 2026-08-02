@@ -294,34 +294,34 @@ export function PerfilDetail() {
         <div className="p-8 border-b border-gray-200">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
             {/* Avatar con opción de cambiar foto */}
-              <div className="relative inline-block"> 
-                {/* Avatar */}
-                <div
-                  className="cursor-pointer relative group"
-                  onClick={() => setShowModal(true)}
-                >
-                  {uploading ? (
-                    <div className="w-28 h-28 bg-cyan-500 rounded-full flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                    </div>
-                  ) : user?.foto_perfil ? (
-                    <img
-                      src={`${STATIC_URL}${user.foto_perfil}`}
-                      alt="Foto de perfil"
-                      className="w-28 h-28 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-28 h-28 bg-linear-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
-                      <User className="h-14 w-14 text-white" />
-                    </div>
-                  )}
-
-                  {/* Badge de cámara */}
-                  <div className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md">
-                    <Camera className="h-5 w-5 text-cyan-500" />
+            <div className="relative inline-block">
+              {/* Avatar */}
+              <div
+                className="cursor-pointer relative group"
+                onClick={() => setShowModal(true)}
+              >
+                {uploading ? (
+                  <div className="w-28 h-28 bg-cyan-500 rounded-full flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                   </div>
+                ) : user?.foto_perfil ? (
+                  <img
+                    src={`${STATIC_URL}${user.foto_perfil}`}
+                    alt="Foto de perfil"
+                    className="w-28 h-28 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-28 h-28 bg-linear-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                    <User className="h-14 w-14 text-white" />
+                  </div>
+                )}
+
+                {/* Badge de cámara */}
+                <div className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md">
+                  <Camera className="h-5 w-5 text-cyan-500" />
                 </div>
               </div>
+            </div>
 
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-2xl font-bold text-gray-800">{user?.nombre}</h2>
@@ -451,7 +451,9 @@ export function PerfilDetail() {
               )}
 
               {/*  Usuario con rol especial que puede solicitar otro cambio (ej: docente quiere ser bibliotecario) */}
-              {user?.id_rol !== 1/*'estudiante'*/ && user?.id_rol !== 3 && solicitudEstado?.id_estado !== 2 && (
+              {/* user?.id_rol !== 1/*'estudiante' && user?.id_rol !== 3 && solicitudEstado?.id_estado !== 2 &&  */}
+              {solicitudEstado?.id_estado !== 2 && (
+
                 <button
                   onClick={handleAbrirModal}
                   className="w-full flex items-center justify-center gap-2 bg-cyan-500 text-white py-3 rounded-lg font-semibold hover:bg-cyan-600 transition"
@@ -527,7 +529,7 @@ export function PerfilDetail() {
 
         {/* Modal de solicitud  */}
         {showSolicitudModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-100 p-4">
             <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
               {/* Header */}
               <div className="flex justify-between items-center p-4 border-b border-gray-200 sticky top-0 bg-white">
@@ -600,8 +602,7 @@ export function PerfilDetail() {
                   <div className="relative">
                     <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <select
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${erroresForm.rol ? 'border-red-500' : 'border-gray-300'
-                        }`}
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 ${erroresForm.rol ? 'border-red-500' : 'border-gray-300'}`}
                       value={rolSolicitado}
                       onChange={(e) => {
                         setRolSolicitado(e.target.value);
@@ -612,19 +613,22 @@ export function PerfilDetail() {
                       {cargandoRoles ? (
                         <option disabled>Cargando...</option>
                       ) : (
-                        rolesDisponibles.map((rol) => (
-                          <option key={rol.id_rol} value={rol.id_rol}>
-                            {rol.nombre.charAt(0).toUpperCase() + rol.nombre.slice(1)}
-                          </option>
-                        ))
+                        // 🔥 FILTRAR: Excluir el rol actual del usuario
+                        rolesDisponibles
+                          .filter(rol => rol.id_rol !== user?.id_rol) // Excluir rol actual
+                          .map((rol) => (
+                            <option key={rol.id_rol} value={rol.id_rol}>
+                              {rol.nombre.charAt(0).toUpperCase() + rol.nombre.slice(1)}
+                            </option>
+                          ))
                       )}
                     </select>
+                    {erroresForm.rol && (
+                      <p className="text-red-500 text-sm mt-1">{erroresForm.rol}</p>
+                    )}
                   </div>
-                  {erroresForm.rol && (
-                    <p className="text-red-500 text-xs mt-1">{erroresForm.rol}</p>
-                  )}
                 </div>
-
+                
                 {/* Justificación */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">

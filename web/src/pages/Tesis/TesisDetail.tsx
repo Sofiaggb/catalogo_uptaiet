@@ -173,7 +173,7 @@ export function TesisDetail() {
             <div className="flex items-center gap-4 text-white/80">
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
-                <span className="text-sm">{new Date(tesis.fecha_creacion).toLocaleDateString()}</span>
+                <span className="text-sm">{tesis.fecha_creacion}</span>
               </div>
               {tesis.promedio_nota && (
                 <div className="flex items-center gap-1">
@@ -276,7 +276,7 @@ export function TesisDetail() {
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
                     <span className="text-gray-500">Fecha de registro</span>
-                    <span className="text-gray-700">{new Date(tesis.fecha_creacion).toLocaleDateString()}</span>
+                    <span className="text-gray-700">{tesis.fecha_creacion}</span>
                   </div>
                 </div>
               </div>
@@ -330,7 +330,7 @@ export function TesisDetail() {
                       <div className="mt-3 pt-3 border-t border-gray-200">
                         <p className="text-gray-600 italic">"{evaluacion.comentarios}"</p>
                         <p className="text-xs text-gray-400 mt-2">
-                          Evaluado el {new Date(evaluacion.fecha_evaluacion).toLocaleDateString()}
+                          Evaluado el { evaluacion.fecha_evaluacion}
                         </p>
                       </div>
                     )}

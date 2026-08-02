@@ -27,10 +27,10 @@ export const carreraController = {
     const { id } = req.params;
     try {
       const result = await pool.query(
-        `SELECT tt.id_tipo_trabajo, tt.nombre 
-          FROM catalogo.tipo_trabajo tt
-          JOIN catalogo.carrera_tipo_trabajo ctt ON tt.id_tipo_trabajo = ctt.id_tipo_trabajo
-          WHERE ctt.id_tipo_carrera = $1  AND tt.fecha_eliminacion IS NULL AND  ctt.fecha_eliminacion IS NULL;` , [id]
+       `SELECT tt.id_tipo_trabajo, tt.nombre 
+        FROM catalogo.tipo_trabajo tt
+        JOIN catalogo.carrera_tipo_trabajo ctt ON tt.id_tipo_trabajo = ctt.id_tipo_trabajo
+        WHERE ctt.id_tipo_carrera = $1  AND tt.fecha_eliminacion IS NULL AND  ctt.fecha_eliminacion IS NULL;` , [id]
       );
       res.json({
             success: true,

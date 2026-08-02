@@ -76,10 +76,10 @@ const limits = {
 
 // Exportar middlewares específicos por tipo
 const upload = {
-    // Para tesis (solo PDF, 10MB)
+    // Para tesis (solo PDF, 20MB)
     tesis: multer({
         storage: createStorage(TIPO_RECURSO.TESIS),
-        limits: { fileSize: 10 * 1024 * 1024 },
+        limits: { fileSize: 20 * 1024 * 1024 },
         fileFilter: (req, file, cb) => {
             if (file.mimetype === 'application/pdf') {
                 cb(null, true);
@@ -96,14 +96,14 @@ const upload = {
         fileFilter
     }),
 
-    // Para documentos (varios formatos, 15MB)
+    // Para documentos (varios formatos, 20MB)
     documentos: multer({
         storage: createStorage(TIPO_RECURSO.DOCUMENTO),
-        limits: { fileSize: 15 * 1024 * 1024 },
+        limits: { fileSize: 20 * 1024 * 1024 },
         fileFilter
     }),
 
-    // Para recursos generales (varios formatos, 10MB)
+    // Para recursos generales (varios formatos, 5MB)
     encabezado: multer({
         storage: createStorage(TIPO_RECURSO.ENCABEZADO),
         limits: { fileSize: 5 * 1024 * 1024 },

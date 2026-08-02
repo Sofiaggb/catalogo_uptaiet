@@ -74,7 +74,7 @@ $$ LANGUAGE plpgsql;
 
 
 
-
+select recursos.libro_obtener(6)
 ---------- obtener libro completa
 CREATE OR REPLACE FUNCTION recursos.libro_obtener(
     p_id_libro INTEGER
@@ -108,7 +108,7 @@ BEGIN
             d.url_documento,
             m.id_materia,
             m.nombre AS materia,
-			d.fecha_creacion
+			TO_CHAR(d.fecha_creacion, 'DD/MM/YYYY') as fecha_creacion
         FROM recursos.libro d
         JOIN catalogo.materia m ON m.id_materia = d.id_materia
 		WHERE d.id_libro = p_id_libro

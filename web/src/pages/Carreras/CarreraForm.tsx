@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, GraduationCap, BookOpen, Briefcase } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { ArrowLeft, Save, GraduationCap,  Briefcase } from 'lucide-react';
 import { carrerasApi } from '../../api/endpoints/carreras';
 import { showSuccessAlert, showErrorAlert } from '../../helpers/alerts';
 
@@ -127,7 +126,7 @@ export function CarreraForm({ mode }: { mode: 'create' | 'edit' }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-4">
+    <div className="max-w-2xl min-h-screen mx-auto py-4">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button

@@ -54,11 +54,11 @@ export const enviarCodigo = async (email, codigo, tipo = TIPO_EMAIL.VERIFICACION
         subject: template.subject,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <div style="background-color: #000000; padding: 20px; text-align: center;">
+                <div style="background-color: #0092b8; padding: 20px; text-align: center;">
                     <h1 style="color: #FFD700;">UPTAIET</h1>
                     <p style="color: white;">Catálogo Digital</p>
                 </div>
-                <div style="padding: 20px; border: 1px solid #e0e0e0;">
+                <div style="padding: 20px; border: 1px solid #0092b8;">
                     <h2>${template.title}</h2>
                     ${nombre ? `<p>Hola <strong>${nombre}</strong>,</p>` : '<p>Hola,</p>'}
                     <p>${template.message}</p>

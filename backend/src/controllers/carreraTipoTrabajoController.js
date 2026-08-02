@@ -11,7 +11,7 @@ export const carreraTipoTrabajoController = {
                     ctt.id_carrera_tipo_trabajo,
                     ctt.id_tipo_carrera,
                     ctt.id_tipo_trabajo,
-                    ctt.fecha_creacion,
+                    TO_CHAR(ctt.fecha_creacion, 'DD/MM/YYYY') as fecha_creacion ,
                     ctt.fecha_eliminacion,
                     tc.nombre AS nombre_carrera,
                     tt.nombre AS nombre_trabajo

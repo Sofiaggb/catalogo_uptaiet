@@ -147,7 +147,6 @@ export function Footer() {
           <div className="flex items-center gap-2">
              <img src={logo} alt="Logo de UPTAIET" className="h-8 w-8 object-contain" />
             <span className="text-white font-semibold">UPTAIET</span>
-            <span className="text-xs">Catálogo Digital</span>
           </div>
           
           <div className="flex gap-6 text-sm">

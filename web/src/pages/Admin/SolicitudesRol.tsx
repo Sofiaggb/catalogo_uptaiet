@@ -311,7 +311,7 @@ export function SolicitudesRol() {
                     <td className="p-4 text-gray-500 text-sm">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400" />
-                        {new Date(solicitud.fecha_solicitud).toLocaleDateString()}
+                        {solicitud.fecha_solicitud}
                       </div>
                     </td>
                     <td className="p-4">
@@ -374,7 +374,7 @@ export function SolicitudesRol() {
 
       {/* Modal de revisión de solicitud */}
       {solicitudSeleccionada && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-100 p-4">
           <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200 sticky top-0 bg-white">
@@ -473,9 +473,9 @@ export function SolicitudesRol() {
               )}
               {/* Fechas */}
               <div className="text-xs text-gray-400 flex justify-between pt-2">
-                <span>Solicitado: {new Date(solicitudSeleccionada.fecha_solicitud).toLocaleString()}</span>
+                <span>Solicitado: { solicitudSeleccionada.fecha_solicitud }</span>
                 {solicitudSeleccionada.fecha_respuesta && (
-                  <span>Respondido: {new Date(solicitudSeleccionada.fecha_respuesta).toLocaleString()}</span>
+                  <span>Respondido: { solicitudSeleccionada.fecha_respuesta}</span>
                 )}
               </div>
             </div>

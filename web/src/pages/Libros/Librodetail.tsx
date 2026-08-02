@@ -32,6 +32,7 @@ export function LibroDetail() {
     setLoading(true);
     const data = await librosApi.getById(Number(id));
     if (data.success && data.data) {
+      // console.log( data.data)
       setLibro(data.data);
     }
     setLoading(false);
@@ -150,7 +151,7 @@ export function LibroDetail() {
             </div>
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-sm text-gray-500 mb-1">Fecha de registro</p>
-              <p className="text-gray-700">{new Date(libro.fecha_creacion).toLocaleDateString()}</p>
+              <p className="text-gray-700">{ libro.fecha_creacion}</p>
             </div>
           </div>
         </div>

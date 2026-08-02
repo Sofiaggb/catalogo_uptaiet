@@ -53,11 +53,35 @@ export function GestionEncabezado() {
 
   const handleSubirImagen = async () => {
     if (!selectedFile) return;
+  
+    // Validar formato
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
+    const isValidType = allowedTypes.includes(selectedFile.type);
+    const isValidExtension = allowedExtensions.includes(fileExtension);
+    const isValidSize = selectedFile.size <= maxSize;
+    
+    if (!isValidType || !isValidExtension) {
+      showErrorAlert('Formato no válido. Solo se permiten: JPG, PNG, GIF, WEBP');
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      return;
+    }
+    
+    if (!isValidSize) {
+      showErrorAlert('El archivo es demasiado grande. Máximo 5MB');
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      return;
+    }
     
     setLoading(true);
     const formData = new FormData();
     formData.append('encabezado', selectedFile);
-    
+      
     try {
       const response = await headerService.actualizarImagenEncabezado(formData);
     //   console.log(response)

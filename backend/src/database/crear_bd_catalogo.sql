@@ -346,6 +346,7 @@ RENAME COLUMN rol_solicitado TO id_rol_solicitado;
 CREATE TABLE seguridad.solicitud_rol (
     id_solicitud SERIAL PRIMARY KEY,
     id_usuario INTEGER NOT NULL REFERENCES seguridad.usuario(id_usuario),
+	id_rol_actual  INTEGER NOT NULL REFERENCES seguridad.rol(id_rol),
     id_rol_solicitado INTEGER NOT NULL REFERENCES seguridad.rol(id_rol),
     id_estado INTEGER REFERENCES control.estado(id_estado),
     justificacion TEXT,
@@ -380,3 +381,9 @@ CREATE TABLE configuracion (
 INSERT INTO configuracion (clave, valor, tipo) 
 VALUES ('encabezado_imagen', NULL, 'imagen');
 
+
+--  nuevo de rol
+/*
+ALTER TABLE seguridad.solicitud_rol 
+add COLUMN id_rol_actual  INTEGER REFERENCES seguridad.rol(id_rol) ;
+*/

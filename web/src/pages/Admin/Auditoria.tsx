@@ -252,7 +252,7 @@ export function Auditoria() {
                     <td className="p-4 text-sm text-gray-600 whitespace-nowrap">
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {new Date(log.fecha).toLocaleString()}
+                        {log.fecha}
                       </div>
                     </td>
                     <td className="p-4">
@@ -320,7 +320,7 @@ export function Auditoria() {
 
       {/* Modal de detalle */}
       {selectedLog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-100 p-4">
           <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-4 border-b border-gray-200 sticky top-0 bg-white">
               <h3 className="text-xl font-bold text-gray-800">Detalle de auditoría</h3>
@@ -340,7 +340,7 @@ export function Auditoria() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Fecha</p>
-                  <p className="font-medium">{new Date(selectedLog.fecha).toLocaleString()}</p>
+                  <p className="font-medium">{selectedLog.fecha}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Usuario</p>

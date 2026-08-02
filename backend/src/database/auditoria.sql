@@ -332,7 +332,7 @@ BEGIN
             l.accion,
             l.datos_anteriores,
             l.datos_nuevos,
-            l.fecha,
+            TO_CHAR(l.fecha, 'DD/MM/YYYY') as fecha, 
             l.id_usuario,
             u.nombre as usuario_nombre,
             u.email as usuario_email,

@@ -85,7 +85,7 @@ export function Home() {
       <div className="relative rounded-2xl mt-2 overflow-hidden group perspective-1000">
         <div className="relative transition-transform duration-700 ease-out group-hover:rotate-y-3 group-hover:rotate-x-3">
           {/* Fondo con gradiente y patrón */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-900"></div>
+          <div className="absolute inset-0 bg-linear-to-r from-cyan-600 via-blue-600 to-blue-900"></div>
 
           {/* Patrón de fondo animado */}
           <div className="absolute inset-0 opacity-30">

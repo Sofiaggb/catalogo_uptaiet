@@ -7,7 +7,9 @@ export const tipoCarreraController = {
     listar: async (req, res) => {
         try {
             const result = await pool.query(
-                `SELECT id_tipo_carrera, nombre, descripcion, fecha_creacion, fecha_eliminacion
+                `SELECT id_tipo_carrera, nombre, descripcion, 
+                TO_CHAR(fecha_creacion, 'DD/MM/YYYY') as fecha_creacion ,
+                 fecha_eliminacion
                  FROM catalogo.tipo_carrera
                  ORDER BY nombre`
             );

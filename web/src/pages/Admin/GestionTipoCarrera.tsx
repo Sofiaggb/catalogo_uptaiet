@@ -266,7 +266,7 @@ export function GestionTipoCarrera() {
                                         <td className="p-4 font-medium">{item.nombre}</td>
                                         <td className="p-4 text-gray-600">{item.descripcion || '-'}</td>
                                         <td className="p-4 text-gray-500 text-sm">
-                                            {new Date(item.fecha_creacion).toLocaleDateString()}
+                                            {item.fecha_creacion}
                                         </td>
                                         <td className="p-4 text-center">
                                             <button
@@ -319,7 +319,7 @@ export function GestionTipoCarrera() {
                                     <tr key={item.id_tipo_trabajo} className="border-b border-gray-100 hover:bg-gray-50">
                                         <td className="p-4 font-medium">{item.nombre}</td>
                                         <td className="p-4 text-gray-500 text-sm">
-                                            {new Date(item.fecha_creacion).toLocaleDateString()}
+                                            {item.fecha_creacion}
                                         </td>
                                         <td className="p-4 text-center">
                                             <button
@@ -454,7 +454,7 @@ export function GestionTipoCarrera() {
                             {editingItem && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
                                     <p>Editando: <strong>{editingItem.nombre}</strong></p>
-                                    <p className="mt-1">Creado: {new Date(editingItem.fecha_creacion).toLocaleDateString()}</p>
+                                    <p className="mt-1">Creado: {editingItem.fecha_creacion}</p>
                                 </div>
                             )}
 

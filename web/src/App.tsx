@@ -27,7 +27,7 @@ import { SolicitudesRol } from './pages/Admin/SolicitudesRol';
 import { AdminDashboard } from './pages/Admin/AdminDashboard';
 import { Auditoria } from './pages/Admin/Auditoria';
 import { Estadisticas } from './pages/Admin/Estadisticas';
-// import { Footer } from './components/Layout/Footer';
+import { Footer } from './components/Layout/Footer';
 import { GestionEncabezado } from './pages/Admin/GestionEncabezado';
 import { GestionTipoCarrera } from './pages/Admin/GestionTipoCarrera';
 
@@ -132,7 +132,7 @@ function App() {
 
             </Routes>
           </main>
-          {/* <Footer /> */}
+          <Footer />
         </div>
       </Router>
     </AuthProvider>

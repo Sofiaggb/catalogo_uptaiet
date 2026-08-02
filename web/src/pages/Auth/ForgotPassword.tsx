@@ -76,7 +76,7 @@ export function ForgotPassword() {
   };
 
   return (
-    <div className=" bg-white flex flex-col">
+    <div className=" bg-white min-h-screen flex flex-col">
       {/* Header */}
       <div className="pt-8 pb-4 px-5">
         <Link to="/login" className="inline-flex items-center text-cyan-500 hover:text-cyan-600">
@@ -85,7 +85,7 @@ export function ForgotPassword() {
         </Link>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex  justify-center py-6 pb-6">
         <div className="max-w-md w-full">
           {/* Icono */}
           <div className="text-center mb-8">

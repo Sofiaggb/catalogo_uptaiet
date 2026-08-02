@@ -9,6 +9,7 @@ CREATE OR REPLACE FUNCTION seguridad.crear_solicitud_rol(
 RETURNS JSONB AS $$
 DECLARE
     v_solicitud_existente RECORD;
+	v_id_rol_actual integer;
 BEGIN
     -- Verificar si ya hay una solicitud pendiente
     SELECT * INTO v_solicitud_existente
@@ -31,10 +32,14 @@ BEGIN
             'message', 'El rol solicitado no existe'
         );
     END IF;
+
+	SELECT id_rol INTO v_id_rol_actual
+    FROM seguridad.usuario
+    WHERE id_usuario = p_id_usuario;
     
     -- Crear solicitud
-    INSERT INTO seguridad.solicitud_rol (id_usuario, id_rol_solicitado, justificacion, id_estado,cedula,nombre_completo)
-    VALUES (p_id_usuario, p_rol_solicitado, p_justificacion,2, p_cedula, p_nombre_completo);
+    INSERT INTO seguridad.solicitud_rol (id_usuario, id_rol_actual, id_rol_solicitado, justificacion, id_estado,cedula,nombre_completo)
+    VALUES (p_id_usuario, v_id_rol_actual, p_rol_solicitado, p_justificacion,2, p_cedula, p_nombre_completo);
     
     RETURN jsonb_build_object(
         'success', TRUE,
@@ -179,8 +184,8 @@ BEGIN
 			s.nombre_completo,
             s.id_estado,
 			e.nombre_estado as estado,
-            s.fecha_solicitud,
-            s.fecha_respuesta,
+            TO_CHAR(s.fecha_solicitud, 'DD/MM/YYYY') as fecha_solicitud,
+            TO_CHAR(s.fecha_respuesta, 'DD/MM/YYYY') as fecha_respuesta, 
             s.comentario_admin,
             u.id_usuario,
             u.nombre as usuario_nombre,
@@ -190,7 +195,7 @@ BEGIN
         FROM seguridad.solicitud_rol s
         JOIN control.estado e ON e.id_estado = s.id_estado
         JOIN seguridad.usuario u ON s.id_usuario = u.id_usuario
-        JOIN seguridad.rol r_actual ON u.id_rol = r_actual.id_rol
+        JOIN seguridad.rol r_actual ON s.id_rol_actual = r_actual.id_rol
         JOIN seguridad.rol r_solicitado ON s.id_rol_solicitado = r_solicitado.id_rol
         WHERE s.fecha_eliminacion IS NULL
         AND (p_id_estado IS NULL OR s.id_estado = ANY(string_to_array(p_id_estado, ',')::int[]))

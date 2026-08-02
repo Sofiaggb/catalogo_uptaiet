@@ -195,8 +195,7 @@ export const authController = {
       const result = await pool.query(
         `SELECT id_rol, nombre, descripcion 
          FROM seguridad.rol 
-         WHERE id_rol != 1
-         AND fecha_eliminacion IS NULL
+         WHERE fecha_eliminacion IS NULL
          ORDER BY id_rol`
       );
       

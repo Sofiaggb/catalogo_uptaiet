@@ -33,6 +33,7 @@ export function TesisForm({ mode }: TesisFormProps) {
   });
   const [documento, setDocumento] = useState<File | null>(null);
   const [documentoOriginal, setDocumentoOriginal] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     titulo?: string;
     id_carrera?: string;
@@ -43,7 +44,7 @@ export function TesisForm({ mode }: TesisFormProps) {
   // Hooks de estudiantes y evaluaciones
   const {
     estudiantes,
-    buscando: buscandoEstudiante,
+    // buscando: buscandoEstudiante,
     modalVisible: modalEstudianteVisible,
     resultadoBusqueda: resultadoEstudiante,
     multipleModalVisible: multipleEstudianteVisible,
@@ -60,7 +61,7 @@ export function TesisForm({ mode }: TesisFormProps) {
 
   const {
     evaluaciones,
-    buscando: buscandoJurado,
+    // buscando: buscandoJurado,
     modalVisible: modalJuradoVisible,
     resultadoBusqueda: resultadoJurado,
     multipleModalVisible: multipleJuradoVisible,
@@ -148,8 +149,7 @@ export function TesisForm({ mode }: TesisFormProps) {
     }
   };
 
-
-  // Dentro del componente
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Función para abrir el selector de archivos
@@ -161,20 +161,82 @@ export function TesisForm({ mode }: TesisFormProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Validar que sea PDF
-      if (file.type !== 'application/pdf') {
-        alert('Solo se permiten archivos PDF');
-        return;
-      }
-      // Validar tamaño (10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('El archivo no puede superar los 10MB');
-        return;
-      }
-      setDocumento(file);
-      setFieldErrors(prev => ({ ...prev, documento: undefined }));
+      validateAndSetFile(file);
     }
   };
+
+  // Función para validar y establecer el archivo
+  const validateAndSetFile = (file: File) => {
+  // Limpiar errores anteriores
+  setFieldErrors(prev => ({ ...prev, documento: undefined }));
+
+  // 1. Validar que no sea un archivo fantasma/sin permisos (size === 0)
+  if (file.size === 0) {
+    setFieldErrors(prev => ({ 
+      ...prev, 
+      documento: 'No se pudo leer el archivo arrastrado (0 bytes). Por favor, haz clic en el área para seleccionarlo directamente.' 
+    }));
+    setDocumento(null);
+    return false;
+  }
+  
+  // 2. Validar que sea PDF
+  const isPdfType = file.type === 'application/pdf';
+  const isPdfExtension = file.name.toLowerCase().endsWith('.pdf');
+
+  if (!isPdfType && !isPdfExtension) {
+    setFieldErrors(prev => ({ 
+      ...prev, 
+      documento: 'Solo se permiten archivos PDF' 
+    }));
+    setDocumento(null);
+    return false;
+  }
+  
+  // 3. Validar tamaño máximo (10MB)
+  const maxSizeMB = 20;
+  const fileSizeMB = file.size / 1024 / 1024;
+  
+  if (file.size > maxSizeMB * 1024 * 1024) {
+    setFieldErrors(prev => ({ 
+      ...prev, 
+      documento: `El archivo no puede superar los ${maxSizeMB}MB (actual: ${fileSizeMB.toFixed(2)} MB)` 
+    }));
+    setDocumento(null);
+    return false;
+  }
+  
+  // Si todo es válido
+  setDocumento(file);
+  setFieldErrors(prev => ({ ...prev, documento: undefined }));
+  console.log(`Archivo válido: ${file.name} (${fileSizeMB.toFixed(2)} MB)`);
+  return true;
+};
+
+  // Manejadores de eventos para drag & drop
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      validateAndSetFile(files[0]);
+    }
+  };
+
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,6 +244,7 @@ export function TesisForm({ mode }: TesisFormProps) {
 
     // Validar campos básicos
     const tieneDocumento = !!(documento || (isEditing && documentoOriginal));
+
     const tesisValidation = validateTesisForm({
       titulo: form.titulo,
       id_carrera: selectedCarrera,
@@ -297,7 +360,7 @@ export function TesisForm({ mode }: TesisFormProps) {
     setLoading(false);
 
     if (resultado.success) {
-      showSuccessAlert( resultado.message, () => navigate('/proyecto')
+      showSuccessAlert(resultado.message, () => navigate('/proyecto')
       );
     } else {
       console.log(resultado)
@@ -428,18 +491,28 @@ export function TesisForm({ mode }: TesisFormProps) {
             )}
           </div>
 
+
+
           {/* Documento PDF */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Documento PDF
             </label>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 
-            text-center hover:border-cyan-500 transition cursor-pointer"
-              onClick={handleOpenFileSelector}>
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition cursor-pointer
+      ${isDragOver
+                  ? 'border-cyan-500 bg-cyan-50'
+                  : 'border-gray-300 hover:border-cyan-500'
+                }`}
+              onClick={handleOpenFileSelector}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               {documento ? (
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center  gap-2">
+                  <div className="flex items-center gap-2">
                     <FileText className="h-8 w-8 text-green-600" />
                     <span className="text-sm text-gray-600">{documento.name}</span>
                     <span className="text-xs text-gray-400">
@@ -451,6 +524,7 @@ export function TesisForm({ mode }: TesisFormProps) {
                     onClick={(e) => {
                       e.stopPropagation();
                       setDocumento(null);
+                      setFieldErrors(prev => ({ ...prev, documento: undefined }));
                     }}
                     className="text-red-500 hover:text-red-600"
                   >
@@ -479,8 +553,13 @@ export function TesisForm({ mode }: TesisFormProps) {
               ) : (
                 <>
                   <Upload className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">Haz clic para seleccionar un archivo PDF</p>
-                  <p className="text-gray-400 text-sm mt-1">PDF hasta 10MB</p>
+                  <p className="text-gray-500">
+                    {isDragOver
+                      ? '¡Suelta el archivo aquí!'
+                      : 'Arrastra y suelta un archivo PDF o haz clic para seleccionar'
+                    }
+                  </p>
+                  <p className="text-gray-400 text-sm mt-1">PDF hasta 20MB</p>
                 </>
               )}
             </div>
@@ -492,6 +571,12 @@ export function TesisForm({ mode }: TesisFormProps) {
               className="hidden"
               onChange={handleFileChange}
             />
+
+            {fieldErrors.documento && (
+              <div className="mt-1">
+                <p className="text-red-500 text-sm">{fieldErrors.documento}</p>
+              </div>
+            )}
           </div>
         </div>
 
