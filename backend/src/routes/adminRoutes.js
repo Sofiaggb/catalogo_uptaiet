@@ -1,15 +1,19 @@
 // backend/src/routes/adminRoutes.js
 import express from 'express';
 import { adminController } from '../controllers/adminController.js';
-import { authMiddleware, requireRole } from '../middlewares/authMiddleware.js';
+import { authMiddleware, requireAuth, requireRole } from '../middlewares/authMiddleware.js';
 import upload from '../config/multer.js';
 import {headerController} from '../controllers/headerController.js';
+import { permisoController } from '../controllers/permisosController.js';
 
 const router = express.Router();
 
 // Todas las rutas requieren autenticación y rol de administrador
 router.use(authMiddleware);
 router.use(requireRole([3]));
+
+// ruta usuarios
+router.get('/usuarios', requireAuth, permisoController.getUsuarios);
 
 // Obtener todas las solicitudes de cambio de rol
 router.get('/solicitudes-rol', adminController.obtenerSolicitudesRol);

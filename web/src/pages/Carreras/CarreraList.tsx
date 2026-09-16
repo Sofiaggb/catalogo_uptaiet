@@ -4,6 +4,7 @@ import { Search, Plus, GraduationCap,  BookOpen, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { carrerasApi } from '../../api/endpoints/carreras';
 import type { Carrera } from '../../api/types';
+import { usePermiso } from '../../hooks/usePermiso';
 
 // Componente de tarjeta de carrera
 const CarreraCard = ({ carrera }: { carrera: Carrera }) => (
@@ -43,6 +44,7 @@ const CarreraCard = ({ carrera }: { carrera: Carrera }) => (
 
 export function CarrerasList() {
   const { isAuthenticated , user} = useAuth();
+  const crearCarreras = usePermiso('especialidad', 'crear');
   const [carreras, setCarreras] = useState<Carrera[]>([]);
   const [filteredCarreras, setFilteredCarreras] = useState<Carrera[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,7 +144,7 @@ export function CarrerasList() {
       )}
 
       {/* Botón flotante para crear */}
-      {isAuthenticated && [3, 4].includes(user?.id_rol) && (
+      {isAuthenticated && crearCarreras && (
         <Link
           to="/carreras/create"
           className="fixed bottom-6 right-6 bg-cyan-500 rounded-full p-4 shadow-lg hover:bg-cyan-600 transition-all hover:scale-105 z-10"

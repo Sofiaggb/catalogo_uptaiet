@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Upload, FileText, Calendar, BookOpen, Users, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Save, Upload, FileText, Calendar, BookOpen, Users } from 'lucide-react';
 import { tesisApi } from '../../api/endpoints/tesis';
 import { carrerasApi } from '../../api/endpoints/carreras';
 import { useEstudiantes } from '../../hooks/useEstudiantes';
-import { useEvaluaciones } from '../../hooks/useEvaluaciones';
 import { EstudianteForm } from '../../components/forms/EstudianteForm';
-import { EvaluacionForm } from '../../components/forms/EvaluacionForm';
 import { ConfirmarDatosModal } from '../../components/modals/ConfirmarDatosModal';
 import { MultipleResultsModal } from '../../components/modals/MultipleResultsModal';
 import { showErrorAlert, showSuccessAlert } from '../../helpers/alerts';
-import { validateEstudiante, validateEvaluacion, validateTesisForm } from '../../helpers/validations';
+import { validateEstudiante,  validateTesisForm } from '../../helpers/validations';
 
 interface TesisFormProps {
   mode: 'create' | 'edit';
@@ -41,7 +39,7 @@ export function TesisForm({ mode }: TesisFormProps) {
     documento?: string;
   }>({});
 
-  // Hooks de estudiantes y evaluaciones
+  // Hooks de estudiantes 
   const {
     estudiantes,
     // buscando: buscandoEstudiante,
@@ -59,23 +57,6 @@ export function TesisForm({ mode }: TesisFormProps) {
     setEstudiantes
   } = useEstudiantes();
 
-  const {
-    evaluaciones,
-    // buscando: buscandoJurado,
-    modalVisible: modalJuradoVisible,
-    resultadoBusqueda: resultadoJurado,
-    multipleModalVisible: multipleJuradoVisible,
-    resultadosMultiples: resultadosMultiplesJurados,
-    agregarEvaluacion,
-    eliminarEvaluacion,
-    actualizarEvaluacion,
-    actualizarJurado,
-    buscarJuradoPorCedula,
-    usarJuradoExistente,
-    usarJuradoMultiple,
-    continuarConNuevoJurado,
-    setEvaluaciones
-  } = useEvaluaciones();
 
   // Años disponibles
   const aniosDisponibles = useMemo(() => {
@@ -122,23 +103,6 @@ export function TesisForm({ mode }: TesisFormProps) {
             esExistente: true
           }));
           setEstudiantes(estudiantesCargados);
-        }
-
-        if (tesis.evaluaciones?.length) {
-          const evaluacionesCargadas = tesis.evaluaciones.map((ev: any) => ({
-            id_evaluacion: ev.id_evaluacion,
-            nota: ev.nota.toString(),
-            fecha_evaluacion: ev.fecha_evaluacion,
-            comentarios: ev.comentarios || '',
-            jurado: {
-              id_jurado: ev.jurado.id_jurado,
-              nombre_completo: ev.jurado.nombre_completo,
-              cedula: ev.jurado.cedula,
-              titulo_profesional: ev.jurado.titulo_profesional || '',
-              esExistente: true
-            }
-          }));
-          setEvaluaciones(evaluacionesCargadas);
         }
       }
     } catch (error) {
@@ -274,20 +238,6 @@ export function TesisForm({ mode }: TesisFormProps) {
       }
     }
 
-    // Validar evaluaciones
-    if (evaluaciones.length === 0) {
-      showErrorAlert('Debe haber al menos una evaluación');
-      return;
-    }
-
-    for (let i = 0; i < evaluaciones.length; i++) {
-      const validation = validateEvaluacion(evaluaciones[i], i);
-      if (!validation.isValid) {
-        showErrorAlert(validation.errors[0]);
-        return;
-      }
-    }
-
     setLoading(true);
 
     const formData = new FormData();
@@ -322,40 +272,14 @@ export function TesisForm({ mode }: TesisFormProps) {
     console.log('estudiantesData>>>', estudiantesData)
     formData.append('estudiantes', JSON.stringify(estudiantesData));
 
-    // Evaluaciones
-    const evaluacionesData = evaluaciones.map(ev => {
-      let jurado: any;
-      if (ev.jurado.id_jurado) {
-        jurado = {
-          id_jurado: ev.jurado.id_jurado,
-          nombre_completo: ev.jurado.nombre_completo,
-          titulo_profesional: ev.jurado.titulo_profesional || undefined
-        };
-      } else {
-        jurado = {
-          nombre_completo: ev.jurado.nombre_completo,
-          cedula: ev.jurado.cedula,
-          titulo_profesional: ev.jurado.titulo_profesional || undefined
-        };
-      }
-      return {
-        id_evaluacion: ev.id_evaluacion,
-        nota: parseFloat(ev.nota),
-        fecha_evaluacion: ev.fecha_evaluacion,
-        comentarios: ev.comentarios || undefined,
-        jurado
-      };
-    });
-    console.log('evaluaciones>>>', evaluaciones)
-
-    formData.append('evaluaciones', JSON.stringify(evaluacionesData));
-
     let resultado;
     if (isEditing && id) {
       resultado = await tesisApi.actualizar(Number(id), formData);
     } else {
       resultado = await tesisApi.crear(formData);
     }
+      console.log(resultado)
+
 
     setLoading(false);
 
@@ -587,7 +511,7 @@ export function TesisForm({ mode }: TesisFormProps) {
               <div className="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
                 <span className="text-cyan-600 font-bold text-sm">2</span>
               </div>
-              <h2 className="text-lg font-bold text-gray-800">Estudiantes</h2>
+              <h2 className="text-lg font-bold text-gray-800">Autores</h2>
             </div>
             <button
               type="button"
@@ -601,7 +525,7 @@ export function TesisForm({ mode }: TesisFormProps) {
           {estudiantes.length === 0 ? (
             <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
               <Users className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500">No hay estudiantes agregados</p>
+              <p className="text-gray-500">No hay autores agregados</p>
             </div>
           ) : (
             estudiantes.map((estudiante, idx) => (
@@ -617,43 +541,8 @@ export function TesisForm({ mode }: TesisFormProps) {
           )}
         </div>
 
-        {/* Evaluaciones */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-cyan-100 rounded-full flex items-center justify-center">
-                <span className="text-cyan-600 font-bold text-sm">3</span>
-              </div>
-              <h2 className="text-lg font-bold text-gray-800">Evaluaciones</h2>
-            </div>
-            <button
-              type="button"
-              onClick={agregarEvaluacion}
-              className="bg-cyan-100 text-cyan-700 px-4 py-2 rounded-lg hover:bg-cyan-200 transition"
-            >
-              + Agregar
-            </button>
-          </div>
+       
 
-          {evaluaciones.length === 0 ? (
-            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-              <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500">No hay evaluaciones agregadas</p>
-            </div>
-          ) : (
-            evaluaciones.map((evaluacion, idx) => (
-              <EvaluacionForm
-                key={idx}
-                index={idx}
-                evaluacion={evaluacion}
-                onUpdateEvaluacion={actualizarEvaluacion}
-                onUpdateJurado={actualizarJurado}
-                onBuscarJurado={buscarJuradoPorCedula}
-                onDelete={eliminarEvaluacion}
-              />
-            ))
-          )}
-        </div>
 
         {/* Botón Enviar */}
         <div className="flex justify-end">
@@ -681,13 +570,6 @@ export function TesisForm({ mode }: TesisFormProps) {
         onCancelar={continuarConNuevoEstudiante}
       />
 
-      <ConfirmarDatosModal
-        visible={modalJuradoVisible}
-        titulo="Jurado encontrado"
-        datos={resultadoJurado}
-        onConfirmar={usarJuradoExistente}
-        onCancelar={continuarConNuevoJurado}
-      />
 
       <MultipleResultsModal
         visible={multipleEstudianteVisible}
@@ -697,13 +579,6 @@ export function TesisForm({ mode }: TesisFormProps) {
         onCancel={continuarConNuevoEstudiante}
       />
 
-      <MultipleResultsModal
-        visible={multipleJuradoVisible}
-        title="Seleccionar Jurado"
-        results={resultadosMultiplesJurados}
-        onSelect={usarJuradoMultiple}
-        onCancel={continuarConNuevoJurado}
-      />
     </div>
   );
 }

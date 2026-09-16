@@ -4,6 +4,7 @@ import { authMiddleware, requireAuth } from '../middlewares/authMiddleware.js';
 import { tipoCarreraController } from '../controllers/tipoCarreraController.js';
 import { tipoTrabajoController } from '../controllers/tipoTrabajoController.js';
 import { carreraTipoTrabajoController } from '../controllers/carreraTipoTrabajoController.js';
+import { verificarPermiso } from '../middlewares/permisosMiddlewere.js';
 const router = express.Router();
 
 router.use(authMiddleware);
@@ -15,11 +16,12 @@ router.get('/:id/tipos-trabajo', carreraController.getTiposTrabajoByCarrera);
 
 router.get('/', carreraController.getCarreras);
 router.get('/byId/:id', carreraController.getCarreraById);
-router.post('/save',requireAuth, carreraController.createCarrera);
-router.put('/upload/:id',requireAuth, carreraController.updateCarrera);
+router.post('/save',requireAuth,  verificarPermiso('especialidad', 'crear'), carreraController.createCarrera);
+router.put('/upload/:id',requireAuth, verificarPermiso('especialidad', 'editar'), carreraController.updateCarrera);
 
-router.delete('/:id', requireAuth, carreraController.deleteCarrera);
+router.delete('/:id', requireAuth, verificarPermiso('especialidad', 'eliminar'), carreraController.deleteCarrera);
 
+// esto es para la relacion de carreras y tipos de trabajo 
 // ===== TIPOS DE CARRERA =====
 router.get('/tipos-carrera',  tipoCarreraController.listar);
 router.post('/tipos-carrera',  tipoCarreraController.crear);

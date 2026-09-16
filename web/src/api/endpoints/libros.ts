@@ -36,4 +36,8 @@ export const librosApi = {
         const response = await apiClient.delete<{ success: boolean }>(`/libross/delete/${id}`);
         return response.success;
     },
+
+    getTiposRecursos: async () => {
+        return await apiClient.get('/libros/tipos-recursos');
+    },
 };

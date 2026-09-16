@@ -34,6 +34,7 @@ import { authMiddleware } from './src/middlewares/authMiddleware.js';
 import { auditMiddleware } from './src/middlewares/auditMiddleware.js';
 import downloadRoutes from './src/routes/downloadRoutes.js';
 import headerRoutes from './src/routes/headerRoutes.js';
+import permisosRoutes from './src/routes/permisosRoutes.js';
 
 // Middlewares
 // Configuración de cors
@@ -58,6 +59,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/perfil', perfilRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/auditoria', auditRoutes);
+app.use('/api/admin/permisos', permisosRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/api', headerRoutes);
 

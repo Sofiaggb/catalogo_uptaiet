@@ -14,16 +14,13 @@ CREATE OR REPLACE FUNCTION tesis.crear_tesis(
 	p_anio_elaboracion INT ,
     p_url_documento VARCHAR(500) DEFAULT NULL,    
     p_estudiantes JSONB DEFAULT '[]'::jsonb,    
-    p_evaluaciones JSONB DEFAULT '[]'::jsonb,    
     p_creado_por INTEGER DEFAULT NULL
 )
 RETURNS JSONB AS $$
 DECLARE
     v_id_tesis INT;
     v_estudiante JSONB;
-    v_evaluacion JSONB;
     v_id_estudiante INT;
-    v_id_jurado INT;
     v_error TEXT;
 BEGIN
 
@@ -121,74 +118,7 @@ BEGIN
         
     END LOOP;
     
-    -----------------------------------
-    -- EVALUACIONES y JURADOS
-    ----------------------------------
-    FOR v_evaluacion IN SELECT * FROM jsonb_array_elements(p_evaluaciones) LOOP
-        IF v_evaluacion ? 'jurado' THEN
-            
-            -- Caso 1: Jurado con ID existente
-             IF v_evaluacion->'jurado' ? 'id_jurado' AND (v_evaluacion->'jurado'->>'id_jurado') IS NOT NULL THEN
-                v_id_jurado := (v_evaluacion->'jurado'->>'id_jurado')::INT;
-                
-              IF EXISTS (SELECT 1 FROM personas.jurado WHERE id_jurado = v_id_jurado AND fecha_eliminacion IS NULL) THEN
-                    UPDATE personas.jurado
-					SET nombre_completo = v_evaluacion->'jurado'->>'nombre_completo',
-						titulo_profesional = v_evaluacion->'jurado'->>'titulo_profesional'
-					WHERE id_jurado = v_id_jurado;
-               END IF;
-            
-            --  Crear jurado por nombre/cedula
-            ELSIF v_evaluacion->'jurado' ? 'nombre_completo' THEN
-                
-                -- Verificar si ya existe por cedula
-                SELECT id_jurado INTO v_id_jurado
-                FROM personas.jurado
-                WHERE cedula = (v_evaluacion->'jurado'->>'cedula')
-                AND fecha_eliminacion IS NULL
-                LIMIT 1;
-                
-                IF v_id_jurado IS  NULL THEN
-                    -- Crear nuevo jurado
-                    INSERT INTO personas.jurado (
-                        nombre_completo,
-                        titulo_profesional,
-                        cedula,
-						id_usuario_creacion
-                    ) VALUES (
-                        v_evaluacion->'jurado'->>'nombre_completo',
-                        v_evaluacion->'jurado'->>'titulo_profesional',
-                        v_evaluacion->'jurado'->>'cedula',
-                        p_creado_por
-                    )
-                    RETURNING id_jurado INTO v_id_jurado;
-                    
-                END IF;
-            ELSE
-                RAISE WARNING 'Jurado inválido, se omite: %', v_evaluacion;
-                CONTINUE;
-            END IF;
-            
-            -- Crear evaluación
-            INSERT INTO tesis.evaluacion_tesis (
-                id_tesis,
-                id_jurado,
-                nota,
-                fecha_evaluacion,
-                comentarios,
-				id_usuario_creacion
-            ) VALUES (
-                v_id_tesis,
-                v_id_jurado,
-                COALESCE((v_evaluacion->>'nota')::DECIMAL(4,2), 0),
-                COALESCE((v_evaluacion->>'fecha_evaluacion')::DATE, NOW()),
-                v_evaluacion->>'comentarios',
-                p_creado_por
-            );
-        END IF;
-    END LOOP;
-    
-    
+
     --  RESULTADO    
     RETURN jsonb_build_object(
         'success', TRUE,
@@ -266,38 +196,9 @@ BEGIN
             JOIN personas.estudiante est ON te.id_estudiante = est.id_estudiante
             WHERE te.id_tesis = t.id_tesis
 			AND te.fecha_eliminacion IS NULL
-        ), '[]'::jsonb) AS estudiantes,
+        ), '[]'::jsonb) AS estudiantes
 
-        -- Evaluaciones
-        COALESCE((
-            SELECT jsonb_agg(
-                jsonb_build_object(
-                    'id_evaluacion', ev.id_evaluacion,
-                    'nota', ev.nota,
-                    'fecha_evaluacion', TO_CHAR(ev.fecha_evaluacion, 'DD/MM/YYYY')   ,
-                    'comentarios', ev.comentarios,
-                    'jurado', jsonb_build_object(
-                        'id_jurado', j.id_jurado,
-                        'nombre_completo', j.nombre_completo,
-                        'titulo_profesional', j.titulo_profesional,
-                        'cedula', j.cedula
-                    )
-                )
-                ORDER BY ev.fecha_evaluacion DESC
-            )
-            FROM tesis.evaluacion_tesis ev
-            JOIN personas.jurado j ON ev.id_jurado = j.id_jurado
-            WHERE ev.id_tesis = t.id_tesis
-            AND ev.fecha_eliminacion IS NULL
-        ), '[]'::jsonb) as evaluaciones,
-
-        -- Promedio
-        (
-            SELECT ROUND(AVG(ev.nota), 2)
-            FROM tesis.evaluacion_tesis ev
-            WHERE ev.id_tesis = t.id_tesis
-            AND ev.fecha_eliminacion IS NULL
-        ) as promedio_nota    
+    
     FROM tesis.tesis t
     JOIN catalogo.carrera c ON t.id_carrera = c.id_carrera
 	JOIN catalogo.tipo_carrera tc ON tc.id_tipo_carrera = c.id_tipo_carrera
@@ -381,8 +282,7 @@ BEGIN
             e.id_estado,
             e.nombre_estado,
 			t.vistas,
-            COALESCE(te.total_estudiantes, 0) AS total_estudiantes,
-            ev.promedio_nota
+            COALESCE(te.total_estudiantes, 0) AS total_estudiantes
         FROM filtros t
         JOIN catalogo.carrera c ON t.id_carrera = c.id_carrera
         LEFT JOIN control.estado e ON t.id_estado = e.id_estado
@@ -391,15 +291,8 @@ BEGIN
             FROM tesis.tesis_estudiante
             GROUP BY id_tesis
         ) te ON te.id_tesis = t.id_tesis
-        LEFT JOIN (
-            SELECT id_tesis, ROUND(AVG(nota), 2) AS promedio_nota
-            FROM tesis.evaluacion_tesis
-            WHERE fecha_eliminacion IS NULL
-            GROUP BY id_tesis
-        ) ev ON ev.id_tesis = t.id_tesis
         ORDER BY 
             CASE WHEN p_sort = 'vistas' THEN t.vistas END DESC,
-            CASE WHEN p_sort = 'calificacion' THEN ev.promedio_nota END DESC NULLS LAST,
             CASE WHEN p_sort = 'reciente' OR p_sort IS NULL THEN t.fecha_creacion END DESC
         LIMIT p_limit OFFSET p_offset
     ),
@@ -508,15 +401,12 @@ CREATE OR REPLACE FUNCTION tesis.editar_tesis(
     p_anio_elaboracion INT,
     p_url_documento VARCHAR(500) DEFAULT NULL,
     p_estudiantes JSONB DEFAULT '[]'::jsonb,
-    p_evaluaciones JSONB DEFAULT '[]'::jsonb,
     p_editado_por INTEGER DEFAULT NULL
 )
 RETURNS JSONB AS $$
 DECLARE
     v_estudiante JSONB;
-    v_evaluacion JSONB;
     v_id_estudiante INT;
-    v_id_jurado INT;
 BEGIN
     -- Verificar que la tesis existe y no está eliminada
     IF NOT EXISTS (SELECT 1 FROM tesis.tesis WHERE id_tesis = p_id_tesis AND fecha_eliminacion IS NULL) THEN
@@ -602,100 +492,7 @@ BEGIN
 		ON CONFLICT (id_tesis, id_estudiante) DO NOTHING;
     END LOOP;
     
-    -- ==========================================
-    -- EVALUACIONES Y JURADOS
-    -- ==========================================    
-    -- Eliminar evaluaciones que ya no están
-
-    UPDATE tesis.evaluacion_tesis
-	SET fecha_eliminacion = now(),
-		id_usuario_eliminacion = p_editado_por
-    WHERE id_tesis = p_id_tesis
-    AND id_evaluacion NOT IN (
-        SELECT (elem->>'id_evaluacion')::INT
-        FROM jsonb_array_elements(p_evaluaciones) elem
-        WHERE elem ? 'id_evaluacion' AND (elem->>'id_evaluacion') IS NOT NULL
-    );
-    
-    --  AGREGAR O ACTUALIZAR EVALUACIONES    
-    FOR v_evaluacion IN SELECT * FROM jsonb_array_elements(p_evaluaciones) LOOP
-        IF v_evaluacion ? 'jurado' THEN
-            
-            -- Caso 1: Jurado con ID existente
-            IF v_evaluacion->'jurado' ? 'id_jurado' AND (v_evaluacion->'jurado'->>'id_jurado') IS NOT NULL THEN
-                v_id_jurado := (v_evaluacion->'jurado'->>'id_jurado')::INT;
-                
-                IF EXISTS (SELECT 1 FROM personas.jurado WHERE id_jurado = v_id_jurado AND fecha_eliminacion IS NULL) THEN
-				 	UPDATE personas.jurado
-					SET nombre_completo = v_evaluacion->'jurado'->>'nombre_completo',
-						titulo_profesional = v_evaluacion->'jurado'->>'titulo_profesional'
-					WHERE id_jurado = v_id_jurado;
-               END IF;
-            
-            -- Caso 2: Crear jurado por nombre/cedula
-            ELSIF v_evaluacion->'jurado' ? 'nombre_completo' THEN
-                
-                -- Verificar si ya existe por cedula
-                SELECT id_jurado INTO v_id_jurado
-                FROM personas.jurado
-                WHERE cedula = (v_evaluacion->'jurado'->>'cedula')
-                AND fecha_eliminacion IS NULL
-                LIMIT 1;
-                
-                IF v_id_jurado IS  NULL THEN
-                    -- Crear nuevo jurado
-                    INSERT INTO personas.jurado (
-                        nombre_completo,
-                        titulo_profesional,
-                        cedula,
-                        id_usuario_creacion
-                    ) VALUES (
-                        v_evaluacion->'jurado'->>'nombre_completo',
-                        v_evaluacion->'jurado'->>'titulo_profesional',
-                        v_evaluacion->'jurado'->>'cedula',
-                        p_editado_por
-                    )
-                    RETURNING id_jurado INTO v_id_jurado;
-                    
-                END IF;
-            ELSE
-                RAISE WARNING 'Jurado inválido, se omite: %', v_evaluacion;
-                CONTINUE;
-            END IF;
-            
-            -- Verificar si la evaluación ya existe (por ID)
-            IF v_evaluacion ? 'id_evaluacion' AND (v_evaluacion->>'id_evaluacion') IS NOT NULL THEN
-                -- Actualizar evaluación existente
-                UPDATE tesis.evaluacion_tesis
-                SET 
-                    id_jurado = v_id_jurado,
-                    nota = COALESCE((v_evaluacion->>'nota')::DECIMAL(4,2), 0),
-                    fecha_evaluacion = COALESCE((v_evaluacion->>'fecha_evaluacion')::DATE, NOW()),
-                    comentarios = v_evaluacion->>'comentarios',
-                    id_usuario_modificacion = p_editado_por,
-                    fecha_modificacion = NOW()
-                WHERE id_evaluacion = (v_evaluacion->>'id_evaluacion')::INT
-                AND id_tesis = p_id_tesis;
-            ELSE
-                -- Crear nueva evaluación
-                INSERT INTO tesis.evaluacion_tesis (
-                    id_tesis,
-                    id_jurado,
-                    nota,
-                    fecha_evaluacion,
-                    comentarios,
-                    id_usuario_creacion
-                ) VALUES (
-                    p_id_tesis,
-                    v_id_jurado,
-                    COALESCE((v_evaluacion->>'nota')::DECIMAL(4,2), 0),
-                    COALESCE((v_evaluacion->>'fecha_evaluacion')::DATE, NOW()),
-                    v_evaluacion->>'comentarios',
-                    p_editado_por
-                );
-            END IF;
-        END IF;
-    END LOOP;
+   
     
     --  RESULTADO    
     RETURN jsonb_build_object(

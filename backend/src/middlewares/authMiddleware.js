@@ -50,8 +50,8 @@ export const requireRole = (roles) => {
                 message: 'Debes iniciar sesión'
             });
         }
-        console.log('rol>>>>>',req.usuario.id_rol)
-        console.log('roles>>>>>',roles)
+        // console.log('rol>>>>>',req.usuario.id_rol)
+        // console.log('roles>>>>>',roles)
 
         if (!roles.includes(req.usuario.id_rol)) {
             return res.status(403).json({

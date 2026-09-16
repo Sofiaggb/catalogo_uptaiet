@@ -5,7 +5,7 @@ import path from 'path';
 
 export const libroController = {
   createLibro: async (req, res) => {
-    const { id_materia, titulo, autor, editorial, year} = req.body;
+    const { id_materia, titulo, autor, editorial, year, id_tipo_recurso } = req.body;
     // Obtener la ruta del archivo subido (si existe)
     let url_documento = null;
     console.log('req.file',req.file)
@@ -18,14 +18,15 @@ export const libroController = {
 
     try {
       const result = await pool.query(
-        `SELECT recursos.libro_crear($1, $2, $3, $4, $5, $6,$7) AS resultado`,
+        `SELECT recursos.libro_crear($1, $2, $3, $4, $5, $6, $7, $8) AS resultado`,
         [ id_materia,
           titulo,
           autor ,
           editorial,
           year,
           url_documento || null,
-          req.usuario?.id_usuario || null
+          req.usuario?.id_usuario || null,
+          id_tipo_recurso
         ]
       );
 
@@ -124,7 +125,7 @@ export const libroController = {
   // Editar tesis existente
   updateLibro: async (req, res) => {
     const { id } = req.params;
-    const { id_materia, titulo, autor, editorial, year} = req.body;
+    const { id_materia, titulo, autor, editorial, year, id_tipo_recurso } = req.body;
     let url_documento = null;
     let oldFilePath = null;
     
@@ -148,7 +149,7 @@ export const libroController = {
             
       // Llamar a la función de PostgreSQL
       const result = await pool.query(
-               `SELECT recursos.libro_edit($1, $2, $3, $4, $5, $6, $7, $8) AS resultado`,
+               `SELECT recursos.libro_edit($1, $2, $3, $4, $5, $6, $7, $8, $9) AS resultado`,
         [ id,
           id_materia,
           titulo,
@@ -156,7 +157,8 @@ export const libroController = {
           editorial,
           year,
           url_documento || null,
-          req.usuario?.id_usuario || null
+          req.usuario?.id_usuario || null,
+          id_tipo_recurso
         ]    
       );
       
@@ -201,5 +203,28 @@ export const libroController = {
     }
   },
 
+  getTiposRecursos: async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT t.id_tipo_recurso, t.nombre
+             FROM recursos.tipo_recurso  t
+             WHERE t.fecha_eliminacion IS NULL
+             ORDER BY t.nombre`,
+      );
+
+      // Formato de respuesta
+      res.json({
+        success: true,
+        data: result.rows,
+        count: result.rows.length,
+      });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener las carreras",
+      });
+    }
+  },
 
 }

@@ -152,7 +152,7 @@ export function Footer() {
           <div className="flex gap-6 text-sm">
             <Link to="/" className="hover:text-yellow-500 transition">Inicio</Link>
             <Link to="/tesis" className="hover:text-yellow-500 transition">Proyectos</Link>
-            <Link to="/libros" className="hover:text-yellow-500 transition">Libros</Link>
+            <Link to="/libros" className="hover:text-yellow-500 transition">Recursos</Link>
           </div>
           
           <p className="text-xs">

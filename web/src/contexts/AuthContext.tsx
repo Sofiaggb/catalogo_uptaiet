@@ -35,6 +35,7 @@ interface User {
   id_rol: number;
   rol: string;
   foto_perfil?: string;
+  permisos?: string[];
 }
 
 interface AuthContextType {

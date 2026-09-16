@@ -252,6 +252,7 @@ CREATE OR REPLACE FUNCTION seguridad.usuario_login(
 RETURNS JSONB AS $$
 DECLARE
     v_usuario RECORD;
+    v_permisos JSONB;
 BEGIN
     -- Validar campos
     IF p_identificador IS NULL OR p_password IS NULL THEN
@@ -281,6 +282,37 @@ BEGIN
     
     -- Verificar contraseña
     IF v_usuario.password = crypt(p_password, v_usuario.password) THEN
+
+	 	-- Obtener los permisos del usuario 
+		SELECT COALESCE(jsonb_agg(p.modulo || ':' || p.accion), '[]'::jsonb)
+		INTO v_permisos
+		FROM seguridad.permiso p
+		WHERE 
+		    --   NO esté bloqueado  
+		    NOT EXISTS (
+		        SELECT 1 FROM seguridad.usuario_permiso up
+		        WHERE up.id_usuario = v_usuario.id_usuario 
+		        AND up.id_permiso = p.id_permiso 
+		        AND up.activo = FALSE 
+		        AND up.fecha_eliminacion IS NULL
+		    )
+		    --  que venga por ROL o por EXTRA (agrupado con paréntesis)
+		    AND (
+		        -- Permisos por ROL
+		        EXISTS (
+		            SELECT 1 FROM seguridad.rol_permiso rp 
+		            WHERE rp.id_rol = v_usuario.id_rol 
+		            AND rp.id_permiso = p.id_permiso
+		        )
+		        -- Permisos EXTRA (activos y vigentes)
+		        OR EXISTS (
+		            SELECT 1 FROM seguridad.usuario_permiso up
+		            WHERE up.id_usuario = v_usuario.id_usuario 
+		            AND up.id_permiso = p.id_permiso 
+		            AND up.activo = TRUE 
+		            AND up.fecha_eliminacion IS NULL
+		        )
+		    );
         
         RETURN jsonb_build_object(
             'success', TRUE,
@@ -293,7 +325,8 @@ BEGIN
                 'rol', v_usuario.rol_nombre,
                 'id_rol', v_usuario.id_rol,
                 'fecha_creacion', v_usuario.fecha_creacion,
-                'foto_perfil', v_usuario.foto_perfil
+                'foto_perfil', v_usuario.foto_perfil,
+                'permisos', v_permisos
             )
         );
     ELSE
@@ -304,6 +337,99 @@ BEGIN
         );
     END IF;
     
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 500,
+            'message', SQLERRM,
+            'codigo', SQLSTATE
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+CREATE OR REPLACE FUNCTION seguridad.get_usuario(p_id_usuario INT)
+RETURNS JSONB AS $$
+DECLARE
+    v_usuario RECORD;
+    v_permisos JSONB;
+BEGIN
+    --  Obtener los datos del usuario
+    SELECT 
+        u.id_usuario,
+        u.email,
+        u.nombre,
+        u.foto_perfil,
+        u.fecha_creacion,
+        r.id_rol,
+        r.nombre AS rol
+    INTO v_usuario
+    FROM seguridad.usuario u
+    JOIN seguridad.rol r ON u.id_rol = r.id_rol
+    WHERE u.id_usuario = p_id_usuario 
+      AND u.fecha_eliminacion IS NULL;
+
+    -- Si no existe el usuario
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 404,
+            'message', 'Usuario no encontrado'
+        );
+    END IF;
+
+    --  Obtener los permisos del usuario
+    SELECT COALESCE(jsonb_agg(p.modulo || ':' || p.accion), '[]'::jsonb)
+    INTO v_permisos
+    FROM seguridad.permiso p
+    WHERE 
+        -- Que NO esté bloqueado
+        NOT EXISTS (
+            SELECT 1 FROM seguridad.usuario_permiso up
+            WHERE up.id_usuario = p_id_usuario
+              AND up.id_permiso = p.id_permiso 
+              AND up.activo = FALSE 
+              AND up.fecha_eliminacion IS NULL
+        )
+        -- Y que venga por ROL o por EXTRA
+        AND (
+            -- Permisos por ROL
+            EXISTS (
+                SELECT 1 FROM seguridad.rol_permiso rp 
+                WHERE rp.id_rol = v_usuario.id_rol   
+                  AND rp.id_permiso = p.id_permiso
+            )
+            -- Permisos EXTRA
+            OR EXISTS (
+                SELECT 1 FROM seguridad.usuario_permiso up
+                WHERE up.id_usuario = p_id_usuario
+                  AND up.id_permiso = p.id_permiso 
+                  AND up.activo = TRUE 
+                  AND up.fecha_eliminacion IS NULL
+            )
+        );
+
+    --   Retornar la respuesta completa
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'status', 200,
+        'message', 'Usuario obtenido correctamente',
+        'data', jsonb_build_object(
+            'id_usuario', v_usuario.id_usuario,
+            'email', v_usuario.email,
+            'nombre', v_usuario.nombre,
+            'rol', v_usuario.rol,
+            'id_rol', v_usuario.id_rol,
+            'fecha_creacion', v_usuario.fecha_creacion,
+            'foto_perfil', v_usuario.foto_perfil,
+            'permisos', v_permisos
+        )
+    );
+
 EXCEPTION
     WHEN OTHERS THEN
         RETURN jsonb_build_object(

@@ -17,7 +17,7 @@ export const auditMiddleware = async (req, res, next) => {
         // Obtener User Agent
         const userAgent = req.headers['user-agent'] || null;
         
-        console.log(' Audit Middleware:', { userId, ip, userAgent: userAgent?.substring(0, 50) });
+        // console.log(' Audit Middleware:', { userId, ip, userAgent: userAgent?.substring(0, 50) });
         
         // Establecer variables de sesión en PostgreSQL
         if (pool) {
@@ -33,7 +33,7 @@ export const auditMiddleware = async (req, res, next) => {
                     current_setting('app.current_ip', true) as ip,
                     current_setting('app.current_user_agent', true) as user_agent
             `);
-            console.log('Variables guardadas:', checkResult.rows[0]);
+            // console.log('Variables guardadas:', checkResult.rows[0]);
         }
         
     } catch (error) {

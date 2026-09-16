@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Book, User, Building, Calendar, FileText, Edit,  ExternalLink } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { librosApi } from '../../api/endpoints/libros';
+import { usePermiso } from '../../hooks/usePermiso';
 
 interface LibroDetail {
   id_libro: number;
@@ -14,13 +15,16 @@ interface LibroDetail {
   descripcion: string;
   id_materia: number;
   materia: string;
+  tipo_recurso:string;
   fecha_creacion: string;
 }
 
 export function LibroDetail() {
   const { id } = useParams();
+  const editarLibro = usePermiso('recursos', 'editar');
+
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [libro, setLibro] = useState<LibroDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +62,7 @@ export function LibroDetail() {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
-        <p className="text-gray-500 ml-3">Cargando libro...</p>
+        <p className="text-gray-500 ml-3">Cargando recurso...</p>
       </div>
     );
   }
@@ -67,8 +71,8 @@ export function LibroDetail() {
     return (
       <div className="text-center py-20">
         <Book className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-700">Libro no encontrado</h2>
-        <p className="text-gray-500 mt-2">El libro que buscas no existe o ha sido eliminado</p>
+        <h2 className="text-2xl font-bold text-gray-700">Recurso no encontrado</h2>
+        <p className="text-gray-500 mt-2">El recurso que buscas no existe o ha sido eliminado</p>
         <Link to="/libros" className="inline-block mt-6 text-cyan-600 hover:underline">
           ← Volver al listado
         </Link>
@@ -81,7 +85,7 @@ export function LibroDetail() {
       {/* Header con breadcrumb */}
       <div className="mb-6">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-          <Link to="/libros" className="hover:text-cyan-600">Libros</Link>
+          <Link to="/libros" className="hover:text-cyan-600">Recursos</Link>
           <span>/</span>
           <span className="text-gray-700 line-clamp-1">{libro.titulo}</span>
         </div>
@@ -95,7 +99,7 @@ export function LibroDetail() {
             Volver
           </button>
           
-          {isAuthenticated  && [2, 3, 4].includes(user?.id_rol) && (
+          {isAuthenticated  && editarLibro && (
             <div className="flex gap-2">
               <button
                 onClick={handleEdit}
@@ -115,6 +119,12 @@ export function LibroDetail() {
         <h1 className="text-3xl md:text-4xl font-bold mb-3">{libro.titulo}</h1>
         
         <div className="flex flex-wrap gap-3 mt-4">
+          {libro.tipo_recurso && (
+            <span className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full text-sm">
+              <User className="h-3 w-3" />
+              {libro.tipo_recurso}
+            </span>
+          )}
           {libro.autor && (
             <span className="flex items-center gap-1 bg-white/20 px-3 py-1 rounded-full text-sm">
               <User className="h-3 w-3" />

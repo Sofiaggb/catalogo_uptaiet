@@ -8,9 +8,12 @@ import { tesisApi } from '../api/endpoints/tesis';
 import { carrerasApi } from '../api/endpoints/carreras';
 import { librosApi } from '../api/endpoints/libros';
 import type { Carrera, Tesis } from '../api/types';
+import { usePermiso } from '../hooks/usePermiso';
 
 export function Home() {
   const { isAuthenticated, user } = useAuth();
+  const puedeVerCarreras = usePermiso('especialidad', 'ver');
+  const puedeVerMaterias = usePermiso('materia', 'ver');
   const [stats, setStats] = useState({
     tesis: 0,
     libros: 0,
@@ -175,33 +178,34 @@ export function Home() {
             className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
           >
             <Library className="h-10 w-10 text-white mx-auto mb-3" />
-            <p className="text-white font-semibold">Libros</p>
+            <p className="text-white font-semibold">Recursos</p>
             <p className="text-white/70 text-sm">{stats.libros} títulos</p>
           </Link>
 
           {isAuthenticated && (
             <>
-              {[3, 4].includes(user?.id_rol) && (
-                <>
-                  <Link
-                    to="/carreras"
-                    className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
-                  >
-                    <GraduationCap className="h-10 w-10 text-white mx-auto mb-3" />
-                    <p className="text-white font-semibold">Carreras</p>
-                    <p className="text-white/70 text-sm">{stats.carreras} programas</p>
-                  </Link>
+              {puedeVerCarreras && (
 
-                  <Link
-                    to="/materias"
-                    className="bg-linear-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
-                  >
-                    <BookOpen className="h-10 w-10 text-white mx-auto mb-3" />
-                    <p className="text-white font-semibold">Materias</p>
-                    <p className="text-white/70 text-sm">Plan de estudios</p>
-                  </Link>
-                </>
+                <Link
+                  to="/carreras"
+                  className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+                >
+                  <GraduationCap className="h-10 w-10 text-white mx-auto mb-3" />
+                  <p className="text-white font-semibold">Especialidades</p>
+                  <p className="text-white/70 text-sm">{stats.carreras} programas</p>
+                </Link>
               )}
+              {puedeVerMaterias && (
+                <Link
+                  to="/materias"
+                  className="bg-linear-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"
+                >
+                  <BookOpen className="h-10 w-10 text-white mx-auto mb-3" />
+                  <p className="text-white font-semibold">Materias</p>
+                  <p className="text-white/70 text-sm">Plan de estudios</p>
+                </Link>
+              )}
+
               <Link
                 to="/perfil"
                 className="bg-linear-to-br from-teal-500 to-teal-600 rounded-xl p-6 text-center hover:scale-105 transition-transform"

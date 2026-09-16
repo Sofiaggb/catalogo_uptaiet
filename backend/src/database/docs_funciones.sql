@@ -8,8 +8,9 @@ CREATE OR REPLACE FUNCTION recursos.libro_crear(
     p_autor VARCHAR,
     p_editorial VARCHAR,	
 	p_year INT ,
-    p_url_documento VARCHAR(500) DEFAULT NULL,    
-    p_creado_por INTEGER DEFAULT NULL
+    p_url_documento VARCHAR(500) ,    
+    p_creado_por INTEGER,
+	p_id_tipo_recurso INTEGER
 )
 RETURNS JSONB AS $$
 DECLARE
@@ -37,6 +38,7 @@ BEGIN
     --  CREAR LA libro    
     INSERT INTO recursos.libro (
 		id_materia ,
+		id_tipo_recurso ,
 	    titulo,
 	    autor ,
 	    editorial ,
@@ -45,6 +47,7 @@ BEGIN
         id_usuario_creacion
     ) VALUES (
 		p_id_materia,
+		p_id_tipo_recurso ,
         TRIM(p_titulo),
         p_autor,
 		p_editorial,
@@ -73,9 +76,11 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
-select recursos.libro_obtener(6)
 ---------- obtener libro completa
+
+---select recursos.libro_obtener(9)
+
+
 CREATE OR REPLACE FUNCTION recursos.libro_obtener(
     p_id_libro INTEGER
 )
@@ -100,18 +105,21 @@ BEGIN
     SELECT row_to_json(libro_data) INTO v_resultado
 	FROM (
         SELECT 
-            d.id_libro,
-            d.titulo,
-            d.editorial,
-            d.year,
-            d.autor,
-            d.url_documento,
+            l.id_libro,
+            l.titulo,
+            l.editorial,
+            l.year,
+            l.autor,
+            l.url_documento,
+			l.id_tipo_recurso,
+			tr.nombre as tipo_recurso,
             m.id_materia,
             m.nombre AS materia,
-			TO_CHAR(d.fecha_creacion, 'DD/MM/YYYY') as fecha_creacion
-        FROM recursos.libro d
-        JOIN catalogo.materia m ON m.id_materia = d.id_materia
-		WHERE d.id_libro = p_id_libro
+			TO_CHAR(l.fecha_creacion, 'DD/MM/YYYY') as fecha_creacion
+        FROM recursos.libro l
+        JOIN catalogo.materia m ON m.id_materia = l.id_materia
+		JOIN recursos.tipo_recurso tr ON tr.id_tipo_recurso = l.id_tipo_recurso
+		WHERE l.id_libro = p_id_libro
 	) AS libro_data;
 
 	RETURN  jsonb_build_object(
@@ -152,32 +160,35 @@ DECLARE
 BEGIN
 
   SELECT COUNT(*) INTO v_total
-    FROM recursos.libro d
-    WHERE d.fecha_eliminacion IS NULL
-    AND (p_id_materia IS NULL OR d.id_materia = ANY(string_to_array(p_id_materia, ',')::int[]))
+    FROM recursos.libro l
+    WHERE l.fecha_eliminacion IS NULL
+    AND (p_id_materia IS NULL OR l.id_materia = ANY(string_to_array(p_id_materia, ',')::int[]))
     AND (p_buscar IS NULL OR 
-        d.titulo ILIKE '%' || p_buscar || '%' OR 
-        d.editorial ILIKE '%' || p_buscar || '%' OR
-        d.autor ILIKE '%' || p_buscar || '%');
+        l.titulo ILIKE '%' || p_buscar || '%' OR 
+        l.editorial ILIKE '%' || p_buscar || '%' OR
+        l.autor ILIKE '%' || p_buscar || '%');
 
     SELECT jsonb_agg(data_docs) INTO v_resultado
     FROM(
         SELECT 
-            d.id_libro,
-            d.titulo,
-            d.autor,
-            d.editorial,
+            l.id_libro,
+            l.titulo,
+            l.autor,
+            l.editorial,
+			l.id_tipo_recurso,
+			tr.nombre as tipo_recurso,
             m.id_materia,
             m.nombre AS materia
-        FROM recursos.libro d
-        JOIN catalogo.materia m ON m.id_materia = d.id_materia
-        WHERE d.fecha_eliminacion IS NULL
-        AND (p_id_materia IS NULL OR d.id_materia = ANY(string_to_array(p_id_materia, ',')::int[]))
+        FROM recursos.libro l
+        JOIN catalogo.materia m ON m.id_materia = l.id_materia
+		JOIN recursos.tipo_recurso tr ON tr.id_tipo_recurso = l.id_tipo_recurso
+        WHERE l.fecha_eliminacion IS NULL
+        AND (p_id_materia IS NULL OR l.id_materia = ANY(string_to_array(p_id_materia, ',')::int[]))
         AND (p_buscar IS NULL OR 
-            d.titulo ILIKE '%' || p_buscar || '%' OR 
-            d.editorial ILIKE '%' || p_buscar || '%' OR
-            d.autor ILIKE '%' || p_buscar || '%' )
-        ORDER BY d.fecha_creacion DESC
+            l.titulo ILIKE '%' || p_buscar || '%' OR 
+            l.editorial ILIKE '%' || p_buscar || '%' OR
+            l.autor ILIKE '%' || p_buscar || '%' )
+        ORDER BY l.fecha_creacion DESC
         LIMIT p_limit OFFSET p_offset
     ) AS data_docs;
 
@@ -210,8 +221,9 @@ CREATE OR REPLACE FUNCTION recursos.libro_edit(
     p_autor VARCHAR,
     p_editorial VARCHAR,	
 	p_year INT ,
-    p_url_documento VARCHAR(500) DEFAULT NULL,    
-    p_editado_por INTEGER DEFAULT NULL
+    p_url_documento VARCHAR(500) ,    
+    p_editado_por INTEGER ,
+	p_id_tipo_recurso INTEGER
 )
 RETURNS JSONB AS $$
 DECLARE
@@ -228,6 +240,7 @@ BEGIN
     --  DATOS BÁSICOS    
     UPDATE recursos.libro
     SET id_materia =p_id_materia ,
+		id_tipo_recurso=p_id_tipo_recurso,
 	    titulo =p_titulo,
 	    autor =p_autor,
 	    editorial =p_editorial ,

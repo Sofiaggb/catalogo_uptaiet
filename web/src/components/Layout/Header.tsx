@@ -86,7 +86,7 @@ export const Header = () => {
               Proyectos
             </Link>
             <Link to="/libros" className="hover:text-yellow-500 transition">
-              Libros
+              Recursos
             </Link>
             
             {isAdmin && (
@@ -160,7 +160,7 @@ export const Header = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               <Library className="h-5 w-5" />
-              <span>Libros</span>
+              <span>Recursos</span>
             </Link>
 
             {isAdmin && (

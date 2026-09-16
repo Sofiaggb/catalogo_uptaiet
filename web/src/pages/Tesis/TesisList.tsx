@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { tesisApi } from '../../api/endpoints/tesis';
 import { carrerasApi } from '../../api/endpoints/carreras';
 import { useDebounce } from '../../hooks/useDebounce';
+import { usePermiso } from '../../hooks/usePermiso';
 
 interface Tesis {
   id_tesis: number;
@@ -16,7 +17,8 @@ interface Tesis {
 }
 
 export function TesisList() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const crearTesis = usePermiso('proyecto', 'crear');
   const [tesis, setTesis] = useState<Tesis[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -141,11 +143,11 @@ export function TesisList() {
           {item.resumen_corto || 'Sin resumen disponible'}
         </p>
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div>
+          {/* <div>
             <span className="bg-yellow-50 text-yellow-600 text-xs font-bold px-2 py-1 rounded-full">
               ★ {item.promedio_nota || 'Nuevo'}
             </span>
-          </div>
+          </div> */}
           <div className="flex items-center gap-1 text-gray-400 text-sm">
             <Eye className="h-4 w-4" />
             <span>{item.vistas || 0} vistas</span>
@@ -177,11 +179,11 @@ export function TesisList() {
                 <span className="text-sm text-gray-500">{item.anio_elaboracion || 2024}</span>
               </div>
             </div>
-            <div className="bg-yellow-50 px-2 py-1 rounded-full">
+            {/* <div className="bg-yellow-50 px-2 py-1 rounded-full">
               <span className="text-xs font-semibold text-yellow-600">
                 ★ {item.promedio_nota || 'Nuevo'}
               </span>
-            </div>
+            </div> */}
           </div>
           <p className="text-gray-600 text-sm mt-2 line-clamp-2">
             {item.resumen_corto || 'Sin resumen disponible'}
@@ -251,7 +253,7 @@ export function TesisList() {
             >
               <option value="reciente">Más reciente</option>
               <option value="vistas">Más visto</option>
-              <option value="calificacion">Mejor calificado</option>
+              {/* <option value="calificacion">Mejor calificado</option> */}
             </select>
 
             <div className="flex bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -399,7 +401,7 @@ export function TesisList() {
       )}
 
       {/* Botón flotante para crear */}
-      {isAuthenticated && [3, 4, 5].includes(user?.id_rol) && (
+      {isAuthenticated && crearTesis && (
         <Link
           to="/proyecto/create"
           className="fixed bottom-6 right-6 bg-cyan-500 rounded-full p-4 shadow-lg hover:bg-cyan-600 transition"

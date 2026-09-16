@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2,  BookOpen, Building, Award,  FileText, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, BookOpen, Building, Award, FileText, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { carrerasApi } from '../../api/endpoints/carreras';
 import { showConfirmAlert, showSuccessAlert, showErrorAlert } from '../../helpers/alerts';
 import type { Carrera } from '../../api/types';
+import { usePermiso } from '../../hooks/usePermiso';
 
 
 export function CarreraDetail() {
+  const editarCarreras = usePermiso('especialidad', 'editar');
+  const eliminarCarreras = usePermiso('especialidad', 'eliminar');
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const [carrera, setCarrera] = useState<Carrera| null>(null);
+  const [carrera, setCarrera] = useState<Carrera | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export function CarreraDetail() {
       'Eliminar Carrera',
       `¿Estás seguro de eliminar "${carrera?.nombre}"? Esta acción no se puede deshacer.`
     );
-    
+
     if (confirmed) {
       const success = await carrerasApi.delete(Number(id));
       if (success) {
@@ -78,7 +81,7 @@ export function CarreraDetail() {
           <span>/</span>
           <span className="text-gray-700">{carrera.nombre}</span>
         </div>
-        
+
         <div className="flex justify-between items-center flex-wrap gap-4">
           <button
             onClick={() => navigate('/carreras')}
@@ -87,25 +90,27 @@ export function CarreraDetail() {
             <ArrowLeft className="h-5 w-5" />
             Volver
           </button>
-          
-          {isAuthenticated && [3, 4].includes(user?.id_rol) && (
-            <div className="flex gap-2">
-              <button
-                onClick={handleEdit}
-                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
-              >
-                <Edit className="h-4 w-4" />
-                Editar
-              </button>
-              {[3].includes(user?.id_rol) && (
 
-              <button
-                onClick={handleDelete}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-              >
-                <Trash2 className="h-4 w-4" />
-                Eliminar
-              </button>
+          {isAuthenticated && (
+            <div className="flex gap-2">
+              {editarCarreras && (
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar
+                </button>
+              )}
+              {eliminarCarreras && (
+
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Eliminar
+                </button>
               )}
             </div>
           )}
@@ -124,10 +129,10 @@ export function CarreraDetail() {
             </span>
           )}
         </div>
-        
+
         <h1 className="text-3xl md:text-4xl font-bold mb-3">{carrera.nombre}</h1>
-        
-     
+
+
       </div>
 
       {/* Información de la carrera */}
@@ -182,7 +187,7 @@ export function CarreraDetail() {
         </div>
       </div>
 
-   
+
     </div>
   );
 }

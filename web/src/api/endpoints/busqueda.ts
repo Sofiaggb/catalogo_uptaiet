@@ -1,7 +1,7 @@
 import { apiClient } from '../client';
 
 export const busquedaApi = {
-  buscarPorCedula: async (tipo: 'estudiante' | 'jurado', cedula: string) => {
+  buscarPorCedula: async (tipo: 'estudiante' , cedula: string) => {
     try {
       return await apiClient.get(`/tesis/${tipo}s/cedula/${cedula}`);
       

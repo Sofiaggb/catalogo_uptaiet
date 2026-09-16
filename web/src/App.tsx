@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Header } from './components/Layout/Header';
 import { Home } from './pages/Home';
 import { TesisList } from './pages/Tesis/TesisList';
@@ -30,30 +30,59 @@ import { Estadisticas } from './pages/Admin/Estadisticas';
 import { Footer } from './components/Layout/Footer';
 import { GestionEncabezado } from './pages/Admin/GestionEncabezado';
 import { GestionTipoCarrera } from './pages/Admin/GestionTipoCarrera';
+import { Permisos } from './pages/Admin/Permisos';
+import { Toaster } from 'react-hot-toast';
+import { useEffect, useRef } from 'react';
+
+// Componente que refresca el usuario al cambiar de ruta
+const REFRESH_COOLDOWN = 60 * 1000; // 1 minuto
+
+function UserRefresher() {
+  const location = useLocation();
+  const { refreshUser, isAuthenticated, user } = useAuth();
+  const lastRefreshRef = useRef(0); // Guarda el timestamp del último refresh
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    const ahora = Date.now();
+    const tiempoDesdeUltimoRefresh = ahora - lastRefreshRef.current;
+
+    // Solo refrescar si pasó el tiempo mínimo desde el último refresh
+    if (tiempoDesdeUltimoRefresh > REFRESH_COOLDOWN) {
+      refreshUser();
+      lastRefreshRef.current = ahora; // Actualizar el timestamp
+    }
+  }, [location.pathname, isAuthenticated, user?.id_usuario]);
+
+  return null;
+}
 
 function App() {
+
   return (
     <AuthProvider>
       <Router>
+        <UserRefresher />
         <div className="min-h-screen bg-white">
           <Header />
-              
+
           <Routes>
-             <Route 
-                path="/admin" 
-                element={
-                  <ProtectedRoute roles={[3]}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="solicitudes" element={<SolicitudesRol />} />
-                <Route path="auditoria" element={<Auditoria />} />
-                <Route path="usuarios" element={<div>Gestión de usuarios</div>} />
-                <Route path="estadisticas" element={<Estadisticas />} />
-                <Route path="encabezado" element={<GestionEncabezado />} />
-                <Route path="configuracionCarreras" element={<GestionTipoCarrera />} />
-              </Route>
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute roles={[3]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="solicitudes" element={<SolicitudesRol />} />
+              <Route path="auditoria" element={<Auditoria />} />
+              <Route path="permisos" element={<Permisos />} />
+              <Route path="estadisticas" element={<Estadisticas />} />
+              <Route path="encabezado" element={<GestionEncabezado />} />
+              <Route path="configuracionCarreras" element={<GestionTipoCarrera />} />
+            </Route>
 
           </Routes>
           <main className="container mx-auto ">
@@ -74,18 +103,18 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-             
+
               {/* proyecots  */}
               <Route path="/proyecto" element={<TesisList />} />
               <Route path="/proyecto/:id" element={<TesisDetail />} />
               <Route path="/proyecto/create" element={
-                <ProtectedRoute roles={[3,4]}>
+                <ProtectedRoute roles={[3, 4]}>
                   <TesisCreate />
                 </ProtectedRoute>
               } />
 
               <Route path="/proyecto/edit/:id" element={
-                <ProtectedRoute roles={[3,4]}>
+                <ProtectedRoute roles={[3, 4]}>
                   <TesisEdit />
                 </ProtectedRoute>
               } />
@@ -94,24 +123,24 @@ function App() {
               <Route path="/carreras" element={<CarrerasList />} />
               <Route path="/carreras/:id" element={<CarreraDetail />} />
               <Route path="/carreras/create" element={
-                <ProtectedRoute roles={[3,4]}>
+                <ProtectedRoute roles={[3, 4]}>
                   <CarrerasCreate />
                 </ProtectedRoute>
               } />
               <Route path="/carreras/edit/:id" element={
-                <ProtectedRoute roles={[3,4]}>
+                <ProtectedRoute roles={[3, 4]}>
                   <CarrerasEdit />
                 </ProtectedRoute>
               } />
               {/* materias  */}
               <Route path="/materias" element={<MateriasList />} />
               <Route path="/materias/create" element={
-                <ProtectedRoute roles={[3,4]}>
+                <ProtectedRoute roles={[3, 4]}>
                   <MateriasCreate />
                 </ProtectedRoute>
               } />
               <Route path="/materias/edit/:id" element={
-                <ProtectedRoute roles={[3,4]}> 
+                <ProtectedRoute roles={[3, 4]}>
                   <MateriasEdit />
                 </ProtectedRoute>
               } />
@@ -120,12 +149,12 @@ function App() {
               <Route path="/libros" element={<LibrosList />} />
               <Route path="/libros/:id" element={<LibroDetail />} />
               <Route path="/libros/create" element={
-                <ProtectedRoute roles={[2,3,4]}>
+                <ProtectedRoute roles={[2, 3, 4]}>
                   <LibrosCreate />
                 </ProtectedRoute>
               } />
               <Route path="/libros/edit/:id" element={
-                <ProtectedRoute roles={[2,3,4]}>
+                <ProtectedRoute roles={[2, 3, 4]}>
                   <LibrosEdit />
                 </ProtectedRoute>
               } />
@@ -133,6 +162,16 @@ function App() {
             </Routes>
           </main>
           <Footer />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000, // Duración en ms del mensaje
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+            }}
+          />
         </div>
       </Router>
     </AuthProvider>

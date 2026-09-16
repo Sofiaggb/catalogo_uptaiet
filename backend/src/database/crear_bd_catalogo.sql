@@ -141,16 +141,6 @@ CREATE TABLE personas.estudiante (
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
 
-CREATE TABLE personas.jurado (
-    id_jurado SERIAL PRIMARY KEY,
-	cedula VARCHAR(20) UNIQUE,
-    nombre_completo VARCHAR(200) NOT NULL,
-    titulo_profesional VARCHAR(150),
-	fecha_creacion timestamp DEFAULT NOW(),
-	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-	fecha_eliminacion timestamp,	
-	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
-);
 
 
 
@@ -205,23 +195,6 @@ CREATE TABLE tesis.tesis_estudiante (
 	UNIQUE(id_tesis, id_estudiante)
 );
 
-CREATE TABLE tesis.evaluacion_tesis (
-    id_evaluacion SERIAL PRIMARY KEY,
-    id_tesis INT NOT NULL REFERENCES tesis.tesis(id_tesis) ON DELETE CASCADE,
-    id_jurado INT NOT NULL REFERENCES personas.jurado(id_jurado) ON DELETE CASCADE,
-    nota DECIMAL(4,2) CHECK (nota >= 0 AND nota <= 20),  -- ejemplo escala 0-20
-    fecha_evaluacion DATE NOT NULL,
-    comentarios TEXT,
-	fecha_creacion timestamp DEFAULT NOW(),
-	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-		fecha_modificacion TIMESTAMP,
-	id_usuario_modificacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-	fecha_eliminacion timestamp,	
-	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-    UNIQUE(id_tesis, id_jurado)  -- un jurado solo evalúa una vez la misma tesis
-);
-
-
 
 -- 4. Esquema para documentos y recursos
 CREATE SCHEMA recursos;
@@ -239,8 +212,21 @@ RENAME COLUMN url_recurso TO url_documento;
 
 */
 
+CREATE TABLE recursos.tipo_recurso (
+  id_tipo_recurso SERIAL  PRIMARY KEY,
+  nombre VARCHAR(50) NOT NULL,
+  fecha_eliminacion timestamp 
+);
+
+INSERT INTO recursos.tipo_recurso ( nombre) 
+VALUES ('Libro'),
+('Guia');
+
+
+
 CREATE TABLE recursos.libro (
     id_libro SERIAL PRIMARY KEY,
+	id_tipo_recurso INTEGER REFERENCES  recursos.tipo_recurso (id_tipo_recurso),
  	id_materia INT NOT NULL REFERENCES catalogo.materia(id_materia) ON DELETE CASCADE,
     titulo VARCHAR(300) NOT NULL,
     autor VARCHAR,
@@ -255,9 +241,11 @@ CREATE TABLE recursos.libro (
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
 
+
+
 ALTER TABLE recursos.libro 
-ADD COLUMN IF NOT EXISTS id_usuario_modificacion INTEGER,
-ADD COLUMN IF NOT EXISTS fecha_modificacion TIMESTAMP ;
+ADD COLUMN id_tipo_recurso INTEGER REFERENCES  recursos.tipo_recurso (id_tipo_recurso);
+-- Los valores serán: 'libro' o 'guia';
 
 -- 4. Esquema para usuario
 CREATE SCHEMA seguridad;
@@ -382,8 +370,93 @@ INSERT INTO configuracion (clave, valor, tipo)
 VALUES ('encabezado_imagen', NULL, 'imagen');
 
 
---  nuevo de rol
-/*
-ALTER TABLE seguridad.solicitud_rol 
-add COLUMN id_rol_actual  INTEGER REFERENCES seguridad.rol(id_rol) ;
-*/
+
+
+
+
+--  Tabla de permisos 
+
+CREATE TABLE IF NOT EXISTS seguridad.permiso (
+    id_permiso SERIAL PRIMARY KEY,
+    modulo VARCHAR(50) NOT NULL,  -- Ej: 'proyecto', 'libro', 'usuario', 'roles'
+    accion VARCHAR(50) NOT NULL,  -- Ej: 'crear', 'editar', 'aprobar', 'eliminar', 'ver'
+    titulo TEXT,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+	  fecha_eliminacion TIMESTAMP,
+    UNIQUE (modulo, accion)       -- Evita duplicados
+);
+
+--  Insertar la matriz de permisos inicial
+INSERT INTO seguridad.permiso (modulo, accion, titulo) VALUES
+-- Módulo Libros / Recursos
+('recursos', 'crear', 'Registrar recursos'),
+('recursos', 'editar', 'Editar recursos'),
+('recursos', 'aprobar', 'Aprobar o rechazar recursos'),
+
+-- Módulo Proyectos / Tesis
+('proyecto', 'crear', 'Registrar proyectos'),
+('proyecto', 'editar', 'Permite editar proyectos'),
+('proyecto', 'aprobar', 'Aprobar o rechazar proyectos'),
+
+-- Módulo carreras / especialidades
+('especialidad', 'crear', 'Registrar especialidades'),
+('especialidad', 'editar', 'Editar especialidad'),
+('especialidad', 'ver', 'Vizualizar  especialidades'),
+('especialidad', 'eliminar', 'Eliminar  especialidades'),
+
+-- Módulo materia
+('materia', 'crear', 'Registrar materias'),
+('materia', 'editar', 'Editar materias'),
+('materia', 'ver', 'Vizualizar  materias'),
+('materia', 'eliminar', 'Eliminar  materias'),
+
+-- auditoria
+('auditoria', 'ver', 'Vizualizar auditoria'),
+
+-- Módulo Usuario
+('usuario', 'aprobar_cambio', 'Administrar solicitud cambio de rol'),
+('usuario', 'dar_permisos', 'Administrar permisos de usuarios'),
+
+
+
+
+--  Tabla de roles y permisos (La matriz que define qué rol puede hacer qué)
+CREATE TABLE IF NOT EXISTS seguridad.rol_permiso (
+    id_rol_permiso SERIAL PRIMARY KEY,
+    id_rol INT NOT NULL REFERENCES seguridad.rol(id_rol) ON DELETE CASCADE,
+    id_permiso INT NOT NULL REFERENCES seguridad.permiso(id_permiso) ON DELETE CASCADE,
+    fecha_creacion TIMESTAMP DEFAULT NOW(),
+  fecha_eliminacion TIMESTAMP,
+	
+    UNIQUE (id_rol, id_permiso)
+);
+
+-- Ejemplo de asignaciones iniciales (Solo algunas)
+-- Administrador tiene TODO
+INSERT INTO seguridad.rol_permiso (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso FROM seguridad.rol r, seguridad.permiso p 
+WHERE r.nombre = 'administrador'
+on conflict do nothing;
+
+-- Docente SOLO puede crear y ver libros
+INSERT INTO seguridad.rol_permiso (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso 
+FROM seguridad.rol r, seguridad.permiso p 
+WHERE r.nombre = 'docente' AND p.modulo = 'recursos' AND p.accion IN ('crear', 'ver');
+
+-- Bibliotecario puede TODO en libros y proyectos
+INSERT INTO seguridad.rol_permiso (id_rol, id_permiso)
+SELECT r.id_rol, p.id_permiso 
+FROM seguridad.rol r, seguridad.permiso p 
+WHERE r.nombre = 'bibliotecario' AND p.modulo IN ('recursos', 'proyecto');
+
+-- Tabla de permisos EXTRA por usuario (para dar o quitar a individuos)
+CREATE TABLE IF NOT EXISTS seguridad.usuario_permiso (
+    id_usuario_permiso SERIAL PRIMARY KEY,
+    id_usuario INT NOT NULL REFERENCES seguridad.usuario(id_usuario) ON DELETE CASCADE,
+    id_permiso INT NOT NULL REFERENCES seguridad.permiso(id_permiso) ON DELETE CASCADE,
+    activo BOOLEAN DEFAULT TRUE, 
+    fecha_asignacion TIMESTAMP DEFAULT NOW(),
+	  fecha_eliminacion TIMESTAMP,
+    UNIQUE(id_usuario, id_permiso)
+);

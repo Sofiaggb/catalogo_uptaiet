@@ -385,7 +385,7 @@ export function GestionTipoCarrera() {
                                             <td className="p-4 font-medium">{item.nombre_carrera}</td>
                                             <td className="p-4 font-medium text-cyan-600">{item.nombre_trabajo}</td>
                                             <td className="p-4 text-gray-500 text-sm">
-                                                {new Date(item.fecha_creacion).toLocaleDateString()}
+                                                {item.fecha_creacion}
                                             </td>
                                             <td className="p-4 text-center">
                                                 <button

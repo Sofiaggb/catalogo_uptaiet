@@ -146,37 +146,3 @@ export const validateEstudiante = (estudiante: {
         errors
     };
 };
-
-// Validar una evaluación
-export const validateEvaluacion = (evaluacion: {
-    nota: string;
-    fecha_evaluacion: string;
-    comentarios?: string;
-    jurado: {
-        nombre_completo: string;
-        cedula: string;
-        titulo_profesional?: string;
-    };
-}, index: number): { isValid: boolean; errors: string[] } => {
-    const errors: string[] = [];
-
-    const notaError = validateNota(evaluacion.nota);
-    if (notaError) errors.push(`Evaluación ${index + 1}: ${notaError}`);
-
-    const fechaError = validateFecha(evaluacion.fecha_evaluacion);
-    if (fechaError) errors.push(`Evaluación ${index + 1}: ${fechaError}`);
-
-    const nombreJuradoError = validateRequired(evaluacion.jurado.nombre_completo, `El nombre del jurado ${index + 1}`);
-    if (nombreJuradoError) errors.push(`Evaluación ${index + 1}: ${nombreJuradoError}`);
-
-    const cedulaJuradoError = validateCedula(evaluacion.jurado.cedula);
-    if (cedulaJuradoError) errors.push(`Evaluación ${index + 1}: ${cedulaJuradoError}`);
-
-    const tituloError = validateTituloProfesional(evaluacion.jurado.titulo_profesional || '');
-    if (tituloError) errors.push(`Evaluación ${index + 1}: ${tituloError}`);
-
-    return {
-        isValid: errors.length === 0,
-        errors
-    };
-};

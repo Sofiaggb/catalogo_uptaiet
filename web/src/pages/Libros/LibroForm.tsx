@@ -13,6 +13,8 @@ export function LibroForm({ mode }: { mode: 'create' | 'edit' }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditing);
+  const [tipoRecurso, setTipoRecurso] = useState<number | null>(null);
+  const [tiposRecurso, setTiposRecurso] = useState<{ id_tipo_recurso: number, nombre: string }[]>([]);
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [form, setForm] = useState({
@@ -35,6 +37,28 @@ export function LibroForm({ mode }: { mode: 'create' | 'edit' }) {
     documento: '',
 
   });
+
+
+
+  // Dentro del useEffect, agrega:
+  useEffect(() => {
+    cargarMaterias();
+    cargarTiposRecurso(); 
+    if (isEditing && id) {
+      cargarLibro();
+    }
+  }, []);
+
+  const cargarTiposRecurso = async () => {
+    const response = await librosApi.getTiposRecursos();
+    if (response && response.success && Array.isArray(response.data)) {
+      setTiposRecurso(response.data);
+      setTipoRecurso(1);
+    } else {
+      // En caso de que venga vacío o mal formado, ponemos un array vacío para evitar el error
+      setTiposRecurso([]);
+    }
+  };
 
   // Generar años disponibles
   const aniosDisponibles = (() => {
@@ -70,6 +94,7 @@ export function LibroForm({ mode }: { mode: 'create' | 'edit' }) {
         year: libro.year?.toString() || '',
         descripcion: libro.descripcion || '',
       });
+      setTipoRecurso(libro.id_tipo_recurso);
       setDocumentoOriginal(libro.url_documento || '');
     }
     setLoadingData(false);
@@ -92,53 +117,53 @@ export function LibroForm({ mode }: { mode: 'create' | 'edit' }) {
   };
 
   // Función para validar y establecer el archivo
-// Función de validación unificada
-const validateAndSetFile = (file: File) => {
-  // Limpiar errores anteriores
-  setErrors(prev => ({ ...prev, documento: undefined }));
+  // Función de validación unificada
+  const validateAndSetFile = (file: File) => {
+    // Limpiar errores anteriores
+    setErrors(prev => ({ ...prev, documento: undefined }));
 
-  // 1. Validar que no sea un archivo fantasma/sin permisos (size === 0)
-  if (file.size === 0) {
-    setErrors(prev => ({ 
-      ...prev, 
-      documento: 'No se pudo leer el archivo arrastrado (0 bytes). Por favor, haz clic en el área para seleccionarlo directamente.' 
-    }));
-    setDocumento(null);
-    return false;
-  }
-  
-  // 2. Validar que sea PDF
-  const isPdfType = file.type === 'application/pdf';
-  const isPdfExtension = file.name.toLowerCase().endsWith('.pdf');
+    // 1. Validar que no sea un archivo fantasma/sin permisos (size === 0)
+    if (file.size === 0) {
+      setErrors(prev => ({
+        ...prev,
+        documento: 'No se pudo leer el archivo arrastrado (0 bytes). Por favor, haz clic en el área para seleccionarlo directamente.'
+      }));
+      setDocumento(null);
+      return false;
+    }
 
-  if (!isPdfType && !isPdfExtension) {
-    setErrors(prev => ({ 
-      ...prev, 
-      documento: 'Solo se permiten archivos PDF' 
-    }));
-    setDocumento(null);
-    return false;
-  }
-  
-  // 3. Validar tamaño máximo (10MB)
-  const maxSizeMB = 20;
-  const fileSizeMB = file.size / 1024 / 1024;
-  
-  if (file.size > maxSizeMB * 1024 * 1024) {
-    setErrors(prev => ({ 
-      ...prev, 
-      documento: `El archivo no puede superar los ${maxSizeMB}MB (actual: ${fileSizeMB.toFixed(2)} MB)` 
-    }));
-    setDocumento(null);
-    return false;
-  }
-  
-  // Si todo es válido
-  setDocumento(file);
-  setErrors(prev => ({ ...prev, documento: undefined }));
-  console.log(`Archivo válido: ${file.name} (${fileSizeMB.toFixed(2)} MB)`);
-  return true;
-};
+    // 2. Validar que sea PDF
+    const isPdfType = file.type === 'application/pdf';
+    const isPdfExtension = file.name.toLowerCase().endsWith('.pdf');
+
+    if (!isPdfType && !isPdfExtension) {
+      setErrors(prev => ({
+        ...prev,
+        documento: 'Solo se permiten archivos PDF'
+      }));
+      setDocumento(null);
+      return false;
+    }
+
+    // 3. Validar tamaño máximo (10MB)
+    const maxSizeMB = 20;
+    const fileSizeMB = file.size / 1024 / 1024;
+
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      setErrors(prev => ({
+        ...prev,
+        documento: `El archivo no puede superar los ${maxSizeMB}MB (actual: ${fileSizeMB.toFixed(2)} MB)`
+      }));
+      setDocumento(null);
+      return false;
+    }
+
+    // Si todo es válido
+    setDocumento(file);
+    setErrors(prev => ({ ...prev, documento: undefined }));
+    console.log(`Archivo válido: ${file.name} (${fileSizeMB.toFixed(2)} MB)`);
+    return true;
+  };
 
 
   // Manejadores de eventos para drag & drop
@@ -148,11 +173,11 @@ const validateAndSetFile = (file: File) => {
     setIsDragOver(true);
   };
 
-const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-  e.preventDefault();
-  e.stopPropagation();
-  setIsDragOver(false);
-};
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -174,10 +199,10 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     const newErrors: any = {};
     if (!form.titulo.trim()) newErrors.titulo = 'El título es obligatorio';
     if (!form.autor.trim()) newErrors.autor = 'El autor es obligatorio';
-    if (!form.editorial.trim()) newErrors.editorial = 'La editorial es obligatoria';
+    // if (!form.editorial.trim()) newErrors.editorial = 'La editorial es obligatoria';
     if (!form.id_materia) newErrors.id_materia = 'Selecciona una materia';
     if (!form.year) newErrors.year = 'El año es obligatorio';
-
+if (tipoRecurso === 1 && !form.editorial.trim()) newErrors.editorial = 'La editorial es obligatoria';
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -188,9 +213,12 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     const formData = new FormData();
     formData.append('titulo', form.titulo);
     formData.append('autor', form.autor);
-    formData.append('editorial', form.editorial);
+    if (tipoRecurso === 1 && form.editorial) formData.append('editorial', form.editorial);
+    // formData.append('editorial', form.editorial);
     formData.append('id_materia', form.id_materia);
     formData.append('year', form.year);
+    formData.append('id_tipo_recurso', tipoRecurso.toString());
+
     if (form.descripcion) formData.append('descripcion', form.descripcion);
 
     if (documento) {
@@ -199,6 +227,8 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
       formData.append('mantener_documento', 'true');
       formData.append('url_documento_original', documentoOriginal);
     }
+
+    // console.log('recursos  formdata>>>',formData)
 
     let result;
     if (isEditing && id) {
@@ -240,15 +270,39 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {isEditing ? 'Editar Libro' : 'Nuevo Libro'}
+            {isEditing
+              ? (tipoRecurso === 1 ? 'Editar Libro' : 'Editar Guía')
+              : (tipoRecurso === 1 ? 'Nuevo Libro' : 'Nueva Guía')}
           </h1>
           <p className="text-gray-500 text-sm">
-            {isEditing ? 'Modifica los datos del libro' : 'Completa los datos del nuevo libro'}
+            {isEditing
+              ? (tipoRecurso === 1 ? 'Modifica los datos del libro' : 'Modifica los datos de la guía')
+              : (tipoRecurso === 1 ? 'Completa los datos del nuevo libro' : 'Completa los datos de la nueva guía')}
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+
+        {/* SELECTOR DE TIPO DE RECURSO */}
+        <div className="mb-4">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Tipo de recurso *
+          </label>
+          <div className="flex gap-4">
+            {tiposRecurso.map(tipo => (
+              <button
+                key={tipo.id_tipo_recurso}
+                type="button"
+                onClick={() => setTipoRecurso(tipo.id_tipo_recurso)}
+                className={`flex-1 py-3 px-4 border rounded-lg transition ${tipoRecurso === tipo.id_tipo_recurso ? 'border-cyan-500 bg-cyan-50 text-cyan-700' : 'border-gray-300'}`}
+              >
+                {tipo.nombre}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Título */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -275,8 +329,8 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Autor *
-            </label>
+  {tipoRecurso === 1 ? 'Autor *' : 'Profesor / Autor *'}
+</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -288,12 +342,12 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
                   setForm({ ...form, autor: e.target.value });
                   setErrors(prev => ({ ...prev, autor: '' }));
                 }}
-                placeholder="Nombre del autor"
+                placeholder={tipoRecurso === 1 ? 'Nombre del autor' : 'Nombre del profesor'}
               />
             </div>
             {errors.autor && <p className="text-red-500 text-sm mt-1">{errors.autor}</p>}
           </div>
-
+{tipoRecurso === 1 && (
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
               Editorial *
@@ -314,8 +368,9 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
             </div>
             {errors.editorial && <p className="text-red-500 text-sm mt-1">{errors.editorial}</p>}
           </div>
-        </div>
+              )}
 
+        </div>
         {/* Materia y Año */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -376,7 +431,7 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
             value={form.descripcion}
             onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-            placeholder="Descripción del libro (opcional)"
+            placeholder={tipoRecurso === 1 ? 'Descripción del libro (opcional)' : 'Descripción de la guía (opcional)'}
           />
         </div>
 
@@ -479,7 +534,7 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
             ) : (
               <Save className="h-5 w-5" />
             )}
-            {isEditing ? 'Actualizar Libro' : 'Crear Libro'}
+            {isEditing ? 'Actualizar' : 'Crear'}
           </button>
         </div>
       </form>

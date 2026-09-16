@@ -1,50 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import {   LayoutDashboard,Menu, X,  Activity, Shield, Clock, ChevronRight,  Database, UserCheck, LogOut, ImageDownIcon, Settings
+import {
+  LayoutDashboard, Menu, X, Activity, Shield, Clock, ChevronRight, Database, UserCheck, LogOut, ImageDownIcon, Settings, User2
 } from 'lucide-react';
 import { adminApi } from '../../api/endpoints/admin';
 import { useAuth } from '../../contexts/AuthContext';
+import { usePermiso } from '../../hooks/usePermiso';
 
-const menuItems = [
-  {
-    path: '/admin',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    exact: true
-  },
-  {
-    path: '/admin/encabezado',  
-    label: 'Encabezado',
-    icon: ImageDownIcon,  
-    description: 'Personaliza el encabezado del sitio'
-  },
-  {
-    path: '/admin/configuracionCarreras',
-    label: 'Configuración Tipo Carrera',
-    icon: Settings,
-    description: 'Gestionar tipos de carrera y trabajo'
-  },
-  {
-    path: '/admin/solicitudes',
-    label: 'Solicitudes de Rol',
-    icon: UserCheck,
-    description: 'Revisa y gestiona solicitudes de cambio de rol'
-  },
-  {
-    path: '/admin/auditoria',
-    label: 'Auditoría',
-    icon: Activity,
-    description: 'Historial de actividades del sistema'
-  },
-  {
-    path: '/admin/estadisticas',
-    label: 'Estadísticas',
-    icon: Database,
-    description: 'Estadísticas del sistema'
-  }
-];
 
 export function AdminDashboard() {
+  const puedeDarPermisos = usePermiso('usuario', 'dar_permisos');
+  const puedeAprobarCambio = usePermiso('usuario', 'aprobar_cambio');
+  const puedeVerAuditoria = usePermiso('auditoria', 'ver');
   const location = useLocation();
   const { logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -55,6 +22,60 @@ export function AdminDashboard() {
     totalCarreras: 0,
     solicitudesPendientes: 0
   });
+
+  const menuItems = [
+    {
+      path: '/admin',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      enable: true,
+      exact: true
+    },
+    {
+      path: '/admin/encabezado',
+      label: 'Encabezado',
+      icon: ImageDownIcon,
+      enable: true,
+      description: 'Personaliza el encabezado del sitio'
+    },
+    {
+      path: '/admin/permisos',
+      label: 'Permisos',
+      icon: User2,
+      enable: puedeDarPermisos,
+      description: 'Otorga o elimina permisos a los usuarios'
+    },
+    {
+      path: '/admin/configuracionCarreras',
+      label: 'Configuración Tipo Carrera',
+      icon: Settings,
+      enable: true,
+      description: 'Gestionar tipos de carrera y trabajo'
+    },
+    {
+      path: '/admin/solicitudes',
+      label: 'Solicitudes de Rol',
+      icon: UserCheck,
+      enable: puedeAprobarCambio,
+      description: 'Revisa y gestiona solicitudes de cambio de rol'
+    },
+    {
+      path: '/admin/auditoria',
+      label: 'Auditoría',
+      icon: Activity,
+      enable: puedeVerAuditoria,
+      description: 'Historial de actividades del sistema'
+    },
+    {
+      path: '/admin/estadisticas',
+      label: 'Estadísticas',
+      icon: Database,
+      enable: true,
+      description: 'Estadísticas del sistema'
+    }
+  ];
+
+
 
   useEffect(() => {
     cargarEstadisticas();
@@ -87,7 +108,7 @@ export function AdminDashboard() {
       <div className="flex flex-1 overflow-hidden">
         {/* Overlay para móvil */}
         {sidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-40 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
@@ -119,15 +140,15 @@ export function AdminDashboard() {
 
           {/* Menú */}
           <nav className="p-4 space-y-1 pb-32">
-            {menuItems.map((item) => (
+            {menuItems.filter(item => item.enable).map((item) => (
+
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                  isActive(item.path, item.exact)
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive(item.path, item.exact)
                     ? 'bg-cyan-50 text-cyan-700'
                     : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <item.icon className={`h-5 w-5 ${isActive(item.path, item.exact) ? 'text-cyan-600' : 'text-gray-400'}`} />
                 <span className="font-medium">{item.label}</span>
@@ -219,7 +240,7 @@ export function AdminDashboard() {
                       </div>
                       <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
                     </Link>
-                    
+
                     <Link
                       to="/admin/auditoria"
                       className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-cyan-50 transition group"
@@ -231,7 +252,7 @@ export function AdminDashboard() {
                       </div>
                       <ChevronRight className="h-4 w-4 text-gray-400 ml-auto" />
                     </Link>
-                    
+
                     <Link
                       to="/admin/estadisticas"
                       className="flex items-center gap-3 p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-cyan-50 transition group"

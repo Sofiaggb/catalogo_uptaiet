@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import {
-  ArrowLeft, Download, Edit, Star, Calendar,
-  User, Users, BookOpen, Award, FileText, CheckCircle, XCircle, Clock,
-  Eye
+import {  ArrowLeft, Download, Edit,  Calendar,
+  User, Users, BookOpen,  FileText, CheckCircle, XCircle, Clock,  Eye
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { tesisApi } from '../../api/endpoints/tesis';
 import type { Tesis } from '../../api/types';
 import { useVistas } from '../../hooks/useVistas';
 import {  showWarningAlert } from '../../helpers/alerts';
+import { usePermiso } from '../../hooks/usePermiso';
 
 export function TesisDetail() {
+  const editarTesis = usePermiso('proyecto', 'editar');
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
@@ -85,12 +85,6 @@ export function TesisDetail() {
     }
   };
 
-  const getNotaColor = (nota: number) => {
-    if (nota >= 18) return 'text-green-600';
-    if (nota >= 15) return 'text-blue-600';
-    if (nota >= 12) return 'text-yellow-600';
-    return 'text-red-600';
-  };
 
   if (loading) {
     return (
@@ -137,7 +131,7 @@ export function TesisDetail() {
           </button>
 
           {/* Acciones */}
-          {isAuthenticated && [3, 4].includes(user?.id_rol) && (
+          {isAuthenticated && editarTesis && (
             <div className="flex gap-2">
               <button
                 onClick={handleEdit}
@@ -175,12 +169,12 @@ export function TesisDetail() {
                 <Calendar className="h-4 w-4" />
                 <span className="text-sm">{tesis.fecha_creacion}</span>
               </div>
-              {tesis.promedio_nota && (
+              {/* {tesis.promedio_nota && (
                 <div className="flex items-center gap-1">
                   <Star className="h-4 w-4 text-yellow-400" />
                   <span className="text-sm font-semibold">{tesis.promedio_nota}/20</span>
                 </div>
-              )}
+              )} */}
               <div className="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full">
                 <Eye className="h-4 w-4" />
                 <span className="text-sm">{tesis.vistas || 0} vistas</span>
@@ -214,16 +208,6 @@ export function TesisDetail() {
             Información
           </button>
           <button
-            onClick={() => setActiveTab('evaluaciones')}
-            className={`pb-3 px-1 font-medium transition flex items-center gap-2 ${activeTab === 'evaluaciones'
-              ? 'text-cyan-600 border-b-2 border-cyan-600'
-              : 'text-gray-500 hover:text-gray-700'
-              }`}
-          >
-            <Star className="h-4 w-4" />
-            Evaluaciones ({tesis.evaluaciones?.length || 0})
-          </button>
-          <button
             onClick={() => setActiveTab('estudiantes')}
             className={`pb-3 px-1 font-medium transition flex items-center gap-2 ${activeTab === 'estudiantes'
               ? 'text-cyan-600 border-b-2 border-cyan-600'
@@ -231,7 +215,7 @@ export function TesisDetail() {
               }`}
           >
             <Users className="h-4 w-4" />
-            Estudiantes ({tesis.estudiantes?.length || 0})
+            Autor(es) ({tesis.estudiantes?.length || 0})
           </button>
         </nav>
       </div>
@@ -263,7 +247,7 @@ export function TesisDetail() {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between py-2 border-b border-gray-100">
-                    <span className="text-gray-500">Carrera</span>
+                    <span className="text-gray-500">Especialidad</span>
                     <span className="text-gray-700">{tesis.nombre_carrera}</span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100">
@@ -281,70 +265,10 @@ export function TesisDetail() {
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <Award className="h-5 w-5 text-cyan-600" />
-                  Calificación
-                </h3>
-                <div className="bg-linear-to-br from-yellow-50 to-orange-50 rounded-lg p-5 text-center">
-                  <div className="inline-flex items-center justify-center w-24 h-24 bg-yellow-100 rounded-full mb-3">
-                    <span className={`text-3xl font-bold ${getNotaColor(tesis.promedio_nota)}`}>
-                      {tesis.promedio_nota || 'N/A'}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">Promedio general</p>
-                  {tesis.promedio_nota >= 18 && (
-                    <p className="text-green-600 text-sm mt-2">¡Excelente trabajo!</p>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         )}
 
-        {/* Tab: Evaluaciones */}
-        {activeTab === 'evaluaciones' && (
-          <div className="p-6">
-            {tesis.evaluaciones && tesis.evaluaciones.length > 0 ? (
-              <div className="space-y-4">
-                {tesis.evaluaciones.map((evaluacion) => (
-                  <div key={evaluacion.id_evaluacion} className="bg-gray-50 rounded-lg p-5">
-                    <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <User className="h-4 w-4 text-gray-500" />
-                          <span className="font-semibold text-gray-800">
-                            {evaluacion.jurado.titulo_profesional} {evaluacion.jurado.nombre_completo}
-                          </span>
-                        </div>
-                        {isAuthenticated && [2, 3, 4].includes(user?.id_rol) && (
-                          <p className="text-sm text-gray-500">Cédula: {evaluacion.jurado.cedula}</p>
-                        )}
-                      </div>
-                      <div className={`px-3 py-1 rounded-full ${getNotaColor(evaluacion.nota)} bg-white font-bold text-lg`}>
-                        {evaluacion.nota}/20
-                      </div>
-                    </div>
-
-                    {evaluacion.comentarios && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <p className="text-gray-600 italic">"{evaluacion.comentarios}"</p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          Evaluado el { evaluacion.fecha_evaluacion}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Star className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No hay evaluaciones registradas</p>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Tab: Estudiantes */}
         {activeTab === 'estudiantes' && (
@@ -375,7 +299,7 @@ export function TesisDetail() {
             ) : (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">No hay estudiantes registrados</p>
+                <p className="text-gray-500">No hay Autor(es) registrados</p>
               </div>
             )}
           </div>

@@ -5,7 +5,7 @@ import path from 'path';
 
 export const tesisController = {
   createTesis: async (req, res) => {
-    const { titulo, resumen, id_carrera,anio_elaboracion, estudiantes, evaluaciones } = req.body;
+    const { titulo, resumen, id_carrera,anio_elaboracion, estudiantes } = req.body;
     console.log('anio_elaboracion',anio_elaboracion)
     // Obtener la ruta del archivo subido (si existe)
     let url_documento = null;
@@ -19,7 +19,7 @@ export const tesisController = {
 
     try {
       const result = await pool.query(
-        `SELECT tesis.crear_tesis($1, $2, $3, $4, $5, $6::jsonb, $7::jsonb, $8) AS resultado`,
+        `SELECT tesis.crear_tesis($1, $2, $3, $4, $5, $6::jsonb, $7) AS resultado`,
         [
           titulo,
           resumen || null,
@@ -27,7 +27,6 @@ export const tesisController = {
           anio_elaboracion,
           url_documento || null,
           JSON.stringify(JSON.parse(estudiantes) || []),
-          JSON.stringify(JSON.parse(evaluaciones) || []),
           req.usuario?.id_usuario || null
         ]
       );
@@ -155,7 +154,7 @@ export const tesisController = {
             
       // Llamar a la función de PostgreSQL
       const result = await pool.query(
-        `SELECT tesis.editar_tesis($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9 ) AS resultado`,
+        `SELECT tesis.editar_tesis($1, $2, $3, $4, $5, $6, $7::jsonb, $8 ) AS resultado`,
         [
           id,                                 
           titulo || null,           
@@ -164,7 +163,6 @@ export const tesisController = {
           anio_elaboracion || null,           
           url_documento,                       
           estudiantes ? JSON.stringify(JSON.parse(estudiantes) || []): null,  
-          evaluaciones ? JSON.stringify(JSON.parse(evaluaciones) || []) : null, 
           req.usuario?.id_usuario || null       
         ]
       );
@@ -236,12 +234,10 @@ export const tesisController = {
 // BÚSQUEDA POR CÉDULA
 // ============================================
 
-// Buscar estudiante por cédula
-// backend/src/controllers/tesisController.js
 
 searchEstudianteCedula: async (req, res) => {
     const { cedula } = req.params;
-    
+    // console.log('si pasa')
     try {
         const result = await pool.query(
             `SELECT id_estudiante, nombre_completo, cedula, email
@@ -273,35 +269,6 @@ searchEstudianteCedula: async (req, res) => {
     }
 },
 
-searchJuradosCedula: async (req, res) => {
-    const { cedula } = req.params;
-    
-    try {
-        const result = await pool.query(
-            `SELECT id_jurado, nombre_completo, cedula, titulo_profesional
-             FROM personas.jurado
-             WHERE cedula ILIKE  '%' || $1 || '%'  AND fecha_eliminacion IS NULL`,
-            [cedula]
-        );
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Jurado no encontrado' 
-            });
-        }
-        
-        res.json({
-            success: true,
-            data: result.rows,
-            multiple: result.rows.length > 1
-        });
-        
-    } catch (error) {
-        console.error('Error buscando jurado:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-},
 
 getAniosDisponibles: async (req, res) => {
     try {

@@ -39,21 +39,6 @@ export interface Estudiante {
   esExistente?: boolean;
 }
 
-export interface Jurado {
-  id_jurado?: number;
-  nombre_completo: string;
-  cedula: string;
-  titulo_profesional?: string;
-  esExistente?: boolean;
-}
-
-export interface Evaluacion {
-  id_evaluacion?: number;
-  nota: number;
-  fecha_evaluacion: string;
-  comentarios?: string;
-  jurado: Jurado;
-}
 
 export interface Tesis {
   id_tesis: number;
@@ -70,7 +55,6 @@ export interface Tesis {
   nombre_estado?: string;
   promedio_nota?: number;
   estudiantes?: Estudiante[];
-  evaluaciones?: Evaluacion[];
   vistas?:number;
 }
 
@@ -128,6 +112,7 @@ export interface Libros {
     descripcion?: string;
     id_materia: number;
     materia?: string; 
+  tipo_recurso:string;
     fecha_creacion?: string;
 }
 

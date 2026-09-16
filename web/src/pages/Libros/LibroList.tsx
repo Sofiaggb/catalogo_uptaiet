@@ -6,6 +6,7 @@ import { librosApi } from '../../api/endpoints/libros';
 import { materiasApi } from '../../api/endpoints/materias';
 import type { Libros, Materia } from '../../api/types';
 import { useDebounce } from '../../hooks/useDebounce';
+import { usePermiso } from '../../hooks/usePermiso';
 
 // Componente de tarjeta de libro
 const LibroCard = ({ libro }: { libro: Libros; onRefresh: () => void }) => {
@@ -24,6 +25,12 @@ const LibroCard = ({ libro }: { libro: Libros; onRefresh: () => void }) => {
           </div>
           
           <div className="flex flex-wrap gap-2 mb-3">
+            {libro.tipo_recurso && (
+            <span className="flex items-center gap-1 bg-yellow-100 text-yellow-700  px-3 py-1 rounded-full text-sm">
+              <User className="h-3 w-3" />
+              {libro.tipo_recurso}
+            </span>
+          )}
             {libro.autor && (
               <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
                 <User className="h-3 w-3" />
@@ -56,7 +63,8 @@ const LibroCard = ({ libro }: { libro: Libros; onRefresh: () => void }) => {
 };
 
 export function LibrosList() {
-  const { isAuthenticated , user} = useAuth();
+  const { isAuthenticated } = useAuth();
+  const crearLibro = usePermiso('recursos', 'crear');
   const [libros, setLibros] = useState<Libros[]>([]);
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +154,7 @@ export function LibrosList() {
     return (
       <div className="flex justify-center items-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-600"></div>
-        <p className="text-gray-500 ml-3">Cargando libros...</p>
+        <p className="text-gray-500 ml-3">Cargando recursos...</p>
       </div>
     );
   }
@@ -157,8 +165,8 @@ export function LibrosList() {
       <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6
        rounded-2xl">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-white mb-2">Libros</h1>
-          <p className="text-white/80">Explora nuestra colección de libros y materiales de apoyo</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Recursos</h1>
+          <p className="text-white/80">Explora nuestra colección de libros y guias de apoyo</p>
         </div>
       </div>
 
@@ -280,7 +288,7 @@ export function LibrosList() {
                     Cargando...
                   </div>
                 ) : (
-                  'Cargar más libros'
+                  'Cargar más recursos'
                 )}
               </button>
             </div>
@@ -293,13 +301,13 @@ export function LibrosList() {
           <p className="text-gray-400 text-sm mt-1">
             {searchText || materiasSeleccionadas.length > 0
               ? 'Prueba con otros filtros'
-              : 'Aún no hay libros disponibles'}
+              : 'Aún no hay recursos disponibles'}
           </p>
         </div>
       )}
 
       {/* Botón flotante para crear - solo usuarios autenticados */}
-      {isAuthenticated  && [2, 3, 4].includes(user?.id_rol) && (
+      {isAuthenticated  && crearLibro && (
         <Link
           to="/libros/create"
           className="fixed bottom-6 right-6 bg-cyan-500 rounded-full p-4 shadow-lg hover:bg-cyan-600 transition-all hover:scale-105 z-10"

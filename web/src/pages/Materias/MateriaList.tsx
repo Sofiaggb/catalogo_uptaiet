@@ -5,10 +5,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { materiasApi } from '../../api/endpoints/materias';
 import { showConfirmAlert, showSuccessAlert, showErrorAlert } from '../../helpers/alerts';
 import type { Materia } from '../../api/types';
+import { usePermiso } from '../../hooks/usePermiso';
 
 // Componente de tarjeta de materia
 const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () => void }) => {
   const { isAuthenticated, user } = useAuth();
+  const editarMateria = usePermiso('materia', 'editar');
+  const eliminarMateria = usePermiso('materia', 'eliminar');
   const handleEdit = () => {
     window.location.href = `/materias/edit/${materia.id_materia}`;
   };
@@ -18,7 +21,7 @@ const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () =
       'Eliminar Materia',
       `¿Estás seguro de eliminar "${materia.nombre}"?\n\nEsta acción no se puede deshacer.`
     );
-    
+
     if (confirmed) {
       const success = await materiasApi.delete(materia.id_materia);
       if (success) {
@@ -41,29 +44,31 @@ const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () =
               {materia.nombre}
             </h3>
           </div>
-          
+
         </div>
-        
+
         {/* Botones de acción */}
-        {isAuthenticated  && [3, 4].includes(user?.id_rol) && (
-        <div className="flex gap-2 ml-4">
-          <button
-            onClick={handleEdit}
-            className="p-2 bg-yellow-100 rounded-lg hover:bg-yellow-200 transition"
-            title="Editar"
-          >
-            <Edit className="h-4 w-4 text-yellow-600" />
-          </button>
-          {  [3].includes(user?.id_rol) && (
-          <button
-            onClick={handleDelete}
-            className="p-2 bg-red-100 rounded-lg hover:bg-red-200 transition"
-            title="Eliminar"
-          >
-            <Trash2 className="h-4 w-4 text-red-600" />
-          </button>
-          )}
-        </div>
+        {isAuthenticated && (
+          <div className="flex gap-2 ml-4">
+            {editarMateria && (
+              <button
+                onClick={handleEdit}
+                className="p-2 bg-yellow-100 rounded-lg hover:bg-yellow-200 transition"
+                title="Editar"
+              >
+                <Edit className="h-4 w-4 text-yellow-600" />
+              </button>
+            )}
+            {eliminarMateria && (
+              <button
+                onClick={handleDelete}
+                className="p-2 bg-red-100 rounded-lg hover:bg-red-200 transition"
+                title="Eliminar"
+              >
+                <Trash2 className="h-4 w-4 text-red-600" />
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -71,7 +76,8 @@ const MateriaCard = ({ materia, onRefresh }: { materia: Materia; onRefresh: () =
 };
 
 export function MateriasList() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const crearMateria = usePermiso('materia', 'crear');
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [filteredMaterias, setFilteredMaterias] = useState<Materia[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,13 +101,13 @@ export function MateriasList() {
 
   const filtrarMaterias = () => {
     let filtered = [...materias];
-    
+
     if (searchText.trim()) {
       filtered = filtered.filter(m =>
-        m.nombre.toLowerCase().includes(searchText.toLowerCase()) 
+        m.nombre.toLowerCase().includes(searchText.toLowerCase())
       );
     }
-    
+
     setFilteredMaterias(filtered);
   };
 
@@ -169,7 +175,7 @@ export function MateriasList() {
       )}
 
       {/* Botón flotante para crear */}
-      {isAuthenticated  && [3, 4].includes(user?.id_rol) && (
+      {isAuthenticated && crearMateria && (
         <Link
           to="/materias/create"
           className="fixed bottom-6 right-6 bg-cyan-500 rounded-full p-4 shadow-lg hover:bg-cyan-600 transition-all hover:scale-105 z-10"

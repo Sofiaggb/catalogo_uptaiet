@@ -24,7 +24,7 @@ export function EstudianteForm({ index, estudiante, onUpdate, onDelete, onBuscar
       {/* Cabecera */}
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-gray-700">Estudiante {index + 1}</span>
+          <span className="font-bold text-gray-700">Autor {index + 1}</span>
           {estudiante.esExistente && (
             <span className="flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
               <CheckCircle className="h-3 w-3" />
