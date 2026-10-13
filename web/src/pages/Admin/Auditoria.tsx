@@ -151,7 +151,7 @@ export function Auditoria() {
                 <option value="">Todas</option>
                 {tablasDisponibles.map(t => (
                   <option key={t.tabla} value={t.tabla}>
-                    {t.esquema}.{t.tabla}
+                    {t.tabla}
                   </option>
                 ))}
               </select>

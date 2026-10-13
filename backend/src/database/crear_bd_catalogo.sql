@@ -157,13 +157,23 @@ CREATE TABLE tesis.tesis (
     id_carrera INT NOT NULL REFERENCES catalogo.carrera(id_carrera),
     id_estado int REFERENCES control.estado(id_estado),
 	vistas INT DEFAULT 0,
+	fecha_revision TIMESTAMP,
+	 id_revisor INT REFERENCES seguridad.usuario(id_usuario),
+	  comentario_revision TEXT,
 	fecha_creacion timestamp DEFAULT NOW(),
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
-		fecha_modificacion TIMESTAMP,
+	fecha_modificacion TIMESTAMP,
 	id_usuario_modificacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 	fecha_eliminacion timestamp,	
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
+
+
+-- Agregar campos de revisión a la tabla de tesis
+ALTER TABLE tesis.tesis 
+ADD COLUMN IF NOT EXISTS fecha_revision TIMESTAMP,
+ADD COLUMN IF NOT EXISTS id_revisor INT REFERENCES seguridad.usuario(id_usuario),
+ADD COLUMN IF NOT EXISTS comentario_revision TEXT;
 
 -- Agregar índice para búsquedas por año 
 CREATE INDEX idx_tesis_anio_elaboracion ON tesis.tesis(anio_elaboracion);
@@ -226,6 +236,7 @@ VALUES ('Libro'),
 
 CREATE TABLE recursos.libro (
     id_libro SERIAL PRIMARY KEY,
+	id_estado int REFERENCES control.estado(id_estado),
 	id_tipo_recurso INTEGER REFERENCES  recursos.tipo_recurso (id_tipo_recurso),
  	id_materia INT NOT NULL REFERENCES catalogo.materia(id_materia) ON DELETE CASCADE,
     titulo VARCHAR(300) NOT NULL,
@@ -233,6 +244,9 @@ CREATE TABLE recursos.libro (
     editorial VARCHAR,
     year integer,
     url_documento VARCHAR(500),   
+	fecha_revision TIMESTAMP,
+	id_revisor INT REFERENCES seguridad.usuario(id_usuario),
+	comentario_revision TEXT,
 	fecha_creacion timestamp DEFAULT NOW(),
 	id_usuario_creacion INTEGER REFERENCES seguridad.usuario(id_usuario),
 	fecha_modificacion TIMESTAMP,
@@ -241,6 +255,11 @@ CREATE TABLE recursos.libro (
 	id_usuario_eliminacion INTEGER REFERENCES seguridad.usuario(id_usuario)
 );
 
+
+ALTER TABLE recursos.libro 
+ADD COLUMN IF NOT EXISTS  fecha_revision TIMESTAMP,
+ADD COLUMN IF NOT EXISTS id_revisor INT REFERENCES seguridad.usuario(id_usuario),
+ADD COLUMN IF NOT EXISTS comentario_revision TEXT;
 
 
 ALTER TABLE recursos.libro 

@@ -16,7 +16,7 @@ export function GestionEncabezado() {
 
   useEffect(() => {
     cargarEncabezado();
-    
+
     // Cleanup para evitar memory leaks
     return () => {
       if (previewUrl) {
@@ -28,7 +28,7 @@ export function GestionEncabezado() {
   const cargarEncabezado = async () => {
     try {
       const response = await headerService.obtenerEncabezado();
-    //   console.log(response)
+      //   console.log(response)
       if (response.success) {
         setHeaderData({
           imagen: response.data.imagen,
@@ -53,38 +53,38 @@ export function GestionEncabezado() {
 
   const handleSubirImagen = async () => {
     if (!selectedFile) return;
-  
+
     // Validar formato
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     const maxSize = 5 * 1024 * 1024; // 5MB
-    
+
     const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
     const isValidType = allowedTypes.includes(selectedFile.type);
     const isValidExtension = allowedExtensions.includes(fileExtension);
     const isValidSize = selectedFile.size <= maxSize;
-    
+
     if (!isValidType || !isValidExtension) {
       showErrorAlert('Formato no válido. Solo se permiten: JPG, PNG, GIF, WEBP');
       setSelectedFile(null);
       setPreviewUrl(null);
       return;
     }
-    
+
     if (!isValidSize) {
       showErrorAlert('El archivo es demasiado grande. Máximo 5MB');
       setSelectedFile(null);
       setPreviewUrl(null);
       return;
     }
-    
+
     setLoading(true);
     const formData = new FormData();
     formData.append('encabezado', selectedFile);
-      
+
     try {
       const response = await headerService.actualizarImagenEncabezado(formData);
-    //   console.log(response)
+      //   console.log(response)
       if (response.success) {
         await cargarEncabezado();
         setSelectedFile(null);
@@ -101,13 +101,13 @@ export function GestionEncabezado() {
   };
 
   const handleEliminarImagen = async () => {
-      const confirmed = await showConfirmAlert(
-          'Eliminar Imagen',
-          `¿Estás seguro de eliminar la imagen del encabezado?`
-        );
-        
+    const confirmed = await showConfirmAlert(
+      'Eliminar Imagen',
+      `¿Estás seguro de eliminar la imagen del encabezado?`
+    );
+
     if (!confirmed) return;
-    
+
     setLoading(true);
     try {
       const response = await headerService.eliminarEncabezado();
@@ -126,7 +126,7 @@ export function GestionEncabezado() {
 
   return (
     <div className="space-y-6">
-    {/* Header */}
+      {/* Header */}
       <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold text-white mb-2">Gestión de Encabezado</h1>
@@ -140,9 +140,9 @@ export function GestionEncabezado() {
         <div className="relative bg-gray-100 rounded-lg overflow-hidden">
           {headerData.imagen ? (
             <div className="relative">
-              <img 
+              <img
                 src={`${STATIC_URL}${headerData.imagen} `}
-                alt="Encabezado actual" 
+                alt="Encabezado actual"
                 className="w-full h-16 md:h-20 "
               />
             </div>
@@ -166,14 +166,14 @@ export function GestionEncabezado() {
             <ImageIcon className="h-5 w-5 text-cyan-600" />
             Imagen del encabezado
           </h2>
-          
+
           {editMode === 'imagen' ? (
             <div className="space-y-4">
               {previewUrl && (
                 <div className="relative">
-                  <img 
-                    src={previewUrl} 
-                    alt="Preview" 
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
                     className="w-full h-28 object-cover rounded-lg"
                   />
                   <button
@@ -187,14 +187,14 @@ export function GestionEncabezado() {
                   </button>
                 </div>
               )}
-              
+
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
                 className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"
               />
-              
+
               <div className="flex gap-3">
                 <button
                   onClick={handleSubirImagen}
@@ -232,7 +232,7 @@ export function GestionEncabezado() {
                   <Upload className="h-4 w-4" />
                   Cambiar imagen
                 </button>
-                
+
                 {headerData.imagen && (
                   <button
                     onClick={handleEliminarImagen}
@@ -244,13 +244,13 @@ export function GestionEncabezado() {
                   </button>
                 )}
               </div>
-              
+
               {headerData.imagen && (
                 <p className="text-xs text-gray-500">
                   Imagen actual: {headerData.imagen.split('/').pop()}
                 </p>
               )}
-              
+
               <div className="text-xs text-gray-400 border-t border-gray-100 pt-3">
                 <p>Formatos permitidos: JPG, PNG, WEBP, GIF</p>
                 <p>Tamaño máximo: 5MB</p>
@@ -260,16 +260,16 @@ export function GestionEncabezado() {
         </div>
 
 
-      {/* Consejos */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-sm font-semibold text-blue-800 mb-2">💡 Consejos para el encabezado</h3>
-        <ul className="text-sm text-blue-700 space-y-1">
-          <li>• Usa imágenes de alta calidad con resolución mínima de 1920x200px</li>
-          <li>• El título y subtítulo deben ser concisos y representativos</li>
-          <li>• La imagen se mostrará en todo el ancho del encabezado</li>
-          <li>• Si no hay imagen, se usará el color de fondo predeterminado</li>
-        </ul>
-      </div>
+        {/* Consejos */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">💡 Consejos para el encabezado</h3>
+          <ul className="text-sm text-blue-700 space-y-1">
+            <li>• Usa imágenes de alta calidad con resolución mínima de 1920x200px</li>
+            <li>• El título y subtítulo deben ser concisos y representativos</li>
+            <li>• La imagen se mostrará en todo el ancho del encabezado</li>
+            <li>• Si no hay imagen, se usará el color de fondo predeterminado</li>
+          </ul>
+        </div>
       </div>
 
     </div>

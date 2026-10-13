@@ -9,11 +9,17 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // Rutas 
-router.post('/save', requireAuth, verificarPermiso('libro', 'crear'), upload.libros.single('archivo_pdf'),  libroController.createLibro);
-router.put('/update/:id',requireAuth, verificarPermiso('libro', 'editar'),  upload.libros.single('archivo_pdf'), libroController.updateLibro);
+router.post('/save', requireAuth, verificarPermiso('recursos', 'crear'), upload.libros.single('archivo_pdf'),  libroController.createLibro);
+router.put('/update/:id',requireAuth, verificarPermiso('recursos', 'editar'),  upload.libros.single('archivo_pdf'), libroController.updateLibro);
 router.get('/byId/:id', libroController.getLibroById);
 router.get('/tipos-recursos', libroController.getTiposRecursos);
 
 router.get('/', libroController.getLibros);
+
+// GESTIÓN
+router.get('/gestion', requireAuth, verificarPermiso('recursos', 'aprobar'), libroController.listarGestion);
+router.get('/gestion/anios', requireAuth, verificarPermiso('recursos', 'aprobar'), libroController.getAniosDisponibles);
+router.get('/pendientes/count', requireAuth, verificarPermiso('recursos', 'aprobar'), libroController.contarPendientes);
+router.put('/revisar/:id', requireAuth, verificarPermiso('recursos', 'aprobar'), libroController.revisar);
 
 export default router;

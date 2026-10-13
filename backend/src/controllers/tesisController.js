@@ -5,16 +5,16 @@ import path from 'path';
 
 export const tesisController = {
   createTesis: async (req, res) => {
-    const { titulo, resumen, id_carrera,anio_elaboracion, estudiantes } = req.body;
-    console.log('anio_elaboracion',anio_elaboracion)
+    const { titulo, resumen, id_carrera, anio_elaboracion, estudiantes } = req.body;
+    console.log('anio_elaboracion', anio_elaboracion)
     // Obtener la ruta del archivo subido (si existe)
     let url_documento = null;
-    console.log('req.file',req.file)
-     if (req.file) {
-        url_documento = `/uploads/tesis/${req.file.filename}`;
-        console.log('Archivo recibido:', req.file.filename);
+    console.log('req.file', req.file)
+    if (req.file) {
+      url_documento = `/uploads/tesis/${req.file.filename}`;
+      console.log('Archivo recibido:', req.file.filename);
     } else {
-        console.log('No se recibió ningún archivo');
+      console.log('No se recibió ningún archivo');
     }
 
     try {
@@ -46,12 +46,12 @@ export const tesisController = {
 
     } catch (error) {
       console.error('Error en createTesis:', error);
-        // Limpiar archivo si hay error
-        if (req.file) {
-            const fs = await import('fs');
-            fs.unlinkSync(req.file.path);
-        }
-        
+      // Limpiar archivo si hay error
+      if (req.file) {
+        const fs = await import('fs');
+        fs.unlinkSync(req.file.path);
+      }
+
       res.status(500).json({
         success: false,
         status: 500,
@@ -125,21 +125,21 @@ export const tesisController = {
       });
     }
   },
-  
+
   // Editar tesis existente
   updateTesis: async (req, res) => {
     const { id } = req.params;
-    const { titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones} = req.body;
+    const { titulo, resumen, id_carrera, anio_elaboracion, estudiantes, evaluaciones } = req.body;
     let url_documento = null;
     let oldFilePath = null;
     // console.log(titulo, resumen, id_carrera, anio_elaboracion,estudiantes,evaluaciones)
-    
+
     // Procesar nuevo archivo si existe
     if (req.file) {
       url_documento = `/uploads/tesis/${req.file.filename}`;
       console.log('Nuevo archivo recibido:', req.file.filename);
     }
-    
+
     try {
       // Obtener la URL anterior para posible limpieza después
       if (url_documento) {
@@ -151,24 +151,24 @@ export const tesisController = {
           oldFilePath = oldResult.rows[0].url_documento;
         }
       }
-            
+
       // Llamar a la función de PostgreSQL
       const result = await pool.query(
         `SELECT tesis.editar_tesis($1, $2, $3, $4, $5, $6, $7::jsonb, $8 ) AS resultado`,
         [
-          id,                                 
-          titulo || null,           
-          resumen || null,            
-          id_carrera || null,   
-          anio_elaboracion || null,           
-          url_documento,                       
-          estudiantes ? JSON.stringify(JSON.parse(estudiantes) || []): null,  
-          req.usuario?.id_usuario || null       
+          id,
+          titulo || null,
+          resumen || null,
+          id_carrera || null,
+          anio_elaboracion || null,
+          url_documento,
+          estudiantes ? JSON.stringify(JSON.parse(estudiantes) || []) : null,
+          req.usuario?.id_usuario || null
         ]
       );
-      
+
       const resultado = result.rows[0].resultado;
-      
+
       if (!resultado.success) {
         // Si falló la BD, eliminar el nuevo archivo subido
         if (req.file && fs.existsSync(req.file.path)) {
@@ -177,7 +177,7 @@ export const tesisController = {
         }
         return res.status(resultado.status || 400).json(resultado);
       }
-      
+
       // Si se reemplazó el archivo, eliminar el anterior
       if (resultado.success && url_documento && oldFilePath) {
         // console.log( 'url_documento && oldFilePath>>>> ',url_documento, oldFilePath)
@@ -187,18 +187,18 @@ export const tesisController = {
           console.log('Archivo anterior eliminado:', oldFilePath);
         }
       }
-          
+
       res.status(resultado.status || 200).json(resultado);
-      
+
     } catch (error) {
       console.error('Error en updateTesis:', error);
-      
+
       // Limpiar archivo nuevo si hay error
       if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
         console.log('Archivo nuevo eliminado por error');
       }
-      
+
       res.status(500).json({
         success: false,
         status: 500,
@@ -210,85 +210,165 @@ export const tesisController = {
 
   // Incrementar vistas de una tesis
   incrementarVistas: async (req, res) => {
-      const { id } = req.params;
-      
-      try {
-          const result = await pool.query(
-              `SELECT tesis.incrementar_vistas_tesis($1) AS resultado`,
-              [id]
-          );
-          
-          const resultado = result.rows[0].resultado;
-          res.json(resultado);
-          
-      } catch (error) {
-          console.error('Error en incrementarVistas:', error);
-          res.status(500).json({ 
-              success: false, 
-              message: 'Error al incrementar vistas' 
-          });
-      }
+    const { id } = req.params;
+
+    try {
+      const result = await pool.query(
+        `SELECT tesis.incrementar_vistas_tesis($1) AS resultado`,
+        [id]
+      );
+
+      const resultado = result.rows[0].resultado;
+      res.json(resultado);
+
+    } catch (error) {
+      console.error('Error en incrementarVistas:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al incrementar vistas'
+      });
+    }
   },
 
-// ============================================
-// BÚSQUEDA POR CÉDULA
-// ============================================
+  // ============================================
+  // BÚSQUEDA POR CÉDULA
+  // ============================================
 
 
-searchEstudianteCedula: async (req, res) => {
+  searchEstudianteCedula: async (req, res) => {
     const { cedula } = req.params;
     // console.log('si pasa')
     try {
-        const result = await pool.query(
-            `SELECT id_estudiante, nombre_completo, cedula, email
+      const result = await pool.query(
+        `SELECT id_estudiante, nombre_completo, cedula, email
              FROM personas.estudiante
              WHERE cedula ILIKE  '%' || $1 || '%' AND fecha_eliminacion IS NULL`,
-            [cedula]
-        );
-        
-        // También puedes usar CONCAT:
-        // WHERE cedula ILIKE CONCAT('%', $1)
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Estudiante no encontrado' 
-            });
-        }
-        
-        // Si hay múltiples resultados, devolver todos
-        res.json({
-            success: true,
-            data: result.rows,
-            multiple: result.rows.length > 1
+        [cedula]
+      );
+
+      // También puedes usar CONCAT:
+      // WHERE cedula ILIKE CONCAT('%', $1)
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Estudiante no encontrado'
         });
-        
+      }
+
+      // Si hay múltiples resultados, devolver todos
+      res.json({
+        success: true,
+        data: result.rows,
+        multiple: result.rows.length > 1
+      });
+
     } catch (error) {
-        console.error('Error buscando estudiante:', error);
-        res.status(500).json({success: false, error: 'Error interno del servidor' });
+      console.error('Error buscando estudiante:', error);
+      res.status(500).json({ success: false, error: 'Error interno del servidor' });
     }
-},
+  },
 
 
-getAniosDisponibles: async (req, res) => {
+  getAniosDisponibles: async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT DISTINCT anio_elaboracion as anio
+      const result = await pool.query(
+        `SELECT DISTINCT anio_elaboracion as anio
              FROM tesis.tesis
              WHERE fecha_eliminacion IS NULL
              ORDER BY anio_elaboracion DESC`
-        );
-        
-        const anios = result.rows.map(row => parseInt(row.anio));
-        
-        res.json({
-            success: true,
-            data: anios
-        });
+      );
+
+      const anios = result.rows.map(row => parseInt(row.anio));
+
+      res.json({
+        success: true,
+        data: anios
+      });
     } catch (error) {
-        console.error('Error obteniendo años disponibles:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+      console.error('Error obteniendo años disponibles:', error);
+      res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+  },
+
+  // Listar pendientes (igual que antes)
+  listarGestion: async (req, res) => {
+    const { 
+      buscar, 
+      id_carrera,
+      anio,       
+      estado = 2, 
+      orden = 'reciente',  
+      page = 1, 
+      limit = 20 
+    } = req.query;
+    const offset = (page - 1) * limit;
+
+    try {
+      const result = await pool.query(
+        `SELECT tesis.listar_tesis_gestion($1, $2, $3, $4, $5, $6, $7) AS resultado`,
+        [
+          buscar || null, 
+          id_carrera || null,
+          anio || null,        
+          parseInt(estado),
+          orden,              
+          offset, 
+          limit
+        ]
+      );
+      res.json(result.rows[0].resultado);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
+
+  // probar Y rechazar
+  revisar: async (req, res) => {
+    const { id } = req.params;
+    const { aprobar, comentario } = req.body; 
+    const id_revisor = req.usuario.id_usuario;
+
+    // Validar que 'aprobar' venga como booleano
+    if (typeof aprobar !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: "El campo 'aprobar' debe ser true o false"
+      });
+    }
+
+    try {
+      const result = await pool.query(
+        `SELECT tesis.revisar_tesis($1, $2, $3, $4) AS resultado`,
+        [id, id_revisor, aprobar, comentario || null]
+      );
+      const resultado = result.rows[0].resultado;
+      res.status(resultado.status || 200).json(resultado);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
+
+  contarPendientes: async (req, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT COUNT(*) AS total 
+        FROM tesis.tesis 
+        WHERE id_estado = 2 
+          AND fecha_eliminacion IS NULL
+      `);
+      
+      res.json({
+        success: true,
+        status: 200,
+        data: { total: parseInt(result.rows[0].total) }
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
 
 }

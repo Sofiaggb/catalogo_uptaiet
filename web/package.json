@@ -19,6 +19,7 @@
     "react-hook-form": "^7.76.0",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.15.1",
+    "react-select": "^5.10.2",
     "sweetalert2": "^11.26.24",
     "tailwindcss": "^4.3.0"
   },

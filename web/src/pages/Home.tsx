@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  BookOpen, FileText, Library, GraduationCap, User, LogIn, Award, ChevronRight, Calendar, Shield
-} from 'lucide-react';
+  BookOpen, FileText, Library, GraduationCap, User, LogIn, Award, ChevronRight, Calendar} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { tesisApi } from '../api/endpoints/tesis';
 import { carrerasApi } from '../api/endpoints/carreras';
@@ -11,7 +10,7 @@ import type { Carrera, Tesis } from '../api/types';
 import { usePermiso } from '../hooks/usePermiso';
 
 export function Home() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const puedeVerCarreras = usePermiso('especialidad', 'ver');
   const puedeVerMaterias = usePermiso('materia', 'ver');
   const [stats, setStats] = useState({
@@ -300,35 +299,7 @@ export function Home() {
         )}
       </div>
 
-      {/* Carreras como categorías */}
-      <div className="bg-gray-50 rounded-2xl p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Explora por Carrera</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {carreras.slice(0, 8).map((carrera) => (
-            <Link
-              key={carrera.id_carrera}
-              to={`/proyecto?id_carrera=${carrera.id_carrera}`}
-              className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:border-cyan-300 hover:shadow-md transition group"
-            >
-              <p className="text-gray-700 font-medium text-sm group-hover:text-cyan-600 line-clamp-1">
-                {carrera.nombre}
-              </p>
-            </Link>
-          ))}
-          {carreras.length > 8 && (
-            <Link
-              to="/carreras"
-              className="bg-white border border-gray-200 rounded-lg p-3 text-center hover:border-cyan-300 hover:shadow-md transition group"
-            >
-              <Shield className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-500 font-medium text-sm">Ver todas</p>
-            </Link>
-          )}
-        </div>
-        {carreras.length === 0 && (
-          <p className="text-center text-gray-500 py-4">No hay carreras disponibles</p>
-        )}
-      </div>
+    
     </div>
   );
 }

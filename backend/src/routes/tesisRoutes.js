@@ -15,5 +15,8 @@ router.put('/upload/:id', requireAuth,  verificarPermiso('proyecto', 'editar'), 
 router.post('/vistas/:id', tesisController.incrementarVistas); // Incrementar vistas
 router.get('/estudiantes/cedula/:cedula', tesisController.searchEstudianteCedula);
 router.get('/anios', tesisController.getAniosDisponibles); 
+router.get('/gestion', requireAuth, verificarPermiso('proyecto', 'aprobar'), tesisController.listarGestion);
+router.put('/revisar/:id', requireAuth, verificarPermiso('proyecto', 'aprobar'), tesisController.revisar);
+router.get('/pendientes/count', requireAuth, verificarPermiso('proyecto', 'aprobar'), tesisController.contarPendientes);
 
 export default router;

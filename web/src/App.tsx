@@ -16,7 +16,7 @@ import { MateriasCreate } from './pages/Materias/MateriaCreate';
 import { MateriasList } from './pages/Materias/MateriaList';
 import { MateriasEdit } from './pages/Materias/MateriaEdit';
 import { LibrosList } from './pages/Libros/LibroList';
-import { LibroDetail } from './pages/Libros/Librodetail';
+import { LibroDetail } from './pages/Libros/LibroDetail';
 import { LibrosCreate } from './pages/Libros/LibroCreate';
 import { LibrosEdit } from './pages/Libros/LibroEdit';
 import { Register } from './pages/Auth/Register';
@@ -33,6 +33,8 @@ import { GestionTipoCarrera } from './pages/Admin/GestionTipoCarrera';
 import { Permisos } from './pages/Admin/Permisos';
 import { Toaster } from 'react-hot-toast';
 import { useEffect, useRef } from 'react';
+import { TesisGestion } from './pages/Tesis/TesisGestion';
+import { LibroGestion } from './pages/Libros/LibroGestion';
 
 // Componente que refresca el usuario al cambiar de ruta
 const REFRESH_COOLDOWN = 60 * 1000; // 1 minuto
@@ -108,13 +110,14 @@ function App() {
               <Route path="/proyecto" element={<TesisList />} />
               <Route path="/proyecto/:id" element={<TesisDetail />} />
               <Route path="/proyecto/create" element={
-                <ProtectedRoute roles={[3, 4]}>
+                <ProtectedRoute >
                   <TesisCreate />
                 </ProtectedRoute>
               } />
+              <Route path="/proyecto/gestion" element={<TesisGestion />} />
 
               <Route path="/proyecto/edit/:id" element={
-                <ProtectedRoute roles={[3, 4]}>
+                <ProtectedRoute >
                   <TesisEdit />
                 </ProtectedRoute>
               } />
@@ -123,24 +126,24 @@ function App() {
               <Route path="/carreras" element={<CarrerasList />} />
               <Route path="/carreras/:id" element={<CarreraDetail />} />
               <Route path="/carreras/create" element={
-                <ProtectedRoute roles={[3, 4]}>
+                <ProtectedRoute >
                   <CarrerasCreate />
                 </ProtectedRoute>
               } />
               <Route path="/carreras/edit/:id" element={
-                <ProtectedRoute roles={[3, 4]}>
+                <ProtectedRoute >
                   <CarrerasEdit />
                 </ProtectedRoute>
               } />
               {/* materias  */}
               <Route path="/materias" element={<MateriasList />} />
               <Route path="/materias/create" element={
-                <ProtectedRoute roles={[3, 4]}>
+                <ProtectedRoute >
                   <MateriasCreate />
                 </ProtectedRoute>
               } />
               <Route path="/materias/edit/:id" element={
-                <ProtectedRoute roles={[3, 4]}>
+                <ProtectedRoute >
                   <MateriasEdit />
                 </ProtectedRoute>
               } />
@@ -148,13 +151,14 @@ function App() {
               {/* Libros  */}
               <Route path="/libros" element={<LibrosList />} />
               <Route path="/libros/:id" element={<LibroDetail />} />
+              <Route path="/libros/gestion" element={<LibroGestion />} />
               <Route path="/libros/create" element={
-                <ProtectedRoute roles={[2, 3, 4]}>
+                <ProtectedRoute >
                   <LibrosCreate />
                 </ProtectedRoute>
               } />
               <Route path="/libros/edit/:id" element={
-                <ProtectedRoute roles={[2, 3, 4]}>
+                <ProtectedRoute >
                   <LibrosEdit />
                 </ProtectedRoute>
               } />

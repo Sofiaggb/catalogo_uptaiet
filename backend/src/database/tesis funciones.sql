@@ -57,7 +57,7 @@ BEGIN
         p_resumen,
         p_url_documento,
         p_id_carrera,
-        1, -- publicada
+        2, -- Pendiente
 		p_anio_elaboracion,
         p_creado_por
     )
@@ -263,6 +263,7 @@ BEGIN
         AND (p_buscar IS NULL OR 
              t.titulo ILIKE '%' || p_buscar || '%' OR 
              t.resumen ILIKE '%' || p_buscar || '%')
+		AND id_estado = 1
     ),
 
     conteo AS (
@@ -549,3 +550,181 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql;
+
+
+
+---------------------------------------- aprobar tesis
+CREATE OR REPLACE FUNCTION tesis.revisar_tesis(
+    p_id_tesis INT,
+    p_id_revisor INT,
+    p_aprobar BOOLEAN, 
+    p_comentario TEXT DEFAULT NULL
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_id_estado INT;
+    v_mensaje TEXT;
+BEGIN
+    --  Verificar que la tesis existe
+    IF NOT EXISTS (
+        SELECT 1 FROM tesis.tesis 
+        WHERE id_tesis = p_id_tesis 
+        AND fecha_eliminacion IS NULL
+    ) THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 404,
+            'message', 'Proyecto no encontrado'
+        );
+    END IF;
+
+    -- Validar que si es rechazo, el comentario sea obligatorio
+    IF p_aprobar = FALSE AND (p_comentario IS NULL OR TRIM(p_comentario) = '') THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 400,
+            'message', 'Debes indicar el motivo del rechazo'
+        );
+    END IF;
+
+    -- Determinar el estado y el mensaje según el booleano
+    IF p_aprobar THEN
+        v_id_estado := 1; -- Publicada
+        v_mensaje := 'Proyecto aprobado correctamente';
+    ELSE
+        v_id_estado := 4; -- Rechazada
+        v_mensaje := 'Proyecto rechazado';
+    END IF;
+
+    -- Actualizar la tesis
+    UPDATE tesis.tesis
+    SET id_estado = v_id_estado,
+        id_revisor = p_id_revisor,
+        fecha_revision = NOW(),
+        comentario_revision = p_comentario,
+        id_usuario_modificacion = p_id_revisor,
+        fecha_modificacion = NOW()
+    WHERE id_tesis = p_id_tesis;
+
+    --respuesta 
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'status', 200,
+        'message', v_mensaje,
+        'data', jsonb_build_object(
+            'id_tesis', p_id_tesis,
+            'id_estado', v_id_estado,
+            'aprobada', p_aprobar
+        )
+    );
+
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 500,
+            'message', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+------------------ ver tesis pendientes y rechazadas
+
+
+CREATE OR REPLACE FUNCTION tesis.listar_tesis_gestion(
+    p_busqueda TEXT DEFAULT NULL,
+    p_id_carrera character varying  DEFAULT NULL,
+    p_anio character varying  DEFAULT NULL,           
+    p_estado INT DEFAULT 2,
+    p_orden VARCHAR DEFAULT 'reciente',  
+    p_offset INT DEFAULT 0,
+    p_limit INT DEFAULT 20
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_resultado JSONB;
+    v_total BIGINT;
+BEGIN
+    -- Contar total con todos los filtros
+    SELECT COUNT(*) INTO v_total
+    FROM tesis.tesis t
+    WHERE t.id_estado = p_estado
+      AND t.fecha_eliminacion IS NULL
+      AND (p_busqueda IS NULL OR t.titulo ILIKE '%' || p_busqueda || '%')
+       AND (p_id_carrera IS NULL OR p_id_carrera = ''  OR t.id_carrera = ANY(string_to_array(p_id_carrera, ',')::int[]))
+      AND (p_anio IS NULL OR p_anio = ''  OR t.anio_elaboracion = ANY(string_to_array(p_anio, ',')::int[]));
+
+    -- Obtener las tesis
+    SELECT jsonb_agg(t.*) INTO v_resultado
+    FROM (
+        SELECT 
+            t.id_tesis,
+            t.titulo,
+            t.resumen,
+            t.anio_elaboracion,
+            t.url_documento,
+            t.fecha_creacion,
+            t.id_estado,
+            t.comentario_revision,
+            t.fecha_revision,
+            c.nombre AS nombre_carrera,
+            u.nombre AS nombre_creador,
+            r.nombre AS nombre_revisor,
+            (
+                SELECT jsonb_agg(jsonb_build_object(
+                    'id_estudiante', e.id_estudiante,
+                    'nombre_completo', e.nombre_completo,
+                    'cedula', e.cedula
+                ))
+                FROM tesis.tesis_estudiante te
+                JOIN personas.estudiante e ON e.id_estudiante = te.id_estudiante
+                WHERE te.id_tesis = t.id_tesis
+                  AND te.fecha_eliminacion IS NULL
+            ) AS estudiantes
+        FROM tesis.tesis t
+        LEFT JOIN catalogo.carrera c ON c.id_carrera = t.id_carrera
+        LEFT JOIN seguridad.usuario u ON u.id_usuario = t.id_usuario_creacion
+        LEFT JOIN seguridad.usuario r ON r.id_usuario = t.id_revisor
+        WHERE t.id_estado = p_estado
+          AND t.fecha_eliminacion IS NULL
+          AND (p_busqueda IS NULL OR t.titulo ILIKE '%' || p_busqueda || '%')
+	   	  AND (p_id_carrera IS NULL OR p_id_carrera = ''   OR t.id_carrera = ANY(string_to_array(p_id_carrera, ',')::int[]))
+		  AND (p_anio IS NULL OR p_anio = ''  OR t.anio_elaboracion = ANY(string_to_array(p_anio, ',')::int[]))
+        ORDER BY
+            CASE 
+                WHEN p_orden = 'reciente' THEN t.fecha_creacion
+            END DESC,
+            CASE 
+                WHEN p_orden = 'antiguo' THEN t.fecha_creacion
+            END ASC,
+            CASE 
+                WHEN p_orden = 'titulo' THEN t.titulo
+            END ASC
+        LIMIT p_limit OFFSET p_offset
+    ) t;
+
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'status', 200,
+        'data', COALESCE(v_resultado, '[]'::jsonb),
+        'pagination', jsonb_build_object(
+            'total', v_total,
+            'page', (p_offset / p_limit) + 1,
+            'pages', CEIL(v_total::numeric / p_limit)
+        )
+    );
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN jsonb_build_object(
+            'success', FALSE,
+            'status', 500,
+            'message', SQLERRM
+        );
+END;
+$$ LANGUAGE plpgsql;
+
+

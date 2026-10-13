@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, Book, User, Building, Calendar, X, Filter } from 'lucide-react';
+import { Search, Plus, Book, User, Building, Calendar, Filter, FileCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { librosApi } from '../../api/endpoints/libros';
 import { materiasApi } from '../../api/endpoints/materias';
 import type { Libros, Materia } from '../../api/types';
 import { useDebounce } from '../../hooks/useDebounce';
 import { usePermiso } from '../../hooks/usePermiso';
+import { usePendientesRecursos } from '../../hooks/usePendientesRecursos';
+import Select from 'react-select';
 
 // Componente de tarjeta de libro
 const LibroCard = ({ libro }: { libro: Libros; onRefresh: () => void }) => {
@@ -23,14 +25,14 @@ const LibroCard = ({ libro }: { libro: Libros; onRefresh: () => void }) => {
               {libro.titulo}
             </h3>
           </div>
-          
+
           <div className="flex flex-wrap gap-2 mb-3">
             {libro.tipo_recurso && (
-            <span className="flex items-center gap-1 bg-yellow-100 text-yellow-700  px-3 py-1 rounded-full text-sm">
-              <User className="h-3 w-3" />
-              {libro.tipo_recurso}
-            </span>
-          )}
+              <span className="flex items-center gap-1 bg-yellow-100 text-yellow-700  px-3 py-1 rounded-full text-sm">
+                <User className="h-3 w-3" />
+                {libro.tipo_recurso}
+              </span>
+            )}
             {libro.autor && (
               <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
                 <User className="h-3 w-3" />
@@ -50,7 +52,7 @@ const LibroCard = ({ libro }: { libro: Libros; onRefresh: () => void }) => {
               </span>
             )}
           </div>
-          
+
           {libro.materia && (
             <p className="text-xs text-gray-400">
               {libro.materia}
@@ -65,33 +67,36 @@ const LibroCard = ({ libro }: { libro: Libros; onRefresh: () => void }) => {
 export function LibrosList() {
   const { isAuthenticated } = useAuth();
   const crearLibro = usePermiso('recursos', 'crear');
+  const aprobarRecurso = usePermiso('recursos', 'aprobar');
+  const pendientes = usePendientesRecursos();
+
   const [libros, setLibros] = useState<Libros[]>([]);
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [materiasSeleccionadas, setMateriasSeleccionadas] = useState<number[]>([]);
+  const [tiposRecurso, setTiposRecurso] = useState<{ id_tipo_recurso: number, nombre: string }[]>([]);
+  const [tiposSeleccionados, setTiposSeleccionados] = useState<number[]>([]);
+  const [aniosDisponibles, setAniosDisponibles] = useState<number[]>([]);
+  const [aniosSeleccionados, setAniosSeleccionados] = useState<number[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const buscarDebounced = useDebounce(searchText, 500);
-  const totalFiltrosActivos = materiasSeleccionadas.length + (searchText ? 1 : 0);
 
   useEffect(() => {
     cargarMaterias();
+    cargarTiposRecurso();
+    cargarAnios();
     cargarLibros();
   }, []);
 
-  // useEffect(() => {
-  //   setPage(1);
-  //   cargarLibros();
-  // }, [searchText, materiasSeleccionadas]);
-
-    useEffect(() => {
+  useEffect(() => {
     if (page === 1) {
       cargarLibros();
     }
-  }, [buscarDebounced, page, materiasSeleccionadas]);
+  }, [buscarDebounced, page, materiasSeleccionadas, tiposSeleccionados, aniosSeleccionados]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value);
@@ -103,6 +108,26 @@ export function LibrosList() {
     setMaterias(data);
   };
 
+  const cargarAnios = async () => {
+    try {
+      const res = await librosApi.getAnios();
+      setAniosDisponibles(res.data || []);
+    } catch (error) {
+      console.error('Error al cargar años:', error);
+    }
+  };
+
+  const cargarTiposRecurso = async () => {
+    const response = await librosApi.getTiposRecursos();
+    if (response && response.success && Array.isArray(response.data)) {
+      setTiposRecurso(response.data);
+    } else {
+      // En caso de que venga vacío o mal formado, ponemos un array vacío para evitar el error
+      setTiposRecurso([]);
+    }
+  };
+
+
   const cargarLibros = async (isLoadMore = false) => {
     if (isLoadMore) {
       setLoadingMore(true);
@@ -112,13 +137,15 @@ export function LibrosList() {
 
     const data = await librosApi.getAll({
       buscar: searchText || undefined,
-      id_materia: materiasSeleccionadas.length > 0 ? materiasSeleccionadas.join(',') : undefined,
+      id_materia: materiasSeleccionadas.length > 0 ? materiasSeleccionadas : undefined,
+      id_tipo_recurso: tiposSeleccionados.length > 0 ? tiposSeleccionados : undefined,
+      anio: aniosSeleccionados.length > 0 ? aniosSeleccionados : undefined,
       page: isLoadMore ? page : 1,
-      limit: 12
+      limit: 15
     });
 
     const librosData = Array.isArray(data?.data) ? data.data : [];
-    
+
     if (data?.pagination) {
       setTotalPages(data.pagination.pages);
     }
@@ -139,16 +166,38 @@ export function LibrosList() {
     }
   };
 
-  const toggleMateria = (id: number) => {
-    setMateriasSeleccionadas(prev =>
-      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
-    );
-  };
+
 
   const limpiarFiltros = () => {
     setMateriasSeleccionadas([]);
+    setTiposSeleccionados([]);
+    setAniosSeleccionados([]);
     setSearchText('');
   };
+
+  const totalFiltrosActivos =
+    materiasSeleccionadas.length +
+    tiposSeleccionados.length +
+    aniosSeleccionados.length +
+    (searchText ? 1 : 0);
+
+  //  Opciones para react-select
+  const opcionesTipos = tiposRecurso.map(t => ({
+    value: t.id_tipo_recurso,
+    label: t.nombre,
+  }));
+
+  const opcionesMaterias = materias.map(m => ({
+    value: m.id_materia,
+    label: m.nombre,
+  }));
+
+  const opcionesAnios = aniosDisponibles.map(a => ({
+    value: a,
+    label: a.toString(),
+  }));
+
+
 
   if (loading && libros.length === 0) {
     return (
@@ -162,11 +211,28 @@ export function LibrosList() {
   return (
     <div className="max-w-7xl mx-auto min-h-screen">
       {/* Header con gradiente */}
-      <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6
-       rounded-2xl">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-white mb-2">Recursos</h1>
-          <p className="text-white/80">Explora nuestra colección de libros y guias de apoyo</p>
+      <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Recursos</h1>
+            <p className="text-white/80">Explora nuestra colección de libros y guías de apoyo</p>
+          </div>
+
+          {/* Botón de gestión con contador */}
+          {aprobarRecurso && (
+            <Link
+              to="/libros/gestion"
+              className="group relative inline-flex items-center gap-2 bg-white/95 hover:bg-white text-blue-700 px-5 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <FileCheck className="h-5 w-5 transition-transform group-hover:scale-110" />
+              <span>Gestionar Pendiantes</span>
+              {pendientes > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center min-w-5.5 h-5.5 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full px-1.5 animate-pulse">
+                  {pendientes}
+                </span>
+              )}
+            </Link>
+          )}
         </div>
       </div>
 
@@ -183,12 +249,11 @@ export function LibrosList() {
               onChange={handleSearchChange}
             />
           </div>
-          
+
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl transition ${
-              showFilters ? 'bg-cyan-500 text-white' : 'bg-white border border-gray-200 text-gray-700'
-            }`}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl transition ${showFilters ? 'bg-cyan-500 text-white' : 'bg-white border border-gray-200 text-gray-700'
+              }`}
           >
             <Filter className="h-5 w-5" />
             Filtros
@@ -202,53 +267,84 @@ export function LibrosList() {
 
         {/* Panel de filtros */}
         {showFilters && (
-          <div className="mt-4 p-5 bg-white border border-gray-200 rounded-xl">
+          <div className="mt-4 p-5 bg-white border border-gray-200 rounded-xl space-y-4">
+
+            
+
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* Filtro tipo de recurso */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Materias</label>
-              <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                <button
-                  onClick={() => setMateriasSeleccionadas([])}
-                  className="px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-                >
-                  Todas
-                </button>
-                {materias.map((materia) => (
-                  <button
-                    key={materia.id_materia}
-                    onClick={() => toggleMateria(materia.id_materia)}
-                    className={`px-3 py-1.5 rounded-full text-sm transition ${
-                      materiasSeleccionadas.includes(materia.id_materia)
-                        ? 'bg-cyan-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {materia.nombre}
-                  </button>
-                ))}
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Tipo de recurso
+              </label>
+              <Select
+                isMulti
+                isClearable
+                isSearchable
+                options={opcionesTipos}
+                value={opcionesTipos.filter(o => tiposSeleccionados.includes(o.value))}
+                onChange={(selected) => {
+                  setTiposSeleccionados(selected ? selected.map(s => s.value) : []);
+                  setPage(1);
+                }}
+                placeholder="Todos los tipos"
+                noOptionsMessage={() => 'No hay tipos'}
+              />
+            </div>
+
+              {/* Materias */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Materias
+                </label>
+                <Select
+                  isMulti
+                  isClearable
+                  isSearchable
+                  options={opcionesMaterias}
+                  value={opcionesMaterias.filter(o => materiasSeleccionadas.includes(o.value))}
+                  onChange={(selected) => {
+                    setMateriasSeleccionadas(selected ? selected.map(s => s.value) : []);
+                    setPage(1);
+                  }}
+                  placeholder="Todas las materias"
+                  noOptionsMessage={() => 'No hay materias'}
+                />
+              </div>
+
+              {/* Años */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Años
+                </label>
+                <Select
+                  isMulti
+                  isClearable
+                  isSearchable
+                  options={opcionesAnios}
+                  value={opcionesAnios.filter(o => aniosSeleccionados.includes(o.value))}
+                  onChange={(selected) => {
+                    setAniosSeleccionados(selected ? selected.map(s => s.value) : []);
+                    setPage(1);
+                  }}
+                  placeholder="Todos los años"
+                  noOptionsMessage={() => 'No hay años'}
+                />
               </div>
             </div>
-            
+
+            {/* Filtros activos */}
             {totalFiltrosActivos > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="flex flex-wrap gap-2">
-                  {materiasSeleccionadas.map(id => {
-                    const materia = materias.find(m => m.id_materia === id);
-                    return (
-                      <span key={id} className="flex items-center gap-1 bg-cyan-100 text-cyan-700 px-2 py-1 rounded-full text-sm">
-                        {materia?.nombre}
-                        <button onClick={() => toggleMateria(id)}>
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    );
-                  })}
-                  <button
-                    onClick={limpiarFiltros}
-                    className="text-sm text-red-500 hover:text-red-600 underline"
-                  >
-                    Limpiar todos
-                  </button>
-                </div>
+              <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
+                <p className="text-xs text-gray-500">
+                  {totalFiltrosActivos} filtro(s) activo(s)
+                </p>
+                <button
+                  onClick={limpiarFiltros}
+                  className="text-sm text-red-500 hover:text-red-600 underline"
+                >
+                  Limpiar todos los filtros
+                </button>
               </div>
             )}
           </div>
@@ -273,7 +369,7 @@ export function LibrosList() {
               }} />
             ))}
           </div>
-          
+
           {/* Botón cargar más */}
           {page < totalPages && (
             <div className="text-center mt-8">
@@ -307,7 +403,7 @@ export function LibrosList() {
       )}
 
       {/* Botón flotante para crear - solo usuarios autenticados */}
-      {isAuthenticated  && crearLibro && (
+      {isAuthenticated && crearLibro && (
         <Link
           to="/libros/create"
           className="fixed bottom-6 right-6 bg-cyan-500 rounded-full p-4 shadow-lg hover:bg-cyan-600 transition-all hover:scale-105 z-10"

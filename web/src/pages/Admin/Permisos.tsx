@@ -95,7 +95,8 @@ export function Permisos() {
               onClick={() => handleSeleccionarUsuario(usuario.id_usuario)}
               className={`w-full text-left p-3 rounded border ${usuarioSeleccionado === usuario.id_usuario ? 'border-cyan-500 bg-cyan-50' : 'border-gray-200'}`}
             >
-              <p className="font-semibold">{usuario.nombre_completo || usuario.nombre_usuario}</p>
+              <p className="font-semibold">Usuario: {  usuario.nombre_usuario}</p>
+              <p className="">Nombre: {usuario.nombre_completo }</p>
               <p className="text-sm text-gray-500">{usuario.nombre_rol}</p>
             </button>
           ))}
@@ -139,7 +140,7 @@ export function Permisos() {
                   {permisos.filter(p => p.modulo === modulo).map(permiso => (
                     <div key={permiso.id_permiso} className={`p-3 rounded border ${['sin_permiso', 'bloqueado'].includes(permiso.estado_permiso)  ? 'border-gray-200' : 'border-cyan-500'}`}>
                       <label className="block text-sm font-medium">{permiso.titulo}</label>
-                      <p className="text-xs text-gray-500">{permiso.estado_permiso}</p>
+                      {/* <p className="text-xs text-gray-500">{permiso.estado_permiso}</p> */}
                       <button
                         onClick={() => handleTogglePermiso(permiso, permiso.estado_permiso)}
                         className={`mt-2 text-xs px-2 py-1 rounded ${['sin_permiso', 'bloqueado'].includes(permiso.estado_permiso)  ? 'bg-cyan-500 text-white' : 'bg-red-500 text-white'}`}

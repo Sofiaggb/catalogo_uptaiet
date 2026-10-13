@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Plus, BookOpen, Calendar, Grid3x3, List, Filter, X, ChevronRight, Eye, TrendingUp } from 'lucide-react';
+import { Search, Plus, BookOpen, Calendar, Grid3x3, List, Filter,  ChevronRight, Eye, FileCheck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { tesisApi } from '../../api/endpoints/tesis';
 import { carrerasApi } from '../../api/endpoints/carreras';
 import { useDebounce } from '../../hooks/useDebounce';
 import { usePermiso } from '../../hooks/usePermiso';
+import { usePendientesTesis } from '../../hooks/usePendientesTesis';
+import Select from 'react-select';
 
 interface Tesis {
   id_tesis: number;
@@ -19,6 +21,7 @@ interface Tesis {
 export function TesisList() {
   const { isAuthenticated } = useAuth();
   const crearTesis = usePermiso('proyecto', 'crear');
+  const aprobarTesis = usePermiso('proyecto', 'aprobar');
   const [tesis, setTesis] = useState<Tesis[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -35,6 +38,8 @@ export function TesisList() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('reciente');
   const [showFilters, setShowFilters] = useState(false);
+
+  const pendientes = usePendientesTesis();
 
   useEffect(() => {
     cargarCarreras();
@@ -92,26 +97,24 @@ export function TesisList() {
     }
   };
 
-  const toggleCarrera = (id: number) => {
-    setCarrerasSeleccionadas(prev =>
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    );
-    setPage(1);
-  };
-
-  const toggleAnio = (anio: number) => {
-    setAniosSeleccionados(prev =>
-      prev.includes(anio) ? prev.filter(a => a !== anio) : [...prev, anio]
-    );
-    setPage(1);
-  };
-
   const limpiarFiltros = () => {
     setCarrerasSeleccionadas([]);
     setAniosSeleccionados([]);
     setBuscar('');
     setPage(1);
   };
+
+  // Opciones para react-select
+  const opcionesCarreras = carreras.map(c => ({
+    value: c.id_carrera,
+    label: c.nombre,
+  }));
+
+  const opcionesAnios = aniosDisponibles.map(a => ({
+    value: a,
+    label: a.toString(),
+  }));
+
 
   const totalFiltrosActivos = carrerasSeleccionadas.length + aniosSeleccionados.length + (buscar ? 1 : 0);
 
@@ -194,10 +197,10 @@ export function TesisList() {
               <Eye className="h-3 w-3" />
               <span>{item.vistas || 0} vistas</span>
             </div>
-            <div className="flex items-center gap-1 text-gray-400 text-xs">
+            {/* <div className="flex items-center gap-1 text-gray-400 text-xs">
               <TrendingUp className="h-3 w-3" />
               <span>15 descargas</span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -207,10 +210,39 @@ export function TesisList() {
   return (
     <div className="max-w-7xl mx-auto min-h-screen">
       {/* Header */}
-      <div className="bg-linear-to-r from-cyan-600 to-blue-600 mt-1 -mx-4 px-5 py-8 mb-6 rounded-2xl">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-white mb-2">Explora Proyectos</h1>
-          <p className="text-white/80">Descubre investigaciones y trabajos académicos</p>
+      <div className="relative bg-linear-to-br from-cyan-600 to-blue-600  mt-1 -mx-4 px-6 py-10 mb-6 rounded-2xl overflow-hidden">
+
+        <div className="relative max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          {/* Título y subtítulo */}
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+              Explora Proyectos
+            </h1>
+            <p className="text-white/80 text-sm md:text-base">
+              Descubre investigaciones y trabajos académicos
+            </p>
+          </div>
+
+          {/* Botón de gestión */}
+          {aprobarTesis && (
+            <Link
+              to="/proyecto/gestion"
+              className="group relative inline-flex items-center gap-2 bg-white/95 hover:bg-white text-blue-700 px-5 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 backdrop-blur-sm"
+            >
+              <FileCheck className="h-5 w-5 transition-transform group-hover:scale-110" />
+              <span>Gestionar Pendientes</span>
+
+              {/* Badge del contador */}
+              {pendientes > 0 && (
+                <span className="ml-1 inline-flex items-center justify-center min-w-5.5 h-5.5 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full px-1.5 animate-pulse-subtle">
+                  {pendientes}
+                </span>
+              )}
+
+              {/* Flecha que aparece al hacer hover */}
+              <ChevronRight className="h-4 w-4 opacity-0 -ml-2 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -273,81 +305,68 @@ export function TesisList() {
           </div>
         </div>
 
-        {/* Panel de filtros */}
+        {/* Panel de filtros con react-select */}
         {showFilters && (
           <div className="mt-4 p-4 bg-white border border-gray-200 rounded-xl">
             <div className="grid md:grid-cols-2 gap-4">
+
+              {/* Filtro de carreras */}
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">Carreras</label>
-                </div>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                  {carreras.map((carrera) => (
-                    <button
-                      key={carrera.id_carrera}
-                      onClick={() => toggleCarrera(carrera.id_carrera)}
-                      className={`px-3 py-1 rounded-full text-sm transition ${carrerasSeleccionadas.includes(carrera.id_carrera)
-                          ? 'bg-cyan-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                      {carrera.nombre}
-                    </button>
-                  ))}
-                </div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Carreras
+                </label>
+                <Select
+                  isMulti
+                  isClearable
+                  isSearchable
+                  options={opcionesCarreras}
+                  value={opcionesCarreras.filter(o =>
+                    carrerasSeleccionadas.includes(o.value)
+                  )}
+                  onChange={(selected) => {
+                    setCarrerasSeleccionadas(selected ? selected.map(s => s.value) : []);
+                    setPage(1);
+                  }}
+                  placeholder="Todas las carreras"
+                  noOptionsMessage={() => 'No hay carreras'}
+                />
               </div>
 
+              {/* Filtro de años */}
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-semibold text-gray-700">Años</label>
-                </div>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                  {aniosDisponibles.map((anio) => (
-                    <button
-                      key={anio}
-                      onClick={() => toggleAnio(anio)}
-                      className={`px-3 py-1 rounded-full text-sm transition ${aniosSeleccionados.includes(anio)
-                          ? 'bg-cyan-500 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                      {anio}
-                    </button>
-                  ))}
-                </div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Años
+                </label>
+                <Select
+                  isMulti
+                  isClearable
+                  isSearchable
+                  options={opcionesAnios}
+                  value={opcionesAnios.filter(o =>
+                    aniosSeleccionados.includes(o.value)
+                  )}
+                  onChange={(selected) => {
+                    setAniosSeleccionados(selected ? selected.map(s => s.value) : []);
+                    setPage(1);
+                  }}
+                  placeholder="Todos los años"
+                  noOptionsMessage={() => 'No hay años'}
+                />
               </div>
             </div>
 
-            {/* Badges de filtros activos */}
+            {/* Filtros activos con botón de limpiar */}
             {totalFiltrosActivos > 0 && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="flex flex-wrap gap-2">
-                  {carrerasSeleccionadas.map(id => {
-                    const carrera = carreras.find(c => c.id_carrera === id);
-                    return (
-                      <span key={id} className="flex items-center gap-1 bg-cyan-100 text-cyan-700 px-2 py-1 rounded-full text-sm">
-                        {carrera?.nombre}
-                        <button onClick={() => toggleCarrera(id)} className="hover:text-cyan-900">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    );
-                  })}
-                  {aniosSeleccionados.map(anio => (
-                    <span key={anio} className="flex items-center gap-1 bg-cyan-100 text-cyan-700 px-2 py-1 rounded-full text-sm">
-                      {anio}
-                      <button onClick={() => toggleAnio(anio)} className="hover:text-cyan-900">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
-                  <button
-                    onClick={limpiarFiltros}
-                    className="text-sm text-red-500 hover:text-red-600 underline"
-                  >
-                    Limpiar todos
-                  </button>
-                </div>
+              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                <p className="text-xs text-gray-500">
+                  {totalFiltrosActivos} filtro(s) activo(s)
+                </p>
+                <button
+                  onClick={limpiarFiltros}
+                  className="text-sm text-red-500 hover:text-red-600 underline"
+                >
+                  Limpiar todos los filtros
+                </button>
               </div>
             )}
           </div>

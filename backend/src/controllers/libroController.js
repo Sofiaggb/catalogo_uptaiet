@@ -97,6 +97,8 @@ export const libroController = {
   getLibros: async (req, res) => {
     const {
       id_materia,
+      id_tipo_recurso,  
+      anio,           
       buscar,
       limit = 50,
       page = 1
@@ -106,18 +108,24 @@ export const libroController = {
 
     try {
       const result = await pool.query(
-        `SELECT recursos.libros_listar($1, $2, $3, $4) AS resultado`,
-        [id_materia  || null, buscar || null, limit, offset]
+        `SELECT recursos.libros_listar($1, $2, $3, $4, $5, $6) AS resultado`,
+        [
+          id_materia || null,
+          id_tipo_recurso || null,  // 👈 NUEVO
+          anio || null,             // 👈 NUEVO
+          buscar || null,
+          limit,
+          offset
+        ]
       );
-      console.log(result)
       const resultado = result.rows[0].resultado;
       res.json(resultado);
 
     } catch (error) {
-      console.error('Error en listarTesis:', error);
+      console.error('Error en getLibros:', error);
       res.status(500).json({
         success: false,
-        error: 'Error al listar las tesis'
+        error: 'Error al listar los recursos'
       });
     }
   },
@@ -227,4 +235,97 @@ export const libroController = {
     }
   },
 
+  // RECURSOS POR GESTIONAR 
+   listarGestion: async (req, res) => {
+    const { 
+      buscar, 
+      id_materia,
+      id_tipo_recurso,
+      anio,
+      estado = 2, 
+      orden = 'reciente', 
+      page = 1, 
+      limit = 20 
+    } = req.query;
+    const offset = (page - 1) * limit;
+
+    try {
+      const result = await pool.query(
+        `SELECT recursos.listar_libros_gestion($1, $2, $3, $4, $5, $6, $7, $8) AS resultado`,
+        [
+          buscar || null,
+          id_materia || null,
+          id_tipo_recurso || null,
+          anio || null,
+          parseInt(estado),
+          orden,
+          offset,
+          limit
+        ]
+      );
+      res.json(result.rows[0].resultado);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
+
+  //  Aprobar/Rechazar
+  revisar: async (req, res) => {
+    const { id } = req.params;
+    const { aprobar, comentario } = req.body;
+    const id_revisor = req.usuario.id_usuario;
+
+    if (typeof aprobar !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: "El campo 'aprobar' debe ser true o false"
+      });
+    }
+
+    try {
+      const result = await pool.query(
+        `SELECT recursos.revisar_libro($1, $2, $3, $4) AS resultado`,
+        [id, id_revisor, aprobar, comentario || null]
+      );
+      const resultado = result.rows[0].resultado;
+      res.status(resultado.status || 200).json(resultado);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
+
+  //  Contar pendientes
+  contarPendientes: async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT COUNT(*) AS total 
+        FROM recursos.libro  
+        WHERE id_estado = 2 
+          AND fecha_eliminacion IS NULL`
+      );
+      res.json({
+        success: true,
+        status: 200,
+        data: { total: parseInt(result.rows[0].total) }
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
+
+    //  Años disponibles
+  getAniosDisponibles: async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT recursos.get_anios_libros() AS resultado`
+      );
+      res.json(result.rows[0].resultado);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  },
 }

@@ -57,6 +57,16 @@ export function LibroDetail() {
     navigate(`/libros/edit/${id}`);
   };
 
+  const handleVolver = () => {
+    // Si el usuario vino de otra página dentro de la app, retrocede
+    // Si no, va a la lista de proyectos
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/proyecto');
+    }
+  };
+
 
   if (loading) {
     return (
@@ -92,7 +102,7 @@ export function LibroDetail() {
         
         <div className="flex justify-between items-center flex-wrap gap-4">
           <button
-            onClick={() => navigate('/libros')}
+            onClick={handleVolver}
             className="flex items-center gap-2 text-gray-600 hover:text-cyan-600 transition"
           >
             <ArrowLeft className="h-5 w-5" />
